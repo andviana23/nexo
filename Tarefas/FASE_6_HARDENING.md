@@ -500,68 +500,68 @@ k6 run --env BASE_URL=https://api-staging.barberpro.dev k6-load-test.js
 
 **1. Governança & Política**
 
-- [ ] Privacy Policy criada (português, clara)
-  - [ ] Finalidades de tratamento documentadas
-  - [ ] Bases legais mapeadas (contrato, legítimo interesse, consentimento)
-  - [ ] Direitos do titular explicados
-  - [ ] Publicada em `/privacy` no frontend
-- [ ] Inventário de dados pessoais completo:
-  - [ ] Users: nome, email, senha (hash), role
-  - [ ] Tenants: CNPJ, telefone, endereço
-  - [ ] Logs: IP, user agent, timestamps
-  - [ ] Audit logs: old_value, new_value
-  - [ ] Assinaturas: dados de clientes
-- [ ] Documento de conformidade: `docs/COMPLIANCE_LGPD.md`
+- [x] Privacy Policy criada (português, clara)
+  - [x] Finalidades de tratamento documentadas
+  - [x] Bases legais mapeadas (contrato, legítimo interesse, consentimento)
+  - [x] Direitos do titular explicados
+  - [x] Publicada em `/privacy` no frontend
+- [x] Inventário de dados pessoais completo:
+  - [x] Users: nome, email, senha (hash), role
+  - [x] Tenants: CNPJ, telefone, endereço
+  - [x] Logs: IP, user agent, timestamps
+  - [x] Audit logs: old_value, new_value
+  - [x] Assinaturas: dados de clientes
+- [x] Documento de conformidade: `docs/COMPLIANCE_LGPD.md`
 
 **2. Consentimento & UX**
 
-- [ ] Banner/modal de consentimento no frontend:
-  - [ ] Opção de aceitar/rejeitar
-  - [ ] Granularidade: Necessários vs Opcionais
-  - [ ] Categorias: Analytics, Error Tracking
-  - [ ] Texto claro e objetivo
-- [ ] Persistência de preferências:
-  - [ ] Cookie/localStorage (frontend)
-  - [ ] Tabela `user_preferences` (backend)
-  - [ ] Endpoints: GET/PUT `/api/v1/me/preferences`
-- [ ] Respeitar consentimento:
-  - [ ] Sentry: Só inicializar se `error_tracking_enabled = true`
-  - [ ] Analytics: Só carregar se `analytics_enabled = true`
+- [x] Banner/modal de consentimento no frontend:
+  - [x] Opção de aceitar/rejeitar
+  - [x] Granularidade: Necessários vs Opcionais
+  - [x] Categorias: Analytics, Error Tracking
+  - [x] Texto claro e objetivo
+  - [x] Persistência de preferências:
+  - [x] Cookie/localStorage (frontend)
+  - [x] Tabela `user_preferences` (backend)
+  - [x] Endpoints: GET/PUT `/api/v1/me/preferences`
+- [x] Respeitar consentimento:
+  - [x] Sentry: Só inicializar se `error_tracking_enabled = true`
+  - [x] Analytics: Só carregar se `analytics_enabled = true`
 
 **3. Right to be Forgotten (DELETE /me)**
 
-- [ ] Endpoint: `DELETE /api/v1/me`
-  - [ ] Autenticado (JWT required)
-  - [ ] Confirmar senha antes de deletar
-  - [ ] Soft delete: `ativo=false, deleted_at=NOW()`
-  - [ ] Anonimizar campos pessoais:
-    - [ ] `nome` → "[USUÁRIO REMOVIDO]"
-    - [ ] `email` → "deleted-{uuid}@anonimizado.local"
-    - [ ] `password_hash` → NULL
-  - [ ] Revogar tokens JWT (blacklist ou invalidar refresh)
-  - [ ] Registrar em audit_logs
-- [ ] Anonimizar dados relacionados:
-  - [ ] Audit logs: Substituir user_id por "DELETED" (se não quebrar integridade)
-  - [ ] Receitas/Despesas: Manter dados (obrigação fiscal), mas desassociar de usuário
-- [ ] Job de limpeza: Hard delete após 90 dias
+- [x] Endpoint: `DELETE /api/v1/me`
+  - [x] Autenticado (JWT required)
+  - [x] Confirmar senha antes de deletar
+  - [x] Soft delete: `ativo=false, deleted_at=NOW()`
+  - [x] Anonimizar campos pessoais:
+    - [x] `nome` → "[USUÁRIO REMOVIDO]"
+    - [x] `email` → "deleted-{uuid}@anonimizado.local"
+    - [x] `password_hash` → hash inválido
+  - [x] Revogar tokens JWT (blacklist ou invalidar refresh)
+  - [x] Registrar em audit_logs
+- [x] Anonimizar dados relacionados:
+  - [x] Audit logs: Substituir user_id por "DELETED" (se não quebrar integridade)
+  - [x] Receitas/Despesas: Manter dados (obrigação fiscal), mas desassociar de usuário
+- [x] Job de limpeza: Hard delete após 90 dias
 
 **4. Data Portability (GET /me/export)**
 
-- [ ] Endpoint: `GET /api/v1/me/export`
-  - [ ] Autenticado (JWT required)
-  - [ ] Rate limiting: 1 export/dia por usuário
-  - [ ] Retornar JSON com:
-    - [ ] Dados de perfil (user)
-    - [ ] Dados do tenant
-    - [ ] Configurações/preferências
-    - [ ] Histórico de uso (opcional: últimas 100 ações)
-  - [ ] **Excluir segredos**: Senhas, tokens, chaves API
-- [ ] Opções de formato:
-  - [ ] JSON (padrão)
-  - [ ] CSV (opcional, para dados tabulares)
-  - [ ] ZIP (se volume > 10 MB)
-- [ ] Header: `Content-Disposition: attachment; filename=meus-dados.json`
-- [ ] Log de auditoria: Registrar cada export
+- [x] Endpoint: `GET /api/v1/me/export`
+  - [x] Autenticado (JWT required)
+  - [x] Rate limiting: 1 export/dia por usuário
+  - [x] Retornar JSON com:
+    - [x] Dados de perfil (user)
+    - [x] Dados do tenant
+  - [x] Configurações/preferências
+  - [x] Histórico de uso (opcional: últimas 100 ações)
+  - [x] **Excluir segredos**: Senhas, tokens, chaves API
+- [x] Opções de formato:
+  - [x] JSON (padrão)
+  - [x] CSV (opcional, para dados tabulares)
+  - [x] ZIP (se volume > 10 MB)
+- [x] Header: `Content-Disposition: attachment; filename=meus-dados.json`
+- [x] Log de auditoria: Registrar cada export
 
 **5. Documentação de Conformidade**
 

@@ -1,0 +1,104 @@
+name: Deploy Production (Backend + Frontend)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Selecione o que deseja deployar"
+        required: true
+        type: choice
+        default: both
+        options:
+          - both
+          - backend
+          - frontend
+      ref:
+        description: "Branch/Tag/SHA a deployar"
+        required: true
+        default: main
+
+env:
+  SSH_HOST: ${{ secrets.VPS_HOST }}
+  SSH_USER: ${{ secrets.VPS_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  BACKEND_REMOTE_DIR: /opt/barber-api
+  FRONT_REMOTE_DIR: /opt/barber-frontend
+  BACKEND_SERVICE: barber-api
+  FRONT_SERVICE: barber-frontend
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: deploy-production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Prepare SSH key
+        run: |
+          echo "${SSH_PRIVATE_KEY}" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+
+      - name: Setup Go
+        if: inputs.target == 'both' || inputs.target == 'backend'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: backend/go.sum
+
+      - name: Build backend binary
+        if: inputs.target == 'both' || inputs.target == 'backend'
+        working-directory: backend
+        run: go build -o bin/main ./cmd/api
+
+      - name: Deploy backend
+        if: inputs.target == 'both' || inputs.target == 'backend'
+        env:
+          SSH_KEY_PATH: /tmp/deploy_key
+          BACKEND_ARTIFACT: backend/bin/main
+        run: ./scripts/deploy-backend.sh
+
+      - name: Setup pnpm
+        if: inputs.target == 'both' || inputs.target == 'frontend'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        if: inputs.target == 'both' || inputs.target == 'frontend'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend deps
+        if: inputs.target == 'both' || inputs.target == 'frontend'
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend (production)
+        if: inputs.target == 'both' || inputs.target == 'frontend'
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL_PROD }}
+        run: pnpm build
+
+      - name: Deploy frontend
+        if: inputs.target == 'both' || inputs.target == 'frontend'
+        env:
+          SSH_KEY_PATH: /tmp/deploy_key
+          FRONT_REMOTE_DIR: ${{ env.FRONT_REMOTE_DIR }}
+          FRONT_SERVICE: ${{ env.FRONT_SERVICE }}
+          SKIP_BUILD: "1"
+          PKG_MGR: pnpm
+        run: ./scripts/deploy-frontend.sh
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f /tmp/deploy_key

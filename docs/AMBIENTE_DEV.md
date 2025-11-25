@@ -1,7 +1,7 @@
-# 🛠️ Configuração de Ambiente de Desenvolvimento — Barber Analytics Pro v2.0
+# 🛠️ Configuração de Ambiente de Desenvolvimento — NEXO (VALTARIS v1.0)
 
 **Sistema Operacional:** Pop!\_OS 22.04 LTS (Ubuntu/Debian)
-**Última Atualização:** 21/11/2025
+**Última Atualização:** 25/11/2025
 **Propósito:** Setup completo "Zero to Hero" após formatação
 
 ---
@@ -18,20 +18,27 @@
 
 ## 1. Stack Tecnológica
 
-| Tecnologia         | Versão                      | Função no Projeto                                     |
-| ------------------ | --------------------------- | ----------------------------------------------------- |
-| **Go**             | 1.24.0+ (toolchain 1.24.10) | Backend API (Clean Architecture)                      |
-| **Node.js**        | 20.x LTS                    | Runtime para Next.js frontend                         |
-| **pnpm**           | 9.x                         | Gerenciador de pacotes frontend (mais rápido que npm) |
-| **PostgreSQL**     | 14+                         | Banco de dados principal (Neon recomendado)           |
-| **Next.js**        | 14.2.4                      | Framework frontend (App Router)                       |
-| **React/React DOM**| 18.2.0                      | Biblioteca UI                                         |
-| **TypeScript**     | 5.3                         | Linguagem frontend                                    |
-| **Echo**           | v4.13.4                     | Framework HTTP para Go                                |
-| **SQLC**           | Latest                      | Type-safe SQL code generator                          |
-| **golang-migrate** | Latest                      | Gerenciamento de                                      |
-| **Git**            | 2.x+                        | Controle de versão                                    |
-| **Make**           | 4.x+                        | Automação de tarefas                                  |
+| Tecnologia          | Versão   | Função no Projeto                                     |
+| ------------------- | -------- | ----------------------------------------------------- |
+| **Go**              | 1.24.0+  | Backend API (Clean Architecture)                      |
+| **Node.js**         | 20.x LTS | Runtime para Next.js frontend                         |
+| **pnpm**            | 9.x      | Gerenciador de pacotes frontend (mais rápido que npm) |
+| **PostgreSQL**      | 14+      | Banco de dados principal (Neon recomendado)           |
+| **Next.js**         | 16.0.4   | Framework frontend (App Router)                       |
+| **React/React DOM** | 19.2.0   | Biblioteca UI (React 19 com Compiler)                 |
+| **TypeScript**      | 5.x      | Linguagem frontend                                    |
+| **Tailwind CSS**    | 4.x      | Framework CSS utilitário                              |
+| **Shadcn/ui**       | Latest   | Componentes UI (Radix + Tailwind)                     |
+| **Zustand**         | 5.x      | Gerenciamento de estado                               |
+| **React Query**     | 5.x      | Gerenciamento de estado servidor/cache                |
+| **React Hook Form** | 7.x      | Formulários performáticos                             |
+| **Zod**             | 4.x      | Validação de schemas                                  |
+| **Echo**            | v4.13.4  | Framework HTTP para Go                                |
+| **pgx/v5**          | 5.7.6    | Driver PostgreSQL para Go                             |
+| **SQLC**            | Latest   | Type-safe SQL code generator                          |
+| **golang-migrate**  | Latest   | Gerenciamento de migrations                           |
+| **Git**             | 2.x+     | Controle de versão                                    |
+| **Make**            | 4.x+     | Automação de tarefas                                  |
 
 ---
 
@@ -208,8 +215,8 @@ sudo apt install -y code
 
 ```bash
 cd ~/projetos
-git clone https://github.com/andviana23/barber-analytics-proV2.git
-cd barber-analytics-proV2
+git clone https://github.com/andviana23/nexo.git
+cd nexo
 ```
 
 ### 3.2 Configurar Backend (Go)
@@ -329,14 +336,11 @@ pnpm dev
 **🧪 Rodar Testes:**
 
 ```bash
-# Testes unitários
-pnpm test:unit
+# Lint
+pnpm lint
 
-# Testes E2E (Playwright)
-pnpm test:e2e
-
-# Testes com coverage
-pnpm test:coverage
+# Build de produção (valida tipos)
+pnpm build
 ```
 
 ---
@@ -375,11 +379,12 @@ code --install-extension eamodio.gitlens
 | **ESLint**                    | `dbaeumer.vscode-eslint`               | Linter JavaScript/TypeScript       |
 | **Prettier**                  | `esbenp.prettier-vscode`               | Formatador de código               |
 | **TypeScript Next.js**        | `willstakayama.vscode-nextjs-snippets` | Snippets Next.js                   |
-| **Tailwind CSS IntelliSense** | `bradlc.vscode-tailwindcss`            | Autocomplete Tailwind              |
-| **ES7+ React Snippets**       | `dsznajder.es7-react-js-snippets`      | Snippets React                     |
+| **Tailwind CSS IntelliSense** | `bradlc.vscode-tailwindcss`            | Autocomplete Tailwind v4           |
+| **ES7+ React Snippets**       | `dsznajder.es7-react-js-snippets`      | Snippets React 19                  |
 | **Auto Rename Tag**           | `formulahendry.auto-rename-tag`        | Renomear tags HTML automaticamente |
 | **Import Cost**               | `wix.vscode-import-cost`               | Mostrar tamanho de imports         |
 | **Path Intellisense**         | `christian-kohler.path-intellisense`   | Autocomplete de paths              |
+| **Shadcn/ui**                 | `shadcn.shadcn-ui`                     | Snippets e autocomplete shadcn/ui  |
 
 **Instalação via CLI:**
 
@@ -392,6 +397,7 @@ code --install-extension dsznajder.es7-react-js-snippets
 code --install-extension formulahendry.auto-rename-tag
 code --install-extension wix.vscode-import-cost
 code --install-extension christian-kohler.path-intellisense
+code --install-extension shadcn.shadcn-ui
 ```
 
 ### 4.3 Geral (Produtividade)
@@ -505,7 +511,7 @@ code --version               # Deve retornar versão
 ### 5.2 Testar Backend
 
 ```bash
-cd ~/projetos/barber-analytics-proV2/backend
+cd ~/projetos/nexo/backend
 
 # Rodar testes
 make test
@@ -517,16 +523,16 @@ make lint
 make build
 
 # Verificar binário
-./bin/barber-analytics-backend --help
+./bin/api --help
 ```
 
 ### 5.3 Testar Frontend
 
 ```bash
-cd ~/projetos/barber-analytics-proV2/frontend
+cd ~/projetos/nexo/frontend
 
-# Rodar testes unitários
-pnpm test:unit
+# Rodar lint
+pnpm lint
 
 # Build de produção
 pnpm build
@@ -640,15 +646,17 @@ echo $DATABASE_URL
 
 Após configurar o ambiente:
 
-1. ✅ Ler `docs/ARQUITETURA.md` para entender a estrutura
-2. ✅ Ler `docs/GUIA_DEV_BACKEND.md` para convenções de código Go
-3. ✅ Ler `docs/GUIA_FRONTEND.md` para padrões do frontend
-4. ✅ Executar `make seed-demo` para ter dados de teste
-5. ✅ Explorar endpoints em `docs/API_REFERENCE.md`
-6. ✅ Começar a codar! 🚀
+1. ✅ Ler `docs/02-arquitetura/ARQUITETURA.md` para entender a estrutura
+2. ✅ Ler `docs/04-backend/GUIA_DEV_BACKEND.md` para convenções de código Go
+3. ✅ Ler `docs/03-frontend/GUIA_FRONTEND.md` para padrões do frontend
+4. ✅ Ler `docs/03-frontend/DESIGN_SYSTEM.md` para padrões de UI (Shadcn/ui + Tailwind v4)
+5. ✅ Executar `make seed-demo` para ter dados de teste
+6. ✅ Explorar endpoints em `docs/04-backend/API_INTERNA.md`
+7. ✅ Começar a codar! 🚀
 
 ---
 
-**Última Atualização:** 21/11/2025
-**Mantenedor:** Equipe Barber Analytics Pro
+**Última Atualização:** 25/11/2025
+**Mantenedor:** Equipe NEXO (VALTARIS)
+**Repositório:** https://github.com/andviana23/nexo
 **Suporte:** Abra uma issue no GitHub

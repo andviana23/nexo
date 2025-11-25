@@ -27,15 +27,8 @@ func NewContaPagarRepository(queries *db.Queries) *ContaPagarRepository {
 
 // Create persiste uma nova conta a pagar.
 func (r *ContaPagarRepository) Create(ctx context.Context, conta *entity.ContaPagar) error {
-	tenantUUID, err := uuidStringToPgtype(conta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	categoriaUUID, err := uuidStringToPgtype(conta.CategoriaID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter categoria_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(conta.TenantID)
+	categoriaUUID := uuidStringToPgtype(conta.CategoriaID)
 
 	tipoStr := string(conta.Tipo)
 	statusStr := string(conta.Status)
@@ -46,7 +39,7 @@ func (r *ContaPagarRepository) Create(ctx context.Context, conta *entity.ContaPa
 		Descricao:      conta.Descricao,
 		CategoriaID:    categoriaUUID,
 		Fornecedor:     &conta.Fornecedor,
-		Valor:          moneyToDecimal(conta.Valor),
+		Valor:          moneyToRawDecimal(conta.Valor),
 		Tipo:           &tipoStr,
 		Recorrente:     &recorrente,
 		Periodicidade:  &conta.Periodicidade,
@@ -76,15 +69,8 @@ func (r *ContaPagarRepository) Create(ctx context.Context, conta *entity.ContaPa
 
 // FindByID busca uma conta por ID.
 func (r *ContaPagarRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.ContaPagar, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	result, err := r.queries.GetContaPagarByID(ctx, db.GetContaPagarByIDParams{
 		ID:       idUUID,
@@ -99,15 +85,8 @@ func (r *ContaPagarRepository) FindByID(ctx context.Context, tenantID, id string
 
 // Update atualiza uma conta existente.
 func (r *ContaPagarRepository) Update(ctx context.Context, conta *entity.ContaPagar) error {
-	tenantUUID, err := uuidStringToPgtype(conta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(conta.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(conta.TenantID)
+	idUUID := uuidStringToPgtype(conta.ID)
 
 	statusStr := string(conta.Status)
 
@@ -115,7 +94,7 @@ func (r *ContaPagarRepository) Update(ctx context.Context, conta *entity.ContaPa
 		ID:             idUUID,
 		TenantID:       tenantUUID,
 		Descricao:      conta.Descricao,
-		Valor:          moneyToDecimal(conta.Valor),
+		Valor:          moneyToRawDecimal(conta.Valor),
 		DataVencimento: dateToDate(conta.DataVencimento),
 		DataPagamento:  pgtype.Date{Valid: conta.DataPagamento != nil},
 		Status:         &statusStr,
@@ -139,17 +118,10 @@ func (r *ContaPagarRepository) Update(ctx context.Context, conta *entity.ContaPa
 
 // Delete remove uma conta.
 func (r *ContaPagarRepository) Delete(ctx context.Context, tenantID, id string) error {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
-
-	err = r.queries.DeleteContaPagar(ctx, db.DeleteContaPagarParams{
+	err := r.queries.DeleteContaPagar(ctx, db.DeleteContaPagarParams{
 		ID:       idUUID,
 		TenantID: tenantUUID,
 	})
@@ -162,10 +134,7 @@ func (r *ContaPagarRepository) Delete(ctx context.Context, tenantID, id string) 
 
 // List lista contas a pagar com filtros
 func (r *ContaPagarRepository) List(ctx context.Context, tenantID string, filters port.ContaPagarListFilters) ([]*entity.ContaPagar, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	// Por enquanto, implementação simples usando ListByTenant
 	// TODO: Expandir para suportar todos os filtros
@@ -192,10 +161,7 @@ func (r *ContaPagarRepository) List(ctx context.Context, tenantID string, filter
 
 // ListByDateRange lista contas em um período
 func (r *ContaPagarRepository) ListByDateRange(ctx context.Context, tenantID string, inicio, fim time.Time) ([]*entity.ContaPagar, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListContasPagarByPeriod(ctx, db.ListContasPagarByPeriodParams{
 		TenantID:         tenantUUID,
@@ -239,10 +205,7 @@ func (r *ContaPagarRepository) ListByStatus(ctx context.Context, tenantID string
 	limit := int32(100)
 	offset := int32(0)
 
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	statusStr := string(status)
 
@@ -261,10 +224,7 @@ func (r *ContaPagarRepository) ListByStatus(ctx context.Context, tenantID string
 
 // ListVencendo lista contas que vencem em até N dias.
 func (r *ContaPagarRepository) ListVencendo(ctx context.Context, tenantID string, proximosDias int32) ([]*entity.ContaPagar, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	hoje := time.Now()
 
@@ -333,7 +293,7 @@ func (r *ContaPagarRepository) toDomain(model *db.ContasAPagar) (*entity.ContaPa
 		Descricao:      model.Descricao,
 		CategoriaID:    pgUUIDToString(model.CategoriaID),
 		Fornecedor:     fornecedor,
-		Valor:          decimalToMoney(model.Valor),
+		Valor:          rawDecimalToMoney(model.Valor),
 		Tipo:           tipo,
 		Recorrente:     recorrente,
 		Periodicidade:  periodicidade,

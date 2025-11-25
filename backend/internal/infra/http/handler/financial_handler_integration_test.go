@@ -83,6 +83,7 @@ func setupFinancialHandler() (*handler.FinancialHandler, *echo.Echo) {
 		generateDREUC,
 		getDREUC,
 		listDREUC,
+		nil, // placeholder para getDashboardUC
 		testLogger,
 	)
 

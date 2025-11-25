@@ -156,10 +156,10 @@ Todos os endpoints dos novos módulos
 
 #### ✅ Estrutura Base
 
-- App Router Next.js 16
-- TypeScript
-- Design System configurado (MUI/Shadcn)
-- React Query configurado
+- App Router Next.js 14.2.4 (React/React DOM 18.2.0)
+- TypeScript 5.3
+- Design System configurado (MUI 5.15.21/Emotion 11.11 + Shadcn)
+- TanStack Query 4.36.1 configurado
 - Autenticação (JWT)
 - Multi-tenant context
 

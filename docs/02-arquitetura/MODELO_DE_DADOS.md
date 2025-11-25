@@ -2,514 +2,90 @@
 
 # 🗄️ Design do Banco de Dados
 
-**Versão:** 2.0
-**Data:** 14/11/2025
-**Status:** Finalizado
+**Versão:** 2.0  
+**Data:** 22/11/2025  
+**Status:** Alinhado ao estado atual (módulos futuros destacados)
 
 ---
 
 ## 📋 Índice
 
-1. [Diagrama ER](#diagrama-er)
-2. [Tabelas Core](#tabelas-core)
-3. [Índices & Performance](#índices--performance)
-4. [Migrations](#migrations)
-5. [Backup & Recovery](#backup--recovery)
+1. [Visão Geral](#visão-geral)
+2. [Tabelas Atuais](#tabelas-atuais)
+3. [Tabelas Planejadas](#tabelas-planejadas)
+4. [Índices & Performance](#índices--performance)
+5. [Migrations](#migrations)
+6. [Estado Atual vs Planejado](#estado-atual-vs-planejado)
 
 ---
 
-## 🎯 Diagrama ER
+## 🎯 Visão Geral
 
-```
-┌─────────────┐
-│   tenants   │
-├─────────────┤
-│ id (PK)     │
-│ nome        │
-│ cnpj        │
-│ ativo       │
-│ plano       │
-└─────────────┘
-      │ 1
-      │
-      │ n
-      ↓
-┌─────────────┐        ┌──────────────┐        ┌──────────────┐
-│    users    │        │  categorias  │        │ receitas     │
-├─────────────┤        ├──────────────┤        ├──────────────┤
-│ id (PK)     │        │ id (PK)      │        │ id (PK)      │
-│ tenant_id   │        │ tenant_id    │        │ tenant_id    │
-│ email       │        │ nome         │        │ descricao    │
-│ password    │        │ tipo         │        │ valor        │
-│ nome        │        │ ativa        │        │ categoria_id │
-│ role        │        └──────────────┘        │ data         │
-│ ativo       │               ↑                └──────────────┘
-└─────────────┘               │
-      │                       │
-      │ n                     │ n
-      │                       │
-      ├─────────────────────────
-      │
-      │ 1 ┌──────────────┐     ┌───────────────────┐
-      │───│  despesas    │     │ planos_assinatura │
-      │   ├──────────────┤     ├───────────────────┤
-      │   │ id (PK)      │     │ id (PK)           │
-      │   │ tenant_id    │     │ tenant_id         │
-      │   │ descricao    │     │ nome              │
-      │   │ valor        │     │ valor             │
-      │   │ categoria_id │     │ periodicidade     │
-      │   │ data         │     └───────────────────┘
-      │   └──────────────┘              │
-      │                                 │ n
-      │                                 │
-      │                                 ↓
-      │                         ┌──────────────────┐
-      │                         │  assinaturas     │
-      │                         ├──────────────────┤
-      │                         │ id (PK)          │
-      │                         │ tenant_id        │
-      │                         │ plan_id          │
-      │                         │ barbeiro_id      │
-      │                         │ asaas_sub_id     │
-      │                         │ status           │
-      │                         │ data_inicio      │
-      │                         └──────────────────┘
-      │                                 │
-      │                                 │ n
-      │                                 │
-      │                                 ↓
-      │                      ┌─────────────────────┐
-      │                      │assinatura_invoices  │
-      │                      ├─────────────────────┤
-      │                      │ id (PK)             │
-      │                      │ tenant_id           │
-      │                      │ assinatura_id       │
-      │                      │ asaas_invoice_id    │
-      │                      │ valor               │
-      │                      │ status              │
-      │                      │ data_vencimento     │
-      │                      └─────────────────────┘
-      │
-      └────→ ┌────────────────┐
-             │  audit_logs    │
-             ├────────────────┤
-             │ id (PK)        │
-             │ tenant_id      │
-             │ user_id        │
-             │ action         │
-             │ resource       │
-             │ timestamp      │
-             └────────────────┘
-```
+O schema atual cobre apenas os módulos já implementados no backend (financeiro, metas, precificação e preferências de usuário). Módulos como agendamento, assinaturas/Asaas, estoque, comissões e CRM ainda não possuem tabelas.
 
 ---
 
-## 🏗️ Tabelas Core
+## 📦 Tabelas Atuais
 
-### tenants
+- **Financeiro**
+  - `contas_a_pagar`
+  - `contas_a_receber`
+  - `compensacoes_bancarias`
+  - `fluxo_caixa_diario`
+  - `dre_mensal`
+- **Metas**
+  - `metas_mensais`
+  - `metas_barbeiro`
+  - `metas_ticket_medio`
+- **Precificação**
+  - `precificacao_config`
+  - `precificacao_simulacoes`
+- **LGPD/Preferências**
+  - `user_preferences`
 
-Tabela de barbearias/clientes do SaaS.
-
-```sql
-CREATE TABLE tenants (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nome VARCHAR(255) NOT NULL UNIQUE,
-    cnpj VARCHAR(14) UNIQUE,
-    ativo BOOLEAN DEFAULT true,
-    plano VARCHAR(50) DEFAULT 'free', -- free, pro, enterprise
-    onboarding_completed BOOLEAN DEFAULT false,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    atualizado_em TIMESTAMP DEFAULT NOW()
-);
-
-COMMENT ON TABLE tenants IS 'Cada barbearia é um tenant';
-COMMENT ON COLUMN tenants.cnpj IS 'Opcional, pode ser NULL inicialmente';
-COMMENT ON COLUMN tenants.plano IS 'Define features disponíveis';
-```
-
-### users
-
-Usuários do sistema, sempre pertencendo a um tenant.
-
-```sql
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    email VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    nome VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'employee',
-        -- owner, manager, accountant, employee, barbeiro
-    ativo BOOLEAN DEFAULT true,
-    ultimo_login TIMESTAMP,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    atualizado_em TIMESTAMP DEFAULT NOW(),
-    UNIQUE(tenant_id, email)
-);
-
-CREATE INDEX idx_users_tenant_id ON users(tenant_id);
-CREATE INDEX idx_users_email ON users(email);
-```
-
-### categorias
-
-Categorias de receitas/despesas.
-
-```sql
-CREATE TABLE categorias (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    nome VARCHAR(100) NOT NULL,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('RECEITA', 'DESPESA')),
-    cor VARCHAR(7) DEFAULT '#000000',
-    ativa BOOLEAN DEFAULT true,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    UNIQUE(tenant_id, nome)
-);
-
-CREATE INDEX idx_categorias_tenant_tipo ON categorias(tenant_id, tipo);
-```
-
-### receitas
-
-Registros de receita.
-
-```sql
-CREATE TABLE receitas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    usuario_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    descricao VARCHAR(255) NOT NULL,
-    valor DECIMAL(15, 2) NOT NULL CHECK (valor > 0),
-    categoria_id UUID NOT NULL REFERENCES categorias(id) ON DELETE RESTRICT,
-    metodo_pagamento VARCHAR(50) NOT NULL,
-    data DATE NOT NULL DEFAULT CURRENT_DATE,
-    status VARCHAR(50) DEFAULT 'CONFIRMADO',
-    observacoes TEXT,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    atualizado_em TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_receitas_tenant_id ON receitas(tenant_id);
-CREATE INDEX idx_receitas_tenant_data ON receitas(tenant_id, data DESC);
-CREATE INDEX idx_receitas_tenant_categoria ON receitas(tenant_id, categoria_id);
-CREATE INDEX idx_receitas_tenant_status ON receitas(tenant_id, status);
-```
-
-### despesas
-
-Registros de despesa.
-
-```sql
-CREATE TABLE despesas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    usuario_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    descricao VARCHAR(255) NOT NULL,
-    valor DECIMAL(15, 2) NOT NULL CHECK (valor > 0),
-    categoria_id UUID NOT NULL REFERENCES categorias(id) ON DELETE RESTRICT,
-    fornecedor VARCHAR(255),
-    metodo_pagamento VARCHAR(50) NOT NULL,
-    data DATE NOT NULL DEFAULT CURRENT_DATE,
-    status VARCHAR(50) DEFAULT 'PENDENTE',
-    observacoes TEXT,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    atualizado_em TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_despesas_tenant_id ON despesas(tenant_id);
-CREATE INDEX idx_despesas_tenant_data ON despesas(tenant_id, data DESC);
-CREATE INDEX idx_despesas_tenant_status ON despesas(tenant_id, status);
-```
-
-### planos_assinatura
-
-Planos oferecidos pelo sistema.
-
-```sql
-CREATE TABLE planos_assinatura (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT,
-    valor DECIMAL(10, 2) NOT NULL CHECK (valor > 0),
-    periodicidade VARCHAR(50) NOT NULL,
-    quantidade_servicos INT DEFAULT 0,
-    ativa BOOLEAN DEFAULT true,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    atualizado_em TIMESTAMP DEFAULT NOW(),
-    UNIQUE(tenant_id, nome)
-);
-```
-
-### assinaturas
-
-Assinaturas ativas/históricas.
-
-```sql
-CREATE TABLE assinaturas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    plan_id UUID NOT NULL REFERENCES planos_assinatura(id) ON DELETE RESTRICT,
-    barbeiro_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    asaas_subscription_id VARCHAR(255) UNIQUE NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'ATIVA',
-    data_inicio DATE NOT NULL,
-    data_fim DATE,
-    proxima_fatura_data DATE NOT NULL,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    atualizado_em TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_assinaturas_tenant ON assinaturas(tenant_id);
-CREATE INDEX idx_assinaturas_status ON assinaturas(tenant_id, status);
-CREATE INDEX idx_assinaturas_barbeiro ON assinaturas(barbeiro_id);
-```
-
-### assinatura_invoices
-
-Faturas de assinatura sincronizadas com Asaas.
-
-```sql
-CREATE TABLE assinatura_invoices (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    assinatura_id UUID NOT NULL REFERENCES assinaturas(id) ON DELETE CASCADE,
-    asaas_invoice_id VARCHAR(255) UNIQUE NOT NULL,
-    valor DECIMAL(10, 2) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'PENDENTE',
-    data_vencimento DATE NOT NULL,
-    data_pagamento DATE,
-    processada BOOLEAN DEFAULT false,
-    criado_em TIMESTAMP DEFAULT NOW(),
-    atualizado_em TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_invoices_tenant ON assinatura_invoices(tenant_id);
-CREATE INDEX idx_invoices_status ON assinatura_invoices(status);
-CREATE INDEX idx_invoices_vencimento ON assinatura_invoices(data_vencimento);
-```
-
-### audit_logs
-
-Auditoria de ações críticas.
-
-```sql
-CREATE TABLE audit_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    action VARCHAR(50) NOT NULL, -- CREATE, UPDATE, DELETE, READ
-    resource VARCHAR(100) NOT NULL, -- receita, despesa, assinatura
-    resource_id VARCHAR(255),
-    old_values JSONB,
-    new_values JSONB,
-    ip_address INET,
-    timestamp TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_audit_logs_tenant_timestamp ON audit_logs(tenant_id, timestamp DESC);
-CREATE INDEX idx_audit_logs_resource ON audit_logs(resource, resource_id);
-```
+> Fonte: `backend/internal/infra/db/schema/*.sql`
 
 ---
 
-## ⚡ Índices & Performance
+## 🔜 Tabelas Planejadas (não existentes)
 
-### Estratégia de Indexação
+- **Agendamento & Lista da Vez:** `agendamentos`, `agendamento_blocos`, `barber_turns`, `barber_turn_history`.
+- **Assinaturas/Asaas:** `planos`, `assinaturas`, `faturas_assinatura`, `webhook_events`.
+- **Comissões:** `comissoes`, `comissoes_regras`.
+- **Estoque:** `produtos`, `movimentacoes_estoque`, `fornecedores`, `consumos_servico`.
+- **CRM/Clientes:** `clientes`, `historico_visitas`, `contatos`.
 
-#### Receitas (Otimizado com Partial Indexes)
-
-```sql
--- Índices base
-CREATE INDEX idx_receitas_tenant_id ON receitas(tenant_id);
-
--- Índices de performance com filtro (excluindo cancelados)
-CREATE INDEX idx_receitas_tenant_id_data
-  ON receitas(tenant_id, data DESC)
-  WHERE status != 'CANCELADO';
-
-CREATE INDEX idx_receitas_tenant_categoria_data
-  ON receitas(tenant_id, categoria_id, data DESC)
-  WHERE status != 'CANCELADO';
-
-CREATE INDEX idx_receitas_tenant_usuario_data
-  ON receitas(tenant_id, usuario_id, data DESC)
-  WHERE status != 'CANCELADO';
-
-CREATE INDEX idx_receitas_tenant_status
-  ON receitas(tenant_id, status);
-
--- Índice para joins
-CREATE INDEX idx_receitas_usuario ON receitas(usuario_id);
-```
-
-#### Despesas (Otimizado com Partial Indexes)
-
-```sql
--- Índices de performance com filtro
-CREATE INDEX idx_despesas_tenant_id_data
-  ON despesas(tenant_id, data DESC)
-  WHERE status != 'CANCELADO';
-
-CREATE INDEX idx_despesas_tenant_categoria_data
-  ON despesas(tenant_id, categoria_id, data DESC)
-  WHERE status != 'CANCELADO';
-
-CREATE INDEX idx_despesas_tenant_status
-  ON despesas(tenant_id, status);
-```
-
-#### Users
-
-```sql
-CREATE INDEX idx_users_tenant_id_email
-  ON users(tenant_id, email);
-
-CREATE INDEX idx_users_tenant_role
-  ON users(tenant_id, role);
-```
-
-#### Assinaturas
-
-```sql
-CREATE INDEX idx_assinaturas_tenant_status
-  ON assinaturas(tenant_id, status);
-
-CREATE INDEX idx_assinaturas_tenant_data_inicio
-  ON assinaturas(tenant_id, data_inicio DESC);
-
-CREATE INDEX idx_assinaturas_tenant_asaas_id
-  ON assinaturas(tenant_id, asaas_subscription_id)
-  WHERE asaas_subscription_id IS NOT NULL;
-```
-
-#### Assinatura Invoices
-
-```sql
-CREATE INDEX idx_invoices_tenant_status_due_date
-  ON assinatura_invoices(tenant_id, status, data_vencimento);
-
-CREATE INDEX idx_invoices_tenant_assinatura_due_date
-  ON assinatura_invoices(tenant_id, assinatura_id, data_vencimento DESC);
-```
-
-#### Audit Logs
-
-```sql
-CREATE INDEX idx_audit_logs_tenant_criado_em
-  ON audit_logs(tenant_id, timestamp DESC)
-  WHERE deleted_at IS NULL;
-
-CREATE INDEX idx_audit_logs_tenant_user_criado_em
-  ON audit_logs(tenant_id, user_id, timestamp DESC)
-  WHERE deleted_at IS NULL;
-
-CREATE INDEX idx_audit_logs_tenant_resource
-  ON audit_logs(tenant_id, resource_type, resource_id)
-  WHERE deleted_at IS NULL;
-```
-
-#### Financial Snapshots
-
-```sql
-CREATE INDEX idx_snapshots_tenant_date
-  ON financial_snapshots(tenant_id, criado_em DESC);
-```
-
-#### Planos Assinatura
-
-```sql
-CREATE INDEX idx_planos_tenant_ativo
-  ON planos_assinatura(tenant_id, ativa);
-```
-
-### Query Optimization
-
-```go
-// ❌ Lento: Sem índice ou sem filtro por tenant
-SELECT * FROM receitas WHERE data = '2024-11-14' AND valor > 50;
-
-// ✅ Rápido: Com índice composto e tenant_id
-SELECT * FROM receitas
-WHERE tenant_id = 'abc'
-  AND data = '2024-11-14'
-  AND status != 'CANCELADO'
-  AND valor > 50;
-
-// ✅ Otimizado: Usando índice parcial (sem cancelados)
-SELECT * FROM receitas
-WHERE tenant_id = 'abc'
-  AND data BETWEEN '2024-11-01' AND '2024-11-30'
-  AND status = 'CONFIRMADO'
-ORDER BY data DESC;
-```
-
-### Benefícios dos Índices Parciais
-
-**Partial Indexes (`WHERE status != 'CANCELADO'`):**
-
-- ✅ Reduz tamanho do índice (apenas registros ativos)
-- ✅ Melhora performance de queries comuns (99% filtram cancelados)
-- ✅ Economiza espaço em disco
-- ✅ Acelera queries de dashboards e relatórios
-
-**Estatísticas de Performance:**
-
-- **Antes:** 120+ índices totais
-- **Depois:** 120+ índices (otimizados com WHERE clauses)
-- **Economia:** ~30% de espaço em índices
-- **Ganho:** ~40% mais rápido em queries de dashboard---
-
-## 📜 Migrations
-
-Usar `golang-migrate`:
-
-```
-migrations/
-├── 001_create_tenants.up.sql
-├── 001_create_tenants.down.sql
-├── 002_create_users.up.sql
-├── 002_create_users.down.sql
-├── 003_create_categorias.up.sql
-├── 003_create_categorias.down.sql
-├── 004_create_receitas.up.sql
-├── 004_create_receitas.down.sql
-└── ...
-```
-
-Executar:
-
-```bash
-migrate -path ./migrations -database "postgres://..." up
-```
+Essas tabelas devem ser especificadas e migradas conforme os módulos forem iniciados.
 
 ---
 
-## 💾 Backup & Recovery
+## 📊 Índices & Performance
 
-### Provedor: Neon
-
-- ✅ Backup automático diário
-- ✅ Point-in-time recovery (últimos 7 dias)
-- ✅ Replicação automática
-- ✅ Snapshots para branches
-
-### Manual Backup
-
-```bash
-# Exportar dados
-pg_dump -Fc $DATABASE_URL > backup-$(date +%Y%m%d).dump
-
-# Restaurar
-pg_restore -d $DATABASE_URL backup-20241114.dump
-```
-
-### RTO/RPO
-
-- **RTO (Recovery Time Objective):** < 2 horas
-- **RPO (Recovery Point Objective):** 24 horas
+- Índices por `tenant_id` e datas em todas as tabelas atuais (ver arquivos `.sql`).
+- `UNIQUE(id, tenant_id)` adotado para evitar vazamento cross-tenant.
+- Gap: ausência de **RLS** (Row Level Security) — ativar quando auth/JWT estiver pronto.
 
 ---
 
-**Status:** ✅ Pronto para implementação
+## 🧳 Migrations
+
+- Migrations estão em `backend/internal/infra/db/schema/migrations`.
+- Cobrem apenas os módulos atuais; novas migrations serão necessárias para agendamento, assinaturas, estoque, etc.
+
+---
+
+## 🧭 Estado Atual vs Planejado
+
+| Área            | Estado atual (22/11/2025)                      | Planejado                                      |
+| --------------- | ---------------------------------------------- | ---------------------------------------------- |
+| Financeiro      | Tabelas e migrations criadas                   | Completar agregações/índices específicos       |
+| Metas           | Tabelas criadas                                | Ajustes para filtros por barbeiro/período      |
+| Precificação    | Tabelas criadas                                | Ligar a custos reais (estoque)                 |
+| User Prefs      | Tabela criada                                  | Audit logs e histórico de consentimento        |
+| Agendamento     | Não existe                                     | Criar schema completo + índices de conflito    |
+| Assinaturas     | Não existe                                     | Criar schema para Asaas + webhooks             |
+| Estoque/CRM     | Não existe                                     | Criar schema de estoque/cliente/consumo        |
+| Segurança       | Sem RLS, sem auditoria                         | Ativar RLS, auditoria e policies por role      |
+
+> Atualizar esta tabela a cada checkpoint do Roadmap Militar.
+

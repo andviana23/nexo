@@ -26,20 +26,9 @@ func NewCompensacaoBancariaRepository(queries *db.Queries) *CompensacaoBancariaR
 
 // Create persiste uma nova compensação bancária.
 func (r *CompensacaoBancariaRepository) Create(ctx context.Context, comp *entity.CompensacaoBancaria) error {
-	tenantUUID, err := uuidStringToPgtype(comp.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	receitaUUID, err := uuidStringToPgtype(comp.ReceitaID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter receita_id: %w", err)
-	}
-
-	meioPagamentoUUID, err := uuidStringToPgtype(comp.MeioPagamentoID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter meio_pagamento_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(comp.TenantID)
+	receitaUUID := uuidStringToPgtype(comp.ReceitaID)
+	meioPagamentoUUID := uuidStringToPgtype(comp.MeioPagamentoID)
 
 	statusStr := comp.Status.String()
 
@@ -49,10 +38,10 @@ func (r *CompensacaoBancariaRepository) Create(ctx context.Context, comp *entity
 		DataTransacao:   dateToDate(comp.DataTransacao),
 		DataCompensacao: dateToDate(comp.DataCompensacao),
 		DataCompensado:  timePtrToDate(comp.DataCompensado),
-		ValorBruto:      moneyToDecimal(comp.ValorBruto),
+		ValorBruto:      moneyToRawDecimal(comp.ValorBruto),
 		TaxaPercentual:  percentageToNumeric(comp.TaxaPercentual),
 		TaxaFixa:        moneyToNumeric(comp.TaxaFixa),
-		ValorLiquido:    moneyToDecimal(comp.ValorLiquido),
+		ValorLiquido:    moneyToRawDecimal(comp.ValorLiquido),
 		MeioPagamentoID: meioPagamentoUUID,
 		DMais:           dmaisToInt32(comp.DMais),
 		Status:          &statusStr,
@@ -73,15 +62,8 @@ func (r *CompensacaoBancariaRepository) Create(ctx context.Context, comp *entity
 
 // FindByID busca uma compensação por ID.
 func (r *CompensacaoBancariaRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.CompensacaoBancaria, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	result, err := r.queries.GetCompensacaoBancariaByID(ctx, db.GetCompensacaoBancariaByIDParams{
 		ID:       idUUID,
@@ -96,15 +78,8 @@ func (r *CompensacaoBancariaRepository) FindByID(ctx context.Context, tenantID, 
 
 // FindByReceitaID busca compensação de uma receita.
 func (r *CompensacaoBancariaRepository) FindByReceitaID(ctx context.Context, tenantID, receitaID string) (*entity.CompensacaoBancaria, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	receitaUUID, err := uuidStringToPgtype(receitaID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter receita_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	receitaUUID := uuidStringToPgtype(receitaID)
 
 	results, err := r.queries.ListCompensacoesByReceita(ctx, db.ListCompensacoesByReceitaParams{
 		TenantID:  tenantUUID,
@@ -123,15 +98,8 @@ func (r *CompensacaoBancariaRepository) FindByReceitaID(ctx context.Context, ten
 
 // Update atualiza uma compensação existente.
 func (r *CompensacaoBancariaRepository) Update(ctx context.Context, comp *entity.CompensacaoBancaria) error {
-	tenantUUID, err := uuidStringToPgtype(comp.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(comp.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(comp.TenantID)
+	idUUID := uuidStringToPgtype(comp.ID)
 
 	statusStr := comp.Status.String()
 
@@ -140,10 +108,10 @@ func (r *CompensacaoBancariaRepository) Update(ctx context.Context, comp *entity
 		TenantID:        tenantUUID,
 		DataCompensacao: dateToDate(comp.DataCompensacao),
 		DataCompensado:  timePtrToDate(comp.DataCompensado),
-		ValorBruto:      moneyToDecimal(comp.ValorBruto),
+		ValorBruto:      moneyToRawDecimal(comp.ValorBruto),
 		TaxaPercentual:  percentageToNumeric(comp.TaxaPercentual),
 		TaxaFixa:        moneyToNumeric(comp.TaxaFixa),
-		ValorLiquido:    moneyToDecimal(comp.ValorLiquido),
+		ValorLiquido:    moneyToRawDecimal(comp.ValorLiquido),
 		Status:          &statusStr,
 	}
 
@@ -158,17 +126,10 @@ func (r *CompensacaoBancariaRepository) Update(ctx context.Context, comp *entity
 
 // Delete remove uma compensação.
 func (r *CompensacaoBancariaRepository) Delete(ctx context.Context, tenantID, id string) error {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
-
-	err = r.queries.DeleteCompensacaoBancaria(ctx, db.DeleteCompensacaoBancariaParams{
+	err := r.queries.DeleteCompensacaoBancaria(ctx, db.DeleteCompensacaoBancariaParams{
 		ID:       idUUID,
 		TenantID: tenantUUID,
 	})
@@ -181,10 +142,7 @@ func (r *CompensacaoBancariaRepository) Delete(ctx context.Context, tenantID, id
 
 // List lista compensações com filtros.
 func (r *CompensacaoBancariaRepository) List(ctx context.Context, tenantID string, filters port.CompensacaoListFilters) ([]*entity.CompensacaoBancaria, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	pageSize := int32(filters.PageSize)
 	if pageSize <= 0 {
@@ -193,6 +151,7 @@ func (r *CompensacaoBancariaRepository) List(ctx context.Context, tenantID strin
 	offset := int32(filters.Page * filters.PageSize)
 
 	var results []db.CompensacoesBancaria
+	var err error
 
 	if filters.Status != nil {
 		statusStr := filters.Status.String()
@@ -219,10 +178,7 @@ func (r *CompensacaoBancariaRepository) List(ctx context.Context, tenantID strin
 
 // ListByStatus lista compensações por status.
 func (r *CompensacaoBancariaRepository) ListByStatus(ctx context.Context, tenantID string, status valueobject.StatusCompensacao) ([]*entity.CompensacaoBancaria, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	statusStr := status.String()
 	results, err := r.queries.ListCompensacoesByStatus(ctx, db.ListCompensacoesByStatusParams{
@@ -260,10 +216,7 @@ func (r *CompensacaoBancariaRepository) ListPendentesCompensacao(ctx context.Con
 
 // ListByDateRange lista compensações em um período.
 func (r *CompensacaoBancariaRepository) ListByDateRange(ctx context.Context, tenantID string, inicio, fim time.Time) ([]*entity.CompensacaoBancaria, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListCompensacoesByDataCompensacao(ctx, db.ListCompensacoesByDataCompensacaoParams{
 		TenantID:          tenantUUID,
@@ -302,10 +255,10 @@ func (r *CompensacaoBancariaRepository) toDomain(model *db.CompensacoesBancaria)
 		DataTransacao:   dateToTime(model.DataTransacao),
 		DataCompensacao: dateToTime(model.DataCompensacao),
 		DataCompensado:  dateToTimePtr(model.DataCompensado),
-		ValorBruto:      decimalToMoney(model.ValorBruto),
+		ValorBruto:      rawDecimalToMoney(model.ValorBruto),
 		TaxaPercentual:  taxaPercentual,
 		TaxaFixa:        numericToMoney(model.TaxaFixa),
-		ValorLiquido:    decimalToMoney(model.ValorLiquido),
+		ValorLiquido:    rawDecimalToMoney(model.ValorLiquido),
 		MeioPagamentoID: pgUUIDToString(model.MeioPagamentoID),
 		DMais:           int32ToDMais(model.DMais),
 		Status:          status,

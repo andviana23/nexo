@@ -23,10 +23,7 @@ func NewUserPreferencesRepository(queries *db.Queries) *UserPreferencesRepositor
 
 // Create persiste novas preferências de usuário.
 func (r *UserPreferencesRepository) Create(ctx context.Context, prefs *entity.UserPreferences) error {
-	userUUID, err := uuidStringToPgtype(prefs.UserID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter user_id: %w", err)
-	}
+	userUUID := uuidStringToPgtype(prefs.UserID)
 
 	params := db.CreateUserPreferencesParams{
 		UserID:               userUUID,
@@ -49,10 +46,7 @@ func (r *UserPreferencesRepository) Create(ctx context.Context, prefs *entity.Us
 
 // FindByUserID busca preferências de um usuário.
 func (r *UserPreferencesRepository) FindByUserID(ctx context.Context, userID string) (*entity.UserPreferences, error) {
-	userUUID, err := uuidStringToPgtype(userID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter user_id: %w", err)
-	}
+	userUUID := uuidStringToPgtype(userID)
 
 	result, err := r.queries.GetUserPreferencesByUserID(ctx, userUUID)
 	if err != nil {
@@ -64,10 +58,7 @@ func (r *UserPreferencesRepository) FindByUserID(ctx context.Context, userID str
 
 // Update atualiza preferências existentes.
 func (r *UserPreferencesRepository) Update(ctx context.Context, prefs *entity.UserPreferences) error {
-	userUUID, err := uuidStringToPgtype(prefs.UserID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter user_id: %w", err)
-	}
+	userUUID := uuidStringToPgtype(prefs.UserID)
 
 	params := db.UpdateUserPreferencesParams{
 		UserID:               userUUID,
@@ -87,10 +78,7 @@ func (r *UserPreferencesRepository) Update(ctx context.Context, prefs *entity.Us
 
 // Delete remove preferências de um usuário.
 func (r *UserPreferencesRepository) Delete(ctx context.Context, userID string) error {
-	userUUID, err := uuidStringToPgtype(userID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter user_id: %w", err)
-	}
+	userUUID := uuidStringToPgtype(userID)
 
 	if err := r.queries.DeleteUserPreferences(ctx, userUUID); err != nil {
 		return fmt.Errorf("erro ao deletar preferências: %w", err)

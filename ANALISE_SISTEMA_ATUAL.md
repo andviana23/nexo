@@ -1,10 +1,10 @@
-# Análise do Sistema Atual — Barber Analytics Pro / VALTARIS v2.0
+# Análise do Sistema Atual — Barber Analytics Pro / NEXO v2.0
 
-**Contexto:** Análise baseada no PRD-VALTARIS (21/11/2025) e no código presente neste repositório. Foco em descrever o que já existe e como funciona hoje.
+**Contexto:** Análise baseada no PRD-NEXO (21/11/2025) e no código presente neste repositório. Foco em descrever o que já existe e como funciona hoje.
 
 ---
 
-## 1. Análise do PRD-VALTARIS.md
+## 1. Análise do PRD-NEXO.md
 - Visão: ERP/CRM para barbearias premium, multi-unidade, com módulos de agendamento, lista da vez, assinaturas (Asaas), financeiro (caixa/DRE/comissões), estoque, CRM, fidelidade, gamificação, metas/KPIs, precificação, relatórios, apps e integrações externas.
 - Regras críticas: multi-tenant obrigatório; bloqueio de benefícios se assinatura inadimplente; comissão só sobre serviços pagos; lista da vez com barbeiros ativos e reset mensal; estoque nunca negativo; privacidade de dados para barbeiro.
 - Roadmap: MVP inclui agenda, lista da vez, financeiro básico, comissões, estoque essencial, assinaturas, CRM básico, relatórios mensais simples, permissões. Pós-MVP: fidelidade, gamificação, metas avançadas, precificação, relatórios avançados, apps. Futuro: NF, integrações avançadas, IA.

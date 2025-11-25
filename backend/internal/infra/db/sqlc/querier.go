@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	AprovarMetaMensal(ctx context.Context, arg AprovarMetaMensalParams) (MetasMensai, error)
+	AtualizarQuantidadeProduto(ctx context.Context, arg AtualizarQuantidadeProdutoParams) (Produto, error)
 	AvgMargemBrutaByPeriod(ctx context.Context, arg AvgMargemBrutaByPeriodParams) (interface{}, error)
 	AvgMargemOperacionalByPeriod(ctx context.Context, arg AvgMargemOperacionalByPeriodParams) (interface{}, error)
 	CountCompensacoesByStatus(ctx context.Context, arg CountCompensacoesByStatusParams) (int64, error)
@@ -35,30 +36,59 @@ type Querier interface {
 	CreateContaReceber(ctx context.Context, arg CreateContaReceberParams) (ContasAReceber, error)
 	CreateDREMensal(ctx context.Context, arg CreateDREMensalParams) (DreMensal, error)
 	CreateFluxoCaixaDiario(ctx context.Context, arg CreateFluxoCaixaDiarioParams) (FluxoCaixaDiario, error)
+	// ========================================
+	// QUERIES SQL - MÓDULO DE ESTOQUE
+	// Geradas via sqlc para type-safety
+	// ========================================
+	// ========================================
+	// FORNECEDORES
+	// ========================================
+	CreateFornecedor(ctx context.Context, arg CreateFornecedorParams) (Fornecedore, error)
 	CreateMetaBarbeiro(ctx context.Context, arg CreateMetaBarbeiroParams) (MetasBarbeiro, error)
 	CreateMetaMensal(ctx context.Context, arg CreateMetaMensalParams) (MetasMensai, error)
 	CreateMetaTicketMedio(ctx context.Context, arg CreateMetaTicketMedioParams) (MetasTicketMedio, error)
+	// ========================================
+	// MOVIMENTAÇÕES DE ESTOQUE
+	// ========================================
+	CreateMovimentacaoEstoque(ctx context.Context, arg CreateMovimentacaoEstoqueParams) (MovimentacoesEstoque, error)
 	CreatePrecificacaoConfig(ctx context.Context, arg CreatePrecificacaoConfigParams) (PrecificacaoConfig, error)
 	CreatePrecificacaoSimulacao(ctx context.Context, arg CreatePrecificacaoSimulacaoParams) (PrecificacaoSimulaco, error)
+	// ========================================
+	// PRODUTOS (operações de estoque)
+	// ========================================
+	CreateProduto(ctx context.Context, arg CreateProdutoParams) (Produto, error)
+	// ========================================
+	// PRODUTO-FORNECEDOR (relacionamento)
+	// ========================================
+	CreateProdutoFornecedor(ctx context.Context, arg CreateProdutoFornecedorParams) (ProdutoFornecedor, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserPreferences(ctx context.Context, arg CreateUserPreferencesParams) (UserPreference, error)
 	DeleteCompensacaoBancaria(ctx context.Context, arg DeleteCompensacaoBancariaParams) error
 	DeleteContaPagar(ctx context.Context, arg DeleteContaPagarParams) error
 	DeleteContaReceber(ctx context.Context, arg DeleteContaReceberParams) error
 	DeleteDREMensal(ctx context.Context, arg DeleteDREMensalParams) error
+	DeleteExpiredRefreshTokens(ctx context.Context) error
 	DeleteFluxoCaixaDiario(ctx context.Context, arg DeleteFluxoCaixaDiarioParams) error
+	DeleteFornecedor(ctx context.Context, arg DeleteFornecedorParams) error
 	DeleteMetaBarbeiro(ctx context.Context, arg DeleteMetaBarbeiroParams) error
 	DeleteMetaMensal(ctx context.Context, arg DeleteMetaMensalParams) error
 	DeleteMetaTicketMedio(ctx context.Context, arg DeleteMetaTicketMedioParams) error
 	DeletePrecificacaoConfig(ctx context.Context, arg DeletePrecificacaoConfigParams) error
 	DeletePrecificacaoSimulacao(ctx context.Context, arg DeletePrecificacaoSimulacaoParams) error
+	DeleteProduto(ctx context.Context, arg DeleteProdutoParams) error
+	DeleteProdutoFornecedor(ctx context.Context, arg DeleteProdutoFornecedorParams) error
+	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteUserPreferences(ctx context.Context, userID pgtype.UUID) error
 	GetCompensacaoBancariaByID(ctx context.Context, arg GetCompensacaoBancariaByIDParams) (CompensacoesBancaria, error)
 	GetContaPagarByID(ctx context.Context, arg GetContaPagarByIDParams) (ContasAPagar, error)
 	GetContaReceberByID(ctx context.Context, arg GetContaReceberByIDParams) (ContasAReceber, error)
+	GetCurvaABC(ctx context.Context, tenantID pgtype.UUID) ([]GetCurvaABCRow, error)
 	GetDREMensalByID(ctx context.Context, arg GetDREMensalByIDParams) (DreMensal, error)
 	GetDREMensalByMesAno(ctx context.Context, arg GetDREMensalByMesAnoParams) (DreMensal, error)
 	GetFluxoCaixaDiarioByData(ctx context.Context, arg GetFluxoCaixaDiarioByDataParams) (FluxoCaixaDiario, error)
 	GetFluxoCaixaDiarioByID(ctx context.Context, arg GetFluxoCaixaDiarioByIDParams) (FluxoCaixaDiario, error)
+	GetFornecedorByCNPJ(ctx context.Context, arg GetFornecedorByCNPJParams) (Fornecedore, error)
+	GetFornecedorByID(ctx context.Context, arg GetFornecedorByIDParams) (Fornecedore, error)
 	GetMetaBarbeiroByID(ctx context.Context, arg GetMetaBarbeiroByIDParams) (MetasBarbeiro, error)
 	GetMetaBarbeiroByMesAno(ctx context.Context, arg GetMetaBarbeiroByMesAnoParams) (MetasBarbeiro, error)
 	GetMetaMensalByID(ctx context.Context, arg GetMetaMensalByIDParams) (MetasMensai, error)
@@ -66,13 +96,27 @@ type Querier interface {
 	GetMetaTicketMedioBarbeiroByMesAno(ctx context.Context, arg GetMetaTicketMedioBarbeiroByMesAnoParams) (MetasTicketMedio, error)
 	GetMetaTicketMedioByID(ctx context.Context, arg GetMetaTicketMedioByIDParams) (MetasTicketMedio, error)
 	GetMetaTicketMedioGeralByMesAno(ctx context.Context, arg GetMetaTicketMedioGeralByMesAnoParams) (MetasTicketMedio, error)
+	GetMovimentacaoByID(ctx context.Context, arg GetMovimentacaoByIDParams) (MovimentacoesEstoque, error)
+	GetMovimentacoesPorPeriodoComDetalhes(ctx context.Context, arg GetMovimentacoesPorPeriodoComDetalhesParams) ([]GetMovimentacoesPorPeriodoComDetalhesRow, error)
 	GetPrecificacaoConfigByID(ctx context.Context, arg GetPrecificacaoConfigByIDParams) (PrecificacaoConfig, error)
 	GetPrecificacaoConfigByTenant(ctx context.Context, tenantID pgtype.UUID) (PrecificacaoConfig, error)
 	GetPrecificacaoSimulacaoByID(ctx context.Context, arg GetPrecificacaoSimulacaoByIDParams) (PrecificacaoSimulaco, error)
+	GetProdutoByID(ctx context.Context, arg GetProdutoByIDParams) (Produto, error)
+	GetProdutoBySKU(ctx context.Context, arg GetProdutoBySKUParams) (Produto, error)
+	GetProdutoFornecedor(ctx context.Context, arg GetProdutoFornecedorParams) (ProdutoFornecedor, error)
+	// ========================================
+	// RELATÓRIOS E CONSULTAS ESPECIAIS
+	// ========================================
+	GetProdutosComEstoqueBaixo(ctx context.Context, tenantID pgtype.UUID) ([]GetProdutosComEstoqueBaixoRow, error)
+	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
+	GetTotalPorTipo(ctx context.Context, arg GetTotalPorTipoParams) (GetTotalPorTipoRow, error)
 	GetUltimaSimulacaoByItem(ctx context.Context, arg GetUltimaSimulacaoByItemParams) (PrecificacaoSimulaco, error)
 	GetUltimoSaldo(ctx context.Context, arg GetUltimoSaldoParams) (pgtype.Numeric, error)
+	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error)
 	GetUserPreferencesByID(ctx context.Context, id pgtype.UUID) (UserPreference, error)
 	GetUserPreferencesByUserID(ctx context.Context, userID pgtype.UUID) (UserPreference, error)
+	GetValorTotalEstoque(ctx context.Context, tenantID pgtype.UUID) (GetValorTotalEstoqueRow, error)
 	ListCompensacoesBancariasByTenant(ctx context.Context, arg ListCompensacoesBancariasByTenantParams) ([]CompensacoesBancaria, error)
 	ListCompensacoesByDataCompensacao(ctx context.Context, arg ListCompensacoesByDataCompensacaoParams) ([]CompensacoesBancaria, error)
 	ListCompensacoesByReceita(ctx context.Context, arg ListCompensacoesByReceitaParams) ([]CompensacoesBancaria, error)
@@ -92,6 +136,9 @@ type Querier interface {
 	ListDREMensalByTenant(ctx context.Context, arg ListDREMensalByTenantParams) ([]DreMensal, error)
 	ListFluxoCaixaDiarioByPeriod(ctx context.Context, arg ListFluxoCaixaDiarioByPeriodParams) ([]FluxoCaixaDiario, error)
 	ListFluxoCaixaDiarioByTenant(ctx context.Context, arg ListFluxoCaixaDiarioByTenantParams) ([]FluxoCaixaDiario, error)
+	ListFornecedores(ctx context.Context, tenantID pgtype.UUID) ([]Fornecedore, error)
+	ListFornecedoresAtivos(ctx context.Context, tenantID pgtype.UUID) ([]Fornecedore, error)
+	ListFornecedoresByProduto(ctx context.Context, arg ListFornecedoresByProdutoParams) ([]ListFornecedoresByProdutoRow, error)
 	ListMetasBarbeiroByBarbeiro(ctx context.Context, arg ListMetasBarbeiroByBarbeiroParams) ([]MetasBarbeiro, error)
 	ListMetasBarbeiroByMesAno(ctx context.Context, arg ListMetasBarbeiroByMesAnoParams) ([]MetasBarbeiro, error)
 	ListMetasBarbeiroByTenant(ctx context.Context, arg ListMetasBarbeiroByTenantParams) ([]MetasBarbeiro, error)
@@ -101,6 +148,15 @@ type Querier interface {
 	ListMetasTicketMedioByBarbeiro(ctx context.Context, arg ListMetasTicketMedioByBarbeiroParams) ([]MetasTicketMedio, error)
 	ListMetasTicketMedioByMesAno(ctx context.Context, arg ListMetasTicketMedioByMesAnoParams) ([]MetasTicketMedio, error)
 	ListMetasTicketMedioByTenant(ctx context.Context, arg ListMetasTicketMedioByTenantParams) ([]MetasTicketMedio, error)
+	ListMovimentacoesByFornecedor(ctx context.Context, arg ListMovimentacoesByFornecedorParams) ([]MovimentacoesEstoque, error)
+	ListMovimentacoesByPeriodo(ctx context.Context, arg ListMovimentacoesByPeriodoParams) ([]MovimentacoesEstoque, error)
+	ListMovimentacoesByProduto(ctx context.Context, arg ListMovimentacoesByProdutoParams) ([]MovimentacoesEstoque, error)
+	ListMovimentacoesByTipo(ctx context.Context, arg ListMovimentacoesByTipoParams) ([]MovimentacoesEstoque, error)
+	ListProdutos(ctx context.Context, tenantID pgtype.UUID) ([]Produto, error)
+	ListProdutosAbaixoDoMinimo(ctx context.Context, tenantID pgtype.UUID) ([]Produto, error)
+	ListProdutosAtivos(ctx context.Context, tenantID pgtype.UUID) ([]Produto, error)
+	ListProdutosByCategoria(ctx context.Context, arg ListProdutosByCategoriaParams) ([]Produto, error)
+	ListProdutosByFornecedor(ctx context.Context, arg ListProdutosByFornecedorParams) ([]ListProdutosByFornecedorRow, error)
 	ListSimulacoesByItem(ctx context.Context, arg ListSimulacoesByItemParams) ([]PrecificacaoSimulaco, error)
 	ListSimulacoesByTenant(ctx context.Context, arg ListSimulacoesByTenantParams) ([]PrecificacaoSimulaco, error)
 	ListSimulacoesByTipoItem(ctx context.Context, arg ListSimulacoesByTipoItemParams) ([]PrecificacaoSimulaco, error)
@@ -112,7 +168,9 @@ type Querier interface {
 	MarcarContaPagarComoPaga(ctx context.Context, arg MarcarContaPagarComoPagaParams) (ContasAPagar, error)
 	MarcarContaReceberComoAtrasada(ctx context.Context, arg MarcarContaReceberComoAtrasadaParams) error
 	MarcarContaReceberComoRecebida(ctx context.Context, arg MarcarContaReceberComoRecebidaParams) (ContasAReceber, error)
+	ReativarFornecedor(ctx context.Context, arg ReativarFornecedorParams) error
 	RejeitarMetaMensal(ctx context.Context, arg RejeitarMetaMensalParams) (MetasMensai, error)
+	SaveRefreshToken(ctx context.Context, arg SaveRefreshTokenParams) error
 	SumContasPagarByPeriod(ctx context.Context, arg SumContasPagarByPeriodParams) (interface{}, error)
 	SumContasPagasByPeriod(ctx context.Context, arg SumContasPagasByPeriodParams) (interface{}, error)
 	SumContasReceberByPeriod(ctx context.Context, arg SumContasReceberByPeriodParams) (interface{}, error)
@@ -127,10 +185,14 @@ type Querier interface {
 	UpdateContaReceber(ctx context.Context, arg UpdateContaReceberParams) (ContasAReceber, error)
 	UpdateDREMensal(ctx context.Context, arg UpdateDREMensalParams) (DreMensal, error)
 	UpdateFluxoCaixaDiario(ctx context.Context, arg UpdateFluxoCaixaDiarioParams) (FluxoCaixaDiario, error)
+	UpdateFornecedor(ctx context.Context, arg UpdateFornecedorParams) (Fornecedore, error)
+	UpdateLastLogin(ctx context.Context, id pgtype.UUID) error
 	UpdateMetaBarbeiro(ctx context.Context, arg UpdateMetaBarbeiroParams) (MetasBarbeiro, error)
 	UpdateMetaMensal(ctx context.Context, arg UpdateMetaMensalParams) (MetasMensai, error)
 	UpdateMetaTicketMedio(ctx context.Context, arg UpdateMetaTicketMedioParams) (MetasTicketMedio, error)
 	UpdatePrecificacaoConfig(ctx context.Context, arg UpdatePrecificacaoConfigParams) (PrecificacaoConfig, error)
+	UpdateProduto(ctx context.Context, arg UpdateProdutoParams) (Produto, error)
+	UpdateProdutoFornecedor(ctx context.Context, arg UpdateProdutoFornecedorParams) (ProdutoFornecedor, error)
 	UpdateUserPreferences(ctx context.Context, arg UpdateUserPreferencesParams) (UserPreference, error)
 }
 

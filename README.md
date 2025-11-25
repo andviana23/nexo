@@ -4,7 +4,7 @@
 
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)](https://github.com/andviana23/barber-analytics-proV2)
 [![Go Version](https://img.shields.io/badge/go-1.24.0-blue)](https://golang.org)
-[![Next.js](https://img.shields.io/badge/next.js-16.0.3-black)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/next.js-14.2.4-black)](https://nextjs.org)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-14%2B-blue)](https://www.postgresql.org)
 
 ---
@@ -75,11 +75,13 @@
 
 ### Frontend
 
-- **Next.js 16.0.3** (App Router)
-- **React 19** (Server & Client Components)
-- **MUI 5** (Material-UI com Design System customizado)
-- **TanStack Query** (Data fetching & caching)
-- **Zod + React Hook Form** (Validação de formulários)
+- **Next.js 14.2.4** (App Router)
+- **React 18.2.0 + React DOM 18.2.0**
+- **MUI 5.15.21 + Emotion 11.11** (Design System customizado)
+- **TanStack Query 4.36.1** (Data fetching & caching)
+- **Zod 3.22 + React Hook Form 7.49** (Validação de formulários)
+- **Zustand 4.5.2** (Estado global leve)
+- **Axios 1.6**, **ESLint 8.56**, **TypeScript 5.3**
 
 ### DevOps
 

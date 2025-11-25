@@ -27,21 +27,14 @@ func NewContaReceberRepository(queries *db.Queries) *ContaReceberRepository {
 
 // Create persiste uma nova conta a receber.
 func (r *ContaReceberRepository) Create(ctx context.Context, conta *entity.ContaReceber) error {
-	tenantUUID, err := uuidStringToPgtype(conta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(conta.TenantID)
 
 	origemStr := conta.Origem
 	statusStr := string(conta.Status)
 
 	var assinaturaUUID pgtype.UUID
 	if conta.AssinaturaID != nil {
-		aid, err := uuidStringToPgtype(*conta.AssinaturaID)
-		if err != nil {
-			return fmt.Errorf("erro ao converter assinatura_id: %w", err)
-		}
-		assinaturaUUID = aid
+		assinaturaUUID = uuidStringToPgtype(*conta.AssinaturaID)
 	}
 
 	params := db.CreateContaReceberParams{
@@ -50,7 +43,7 @@ func (r *ContaReceberRepository) Create(ctx context.Context, conta *entity.Conta
 		AssinaturaID:    assinaturaUUID,
 		ServicoID:       pgtype.UUID{Valid: false},
 		Descricao:       conta.DescricaoOrigem,
-		Valor:           moneyToDecimal(conta.Valor),
+		Valor:           moneyToRawDecimal(conta.Valor),
 		ValorPago:       moneyToNumeric(conta.ValorPago),
 		DataVencimento:  dateToDate(conta.DataVencimento),
 		DataRecebimento: pgtype.Date{Valid: conta.DataRecebimento != nil},
@@ -76,15 +69,8 @@ func (r *ContaReceberRepository) Create(ctx context.Context, conta *entity.Conta
 
 // FindByID busca uma conta por ID.
 func (r *ContaReceberRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.ContaReceber, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	result, err := r.queries.GetContaReceberByID(ctx, db.GetContaReceberByIDParams{
 		ID:       idUUID,
@@ -99,15 +85,8 @@ func (r *ContaReceberRepository) FindByID(ctx context.Context, tenantID, id stri
 
 // Update atualiza uma conta existente.
 func (r *ContaReceberRepository) Update(ctx context.Context, conta *entity.ContaReceber) error {
-	tenantUUID, err := uuidStringToPgtype(conta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(conta.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(conta.TenantID)
+	idUUID := uuidStringToPgtype(conta.ID)
 
 	statusStr := string(conta.Status)
 
@@ -115,7 +94,7 @@ func (r *ContaReceberRepository) Update(ctx context.Context, conta *entity.Conta
 		ID:              idUUID,
 		TenantID:        tenantUUID,
 		Descricao:       conta.DescricaoOrigem,
-		Valor:           moneyToDecimal(conta.Valor),
+		Valor:           moneyToRawDecimal(conta.Valor),
 		ValorPago:       moneyToNumeric(conta.ValorPago),
 		DataVencimento:  dateToDate(conta.DataVencimento),
 		DataRecebimento: pgtype.Date{Valid: conta.DataRecebimento != nil},
@@ -138,17 +117,10 @@ func (r *ContaReceberRepository) Update(ctx context.Context, conta *entity.Conta
 
 // Delete remove uma conta.
 func (r *ContaReceberRepository) Delete(ctx context.Context, tenantID, id string) error {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
-
-	err = r.queries.DeleteContaReceber(ctx, db.DeleteContaReceberParams{
+	err := r.queries.DeleteContaReceber(ctx, db.DeleteContaReceberParams{
 		ID:       idUUID,
 		TenantID: tenantUUID,
 	})
@@ -165,10 +137,7 @@ func (r *ContaReceberRepository) ListByStatus(ctx context.Context, tenantID stri
 	limit := int32(100)
 	offset := int32(0)
 
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	statusStr := string(status)
 
@@ -187,10 +156,7 @@ func (r *ContaReceberRepository) ListByStatus(ctx context.Context, tenantID stri
 
 // ListAtrasadas lista contas vencidas (atrasadas).
 func (r *ContaReceberRepository) ListAtrasadas(ctx context.Context, tenantID string) ([]*entity.ContaReceber, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	hoje := time.Now()
 
@@ -207,10 +173,7 @@ func (r *ContaReceberRepository) ListAtrasadas(ctx context.Context, tenantID str
 
 // List lista contas a receber com filtros
 func (r *ContaReceberRepository) List(ctx context.Context, tenantID string, filters port.ContaReceberListFilters) ([]*entity.ContaReceber, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	var limit int32 = 100
 	var offset int32 = 0
@@ -235,10 +198,7 @@ func (r *ContaReceberRepository) List(ctx context.Context, tenantID string, filt
 
 // ListByDateRange lista contas em um período
 func (r *ContaReceberRepository) ListByDateRange(ctx context.Context, tenantID string, inicio, fim time.Time) ([]*entity.ContaReceber, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListContasReceberByPeriod(ctx, db.ListContasReceberByPeriodParams{
 		TenantID:         tenantUUID,
@@ -254,8 +214,8 @@ func (r *ContaReceberRepository) ListByDateRange(ctx context.Context, tenantID s
 
 // ListByAssinatura lista contas de uma assinatura
 func (r *ContaReceberRepository) ListByAssinatura(ctx context.Context, tenantID, assinaturaID string) ([]*entity.ContaReceber, error) {
-	tenantUUID, _ := uuidStringToPgtype(tenantID)
-	assUUID, _ := uuidStringToPgtype(assinaturaID)
+	tenantUUID := uuidStringToPgtype(tenantID)
+	assUUID := uuidStringToPgtype(assinaturaID)
 
 	results, err := r.queries.ListContasReceberByAssinatura(ctx, db.ListContasReceberByAssinaturaParams{
 		TenantID:     tenantUUID,
@@ -318,7 +278,7 @@ func (r *ContaReceberRepository) toDomain(model *db.ContasAReceber) (*entity.Con
 		Origem:          origem,
 		AssinaturaID:    assinaturaID,
 		DescricaoOrigem: model.Descricao,
-		Valor:           decimalToMoney(model.Valor),
+		Valor:           rawDecimalToMoney(model.Valor),
 		ValorPago:       numericToMoney(model.ValorPago),
 		ValorAberto:     valueobject.Zero(), // Calculado no domínio
 		DataVencimento:  dateToTime(model.DataVencimento),

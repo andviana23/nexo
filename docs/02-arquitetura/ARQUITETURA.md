@@ -4,7 +4,8 @@
 
 **Versão:** 2.0  
 **Data Criação:** 14/11/2025  
-**Status:** Definição e Planejamento  
+**Última Revisão:** 22/11/2025  
+**Status:** Em evolução (documento alinhado ao código atual)  
 **Autor:** Arquiteto de Software Sr.
 
 ---
@@ -21,6 +22,7 @@
 8. [Multi-Tenancy](#multi-tenancy)
 9. [Segurança](#segurança)
 10. [Escalabilidade](#escalabilidade)
+11. [Estado Atual vs Planejado](#estado-atual-vs-planejado)
 
 ---
 
@@ -82,14 +84,14 @@ O Barber Analytics Pro v2.0 é uma plataforma SaaS modular e escalável para ger
 ### Backend
 
 ```yaml
-Linguagem: Go 1.24.0 (toolchain go1.24.10)
-Framework HTTP: Echo v4 (leve, rápido, middleware-friendly)
-ORM/Query Builder: SQLC (type-safe SQL)
-Autenticação: JWT (RS256) + Refresh Tokens
-Validação: go-playground/validator/v10
-Scheduler: Cron em Go (robfig/cron/v3) + systemd para produção
-Logger: Zap (structured logging em JSON)
-Trace: OpenTelemetry (opcional, futuro)
+Linguagem: Go 1.24.0
+Framework HTTP: Echo v4
+Query: SQLC (type-safe SQL)
+Autenticação: JWT RS256 (planejado) — hoje mock de tenant em header
+Validação: go-playground/validator/v10 (não configurado no server ainda)
+Scheduler: robfig/cron v3 (jobs de DRE/Fluxo/Compensações)
+Logger: Zap (JSON estruturado)
+Trace: OpenTelemetry (planejado)
 ```
 
 ### Banco de Dados
@@ -105,12 +107,11 @@ Backup: Automático (Neon/Supabase) + snapshots periódicos
 ### Frontend (MVP -> V2)
 
 ```yaml
-MVP 1.0: React 19 + Vite
-V2.0 SaaS: Next.js 16.0.3 (App Router) + React 19
-Styling: Tailwind CSS 4
+Framework: Next.js (App Router)
 State Management: TanStack Query (React Query)
+UI: MUI + shadcn/ui (mix atual)
+Styling: CSS modules + tokens locais (Tailwind não está em uso no repo)
 Form Validation: Zod + React Hook Form
-UI Components: shadcn/ui
 ```
 
 ### DevOps & Infraestrutura
@@ -198,80 +199,94 @@ type BarbeariaRepository interface {
 ### Camada de Aplicação (Application Layer)
 
 ```go
-// Use Case
-type CreateReceitaUseCase struct {
-    repository domain.ReceitaRepository
-    service    domain.CalculoComissaoService
+// Use Case real (financeiro)
+type CreateContaPagarUseCase struct {
+    repo   port.ContaPagarRepository
+    logger *zap.Logger
 }
 
-func (uc *CreateReceitaUseCase) Execute(ctx context.Context, 
-    input CreateReceitaInput) (*CreateReceitaOutput, error) {
-    // Validações
-    // Lógica de negócio
-    // Persistência
-    // Retorno
+func (uc *CreateContaPagarUseCase) Execute(ctx context.Context, input CreateContaPagarInput) (*entity.ContaPagar, error) {
+    if input.TenantID == "" {
+        return nil, domain.ErrTenantIDRequired
+    }
+    conta, err := entity.NewContaPagar(
+        input.TenantID,
+        input.Descricao,
+        input.CategoriaID,
+        input.Fornecedor,
+        input.Valor,
+        input.Tipo,
+        input.DataVencimento,
+    )
+    if err != nil {
+        return nil, err
+    }
+    if err := uc.repo.Create(ctx, conta); err != nil {
+        uc.logger.Error("erro ao criar conta pagar", zap.Error(err))
+        return nil, err
+    }
+    return conta, nil
 }
 
 // DTO - entrada
-type CreateReceitaInput struct {
-    TenantID      string    `json:"tenant_id" validate:"required"`
-    Descricao     string    `json:"descricao" validate:"required,max=255"`
-    Valor         float64   `json:"valor" validate:"required,gt=0"`
-    Data          time.Time `json:"data" validate:"required"`
-    Categoria     string    `json:"categoria" validate:"required"`
-}
-
-// DTO - saída
-type CreateReceitaOutput struct {
-    ID        string    `json:"id"`
-    TenantID  string    `json:"tenant_id"`
-    Descricao string    `json:"descricao"`
-    Valor     float64   `json:"valor"`
-    Status    string    `json:"status"`
+type CreateContaPagarInput struct {
+    TenantID       string
+    Descricao      string
+    CategoriaID    string
+    Fornecedor     string
+    Valor          valueobject.Money
+    Tipo           valueobject.TipoCusto
+    DataVencimento time.Time
 }
 ```
 
 ### Camada de Apresentação (HTTP/Delivery Layer)
 
 ```go
-// Handler
-type ReceitaHandler struct {
-    createUseCase *application.CreateReceitaUseCase
-    listUseCase   *application.ListReceitasUseCase
-}
+// Handler (trecho real de FinancialHandler)
+func (h *FinancialHandler) CreateContaPagar(c echo.Context) error {
+    ctx := c.Request().Context()
+    tenantID, _ := c.Get("tenant_id").(string) // hoje mockado; futuro: JWT
 
-func (h *ReceitaHandler) Create(c echo.Context) error {
-    var input application.CreateReceitaInput
-    if err := c.Bind(&input); err != nil {
-        return c.JSON(http.StatusBadRequest, ErrorResponse{...})
+    var req dto.CreateContaPagarRequest
+    if err := c.Bind(&req); err != nil {
+        return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "bad_request"})
     }
-    
-    output, err := h.createUseCase.Execute(c.Request().Context(), input)
+    if err := c.Validate(&req); err != nil {
+        return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "validation_error", Message: err.Error()})
+    }
+    valor, tipo, data, err := mapper.FromCreateContaPagarRequest(req)
     if err != nil {
-        return c.JSON(http.StatusInternalServerError, ErrorResponse{...})
+        return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "conversion_error", Message: err.Error()})
     }
-    
-    return c.JSON(http.StatusCreated, output)
+    conta, err := h.createContaPagarUC.Execute(ctx, financial.CreateContaPagarInput{
+        TenantID: tenantID, Descricao: req.Descricao, CategoriaID: req.CategoriaID,
+        Fornecedor: req.Fornecedor, Valor: valor, Tipo: tipo, DataVencimento: data,
+    })
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "internal_error"})
+    }
+    return c.JSON(http.StatusCreated, mapper.ToContaPagarResponse(conta))
 }
 ```
 
 ### Camada de Infraestrutura (Infrastructure Layer)
 
 ```go
-// Repository Implementation
-type PostgresReceitaRepository struct {
+// Repository Implementation (simplificado)
+type PostgresContaPagarRepository struct {
     db *sql.DB
 }
 
-func (r *PostgresReceitaRepository) Save(ctx context.Context, 
-    receita *domain.Receita) error {
+func (r *PostgresContaPagarRepository) Create(ctx context.Context, conta *entity.ContaPagar) error {
     query := `
-        INSERT INTO receitas (id, tenant_id, descricao, valor, data)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO contas_a_pagar (id, tenant_id, descricao, valor, data_vencimento, status)
+        VALUES ($1, $2, $3, $4, $5, $6)
     `
-    _, err := r.db.ExecContext(ctx, query, 
-        receita.ID, receita.TenantID, receita.Descricao, 
-        receita.Valor, receita.Data)
+    _, err := r.db.ExecContext(ctx, query,
+        conta.ID, conta.TenantID, conta.Descricao,
+        conta.Valor.ToDecimal(), conta.DataVencimento, conta.Status,
+    )
     return err
 }
 ```
@@ -281,71 +296,30 @@ func (r *PostgresReceitaRepository) Save(ctx context.Context,
 ## 📂 Estrutura de Diretórios
 
 ```
-barber-analytics-pro/
+barber-analytics-proV2/
 │
 ├── backend/                        # Backend em Go
 │   ├── cmd/api/main.go
 │   ├── internal/
-│   │   ├── config/
-│   │   ├── domain/
-│   │   │   ├── entity/
-│   │   │   ├── valueobject/
-│   │   │   └── service/
-│   │   ├── application/
-│   │   │   ├── dto/
-│   │   │   ├── mapper/
-│   │   │   └── usecase/
-│   │   ├── infrastructure/
-│   │   │   ├── http/
-│   │   │   │   ├── handler/
-│   │   │   │   ├── middleware/
-│   │   │   │   └── route.go
-│   │   │   ├── repository/
-│   │   │   ├── external/
-│   │   │   │   └── asaas/
-│   │   │   └── scheduler/
-│   │   └── ports/
-│   ├── migrations/
-│   ├── tests/
+│   │   ├── domain/                # entity, valueobject, port
+│   │   ├── application/           # dto, mapper, usecase
+│   │   └── infra/                 # http/handler, repository/postgres, scheduler, metrics
+│   ├── internal/infra/db/schema   # SQLC schemas/migrations
 │   └── go.mod
 │
-├── frontend/                       # Frontend Next.js (v2)
-│   ├── app/
-│   │   ├── (auth)/
-│   │   ├── (dashboard)/
-│   │   ├── api/
-│   │   ├── components/            # Componentes (agora dentro de app/)
-│   │   ├── lib/                   # Utils e Hooks (agora dentro de app/)
-│   │   ├── public/
-│   │   └── package.json
-│   │
-│   ├── frontend-v1/                # Frontend React/Vite (MVP)
-│   ├── src/
-│   ├── public/
-│   └── package.json
+├── frontend/                       # Frontend Next.js (App Router)
+│   ├── app/                        # layouts, pages, providers
+│   ├── components/                 # layout/ui/cookie banner
+│   ├── hooks/                      # React Query hooks (financeiro/metas/precificação)
+│   └── lib/services                # clients e schemas zod
 │
-├── docs/                              # Documentação
-│   ├── ARQUITETURA.md
-│   ├── ROADMAP_IMPLEMENTACAO_V2.md
-│   ├── MODELO_MULTI_TENANT.md
-│   ├── FINANCEIRO.md
-│   ├── ASSINATURAS.md
-│   ├── ESTOQUE.md
-│   ├── BANCO_DE_DADOS.md
-│   ├── API_REFERENCE.md
-│   ├── DOMAIN_MODELS.md
-│   ├── FLUXO_CRONS.md
-│   ├── INTEGRACOES_ASAAS.md
-│   ├── GUIA_DEV_BACKEND.md
-│   ├── GUIA_DEV_FRONTEND.md
-│   └── GUIA_DEVOPS.md
+├── docs/                           # Documentação
+│   ├── 02-arquitetura/ARQUITETURA.md (este arquivo)
+│   ├── PRD-NEXO.md
+│   ├── ROADMAP_MILITAR_NEXO.md
+│   └── ...
 │
-├── infra/                            # Infraestrutura e DevOps
-│   ├── nginx/
-│   │   └── nginx.conf
-│   └── .github/workflows/
-│
-├── PRD-BAP-v2.md
+├── .github/workflows/              # CI/CD, backup, testes
 └── README.md
 ```
 
@@ -359,15 +333,14 @@ Abstração para persistência de dados:
 
 ```go
 // Port (Interface)
-type ReceitaRepository interface {
-    Save(ctx context.Context, receita *Receita) error
-    FindByID(ctx context.Context, id string) (*Receita, error)
-    FindByTenantAndPeriod(ctx context.Context, 
-        tenantID string, from, to time.Time) ([]*Receita, error)
+type ContaPagarRepository interface {
+    Create(ctx context.Context, conta *entity.ContaPagar) error
+    FindByID(ctx context.Context, tenantID, id string) (*entity.ContaPagar, error)
+    List(ctx context.Context, tenantID string, filters port.ContaPagarListFilters) ([]*entity.ContaPagar, error)
 }
 
 // Adapter (Implementação)
-type PostgresReceitaRepository struct { ... }
+type PostgresContaPagarRepository struct { ... }
 ```
 
 ### 2. Dependency Injection
@@ -375,10 +348,12 @@ type PostgresReceitaRepository struct { ... }
 Injeção de dependências no startup:
 
 ```go
-func InitializeReceitaHandler(db *sql.DB) *ReceitaHandler {
-    repo := repository.NewPostgresReceitaRepository(db)
-    createUC := application.NewCreateReceitaUseCase(repo)
-    return http.NewReceitaHandler(createUC)
+func InitializeFinancialHandler(dbPool *pgxpool.Pool, logger *zap.Logger) *handler.FinancialHandler {
+    queries := db.New(dbPool)
+    contaPagarRepo := postgres.NewContaPagarRepository(queries)
+    createUC := financial.NewCreateContaPagarUseCase(contaPagarRepo, logger)
+    // ... instanciar demais use cases
+    return handler.NewFinancialHandler(createUC, /* outros UCs */, logger)
 }
 ```
 
@@ -388,16 +363,18 @@ Separação entre modelo de domínio e dados transmitidos:
 
 ```go
 // Domain
-type Receita struct {
-    ID      string
-    Valor   float64
-    // ...
+type ContaPagar struct {
+    ID     string
+    Valor  valueobject.Money
+    Status valueobject.StatusConta
 }
 
 // DTO
-type ReceitaResponse struct {
-    ID      string  `json:"id"`
-    Valor   string  `json:"valor"` // Formatado para JSON
+type ContaPagarResponse struct {
+    ID          string `json:"id"`
+    Valor       string `json:"valor"`   // formatado
+    Status      string `json:"status"`
+    DataVencimento string `json:"data_vencimento"`
 }
 ```
 
@@ -409,8 +386,7 @@ Middleware para cross-cutting concerns:
 app.Use(middleware.Logger())
 app.Use(middleware.Recovery())
 app.Use(middleware.CORSMiddleware())
-app.Use(middleware.AuthMiddleware())
-app.Use(middleware.TenantMiddleware())
+// TODO: registrar validator, auth JWT + tenant middleware
 ```
 
 ### 5. Service Locator (Opcional)
@@ -421,8 +397,8 @@ Para inicialização centralizadas:
 type Container struct {
     DB              *sql.DB
     Logger          *zap.Logger
-    ReceitaRepo     domain.ReceitaRepository
-    DespesaRepo     domain.DespesaRepository
+    ContaPagarRepo  port.ContaPagarRepository
+    ContaReceberRepo port.ContaReceberRepository
     // ... outros services
 }
 ```
@@ -474,11 +450,11 @@ JSON Response
 ```
 Scheduler (robfig/cron)
     ↓
-Cron Job (ex: Sincronizar Asaas)
+Cron Job (ex: GenerateDREMonthly)
     ↓
 Use Case (Application Layer)
-    ├── Buscar faturas no Asaas
-    ├── Mapear para Receitas
+    ├── Ler contas pagar/receber do período
+    ├── Calcular DRE ou Fluxo Diário
     └── Persistir no DB
     ↓
 Notificação (opcional)
@@ -491,25 +467,27 @@ Notificação (opcional)
 
 ### Modelo Selecionado: Column-Based (Tenant per Row)
 
-**Razão**: Simplicidade, segurança, sem complexidade de schema separados.
+**Razão**: Simplicidade, segurança, sem complexidade de schema separados.  
+**Estado atual**: field `tenant_id` presente, mas middleware ainda é mock (header); falta JWT/RLS.
 
 ### Implementação
 
 1. **Coluna tenant_id em todas as tabelas**
 
 ```sql
-CREATE TABLE receitas (
+CREATE TABLE contas_a_pagar (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     descricao VARCHAR(255) NOT NULL,
-    valor DECIMAL(10, 2) NOT NULL,
-    data DATE NOT NULL,
+    valor NUMERIC(18, 2) NOT NULL,
+    data_vencimento DATE NOT NULL,
+    status VARCHAR(20) NOT NULL,
     criado_em TIMESTAMP DEFAULT NOW(),
     UNIQUE(id, tenant_id)
 );
 
-CREATE INDEX idx_receitas_tenant_id ON receitas(tenant_id);
-CREATE INDEX idx_receitas_tenant_data ON receitas(tenant_id, data);
+CREATE INDEX idx_contas_pagar_tenant_id ON contas_a_pagar(tenant_id);
+CREATE INDEX idx_contas_pagar_data ON contas_a_pagar(tenant_id, data_vencimento);
 ```
 
 2. **Middleware de Tenant**
@@ -529,15 +507,15 @@ func TenantMiddleware(c echo.Context) error {
 3. **Query Segura**
 
 ```go
-func (r *PostgresReceitaRepository) FindByTenantAndPeriod(
-    ctx context.Context, tenantID string, from, to time.Time) ([]*Receita, error) {
-    // Always filter by tenant_id
+func (r *PostgresContaPagarRepository) ListByDateRange(
+    ctx context.Context, tenantID string, from, to time.Time) ([]*entity.ContaPagar, error) {
     query := `
-        SELECT id, tenant_id, descricao, valor, data
-        FROM receitas
-        WHERE tenant_id = $1 AND data BETWEEN $2 AND $3
-        ORDER BY data DESC
+        SELECT id, tenant_id, descricao, valor, data_vencimento, status
+        FROM contas_a_pagar
+        WHERE tenant_id = $1 AND data_vencimento BETWEEN $2 AND $3
+        ORDER BY data_vencimento DESC
     `
+    // ...
     return r.db.QueryContext(ctx, query, tenantID, from, to)
 }
 ```
@@ -548,21 +526,18 @@ func (r *PostgresReceitaRepository) FindByTenantAndPeriod(
 
 ### Autenticação
 
-- **JWT com RS256** (assimétrico)
-- **Refresh Token** com rotação
-- **Expiração**: Access Token 15 min, Refresh Token 7 dias
+- **Planejado:** JWT RS256 + refresh/rotação
+- **Estado atual:** sem auth; tenant vem de header mock para desenvolvimento
 
 ### Autorização
 
-- **Role-Based Access Control (RBAC)**
-- **Roles**: Owner, Manager, Employee, Accountant
-- **Policies** por contexto (ex: barbeiro vê só suas finanças)
+- **Planejado:** RBAC por role (Owner, Manager, Employee, Accountant)
+- **Estado atual:** inexistente; rotas financeiras expostas sem checagem
 
 ### Isolamento de Dados
 
-- ✅ Sempre filtrar queries por `tenant_id`
-- ✅ Validar propriedade de recursos
-- ✅ Audit logs em operações sensíveis
+- **Campo `tenant_id` obrigatório** em entidades e queries
+- **Falta:** RLS no banco, audit logs, enforcement em middleware
 
 ### Rate Limiting
 
@@ -609,6 +584,23 @@ func (r *PostgresReceitaRepository) FindByTenantAndPeriod(
 
 ---
 
+## 🧭 Estado Atual vs Planejado
+
+| Área                    | Estado em 22/11/2025                                                    | Planejado / Gap                                        |
+| ----------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| Autenticação/RBAC       | Mock de tenant via header; sem JWT/RBAC                                 | JWT RS256 + roles + middleware de tenant               |
+| Validator Echo          | Uso de `c.Validate` nos handlers, mas validator não registrado no `main`| Registrar validator global                             |
+| Módulos implementados   | Financeiro (payables/receivables/compensação/fluxo/DRE), Metas, Precificação; User prefs parcial | Agendamento, Lista da vez, Comissões, Estoque, CRM, Asaas |
+| Repositórios            | Aggregates financeiros com SQLC; `SumByPeriod` e filtros agregados retornam zero (placeholder) | Implementar agregações e filtros completos             |
+| Cron/Scheduler          | Jobs DRE/Fluxo/Compensações registrados; tenants via env estática       | Provider real de tenants, jobs de comissões/estoque    |
+| LGPD                    | Handlers/UC de export/delete incompletos; rota não exposta              | Integrar rotas `/me/preferences|export|delete` + audit |
+| Frontend                | App Router com layout/dashboard básico; hooks/services prontos          | Páginas de Financeiro, Metas, Precificação, Agenda etc. |
+| Multi-tenant segurança  | Sem RLS ou enforcement além do campo tenant_id                          | RLS ou validação estrita em todas as queries/handlers  |
+
+> Este quadro deve ser revisado a cada checkpoint (Roadmap Militar). Sempre atualizar o documento quando um gap for fechado.
+
+---
+
 ## 🔗 Referências
 
 - [Clean Architecture - Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
@@ -620,5 +612,5 @@ func (r *PostgresReceitaRepository) FindByTenantAndPeriod(
 
 ---
 
-**Última Atualização:** 14/11/2025  
-**Status:** ✅ Aprovado para Implementação
+**Última Atualização:** 22/11/2025  
+**Status:** ✅ Alinhado ao estado atual (com gaps mapeados)

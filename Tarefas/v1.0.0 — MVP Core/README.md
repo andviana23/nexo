@@ -10,7 +10,7 @@
 
 ## 🎯 Visão Geral
 
-O **MVP Core** é a primeira versão do VALTARIS, focada em resolver os problemas mais críticos de gestão de barbearias premium:
+O **MVP Core** é a primeira versão do NEXO, focada em resolver os problemas mais críticos de gestão de barbearias premium:
 
 - ✅ **Agendamento** visual e intuitivo
 - ✅ **Lista da Vez** automática e justa
@@ -336,7 +336,7 @@ O MVP v1.0.0 estará **PRONTO** quando:
 
 ## 📚 Referências
 
-- [PRD Completo](../../PRD-VALTARIS.md)
+- [PRD Completo](../../PRD-NEXO.md)
 - [Integração Asaas](./INTEGRACAO_ASAAS.md)
 - [Roadmap Produto](../../docs/07-produto-e-funcionalidades/ROADMAP_PRODUTO.md)
 - [Catálogo Funcionalidades](../../docs/07-produto-e-funcionalidades/CATALOGO_FUNCIONALIDADES.md)

@@ -1,86 +1,137 @@
-# VALTARIS v1.0 — Foundations
+# NEXO — Design Foundations
 
-> Esta é a base visual do VALTARIS: cores, tipografia, espaçamentos, materiais (vidro/metal), sombras e breakpoints.
+> Base visual do NEXO: cores, tipografia, espaçamentos, efeitos visuais e breakpoints.
 > Se você está mexendo com UI, começa por aqui.
 
 ---
 
-## 1. Identidade “Cyber Luxury”
+## 1. Identidade Visual
 
-A identidade visual do VALTARIS é definida como **Cyber Luxury**:
+A identidade visual do NEXO é **Clean & Professional**:
 
-- **Precisão tecnológica** – tudo parece calculado, alinhado, sem excessos.
-- **Materiais híbridos** – mistura de vidro (blur), metal (bordas finas) e neon (accents controlados).
-- **Sofisticação contida** – nada é chamativo demais; os destaques são cirúrgicos.
-
-Essa identidade deve guiar todas as decisões de cor, tipografia e layout.
-
----
-
-## 2. Paleta Oficial (Tokens)
-
-A paleta de cores do VALTARIS é **imutável**.
-Você **não pode criar novos hex**, apenas usar os tokens existentes.
-
-Todos os tokens são expostos via **tema MUI** e replicados como **CSS Variables `--valtaris-*`**, para uso em:
-
-- Componentes MUI (`theme.palette.*`)
-- Estilização de componentes externos (ex.: DayPilot)
-- Camadas utilitárias (ex.: classes globais)
-
-### 2.1 Light — “Cyber Luxury Light” (tema padrão)
-
-Tema padrão do sistema.
-
-- `primary` `#3E5BFF` · `primaryDark` `#2A42D9`
-- `background.default` `#F5F7FA` · `paper` `#FFFFFF` · `subtle` `#F0F2F6`
-- `border` `#E2E5EC`
-- `text.primary` `#0E1015` · `text.secondary` `#707784` · `text.tertiary` `#A4AAB5`
-- Accents:
-  - `purple` `#8A7CFF`
-  - `aqua` `#22D3EE`
-  - `gold` `#D4AF37`
-- Status:
-  - `success` `#38D69B`
-  - `danger` `#EF4444`
-  - `warning` `#F4B23E`
-
-> Light deve ser sempre o **tema inicial**. Dark é opt-in e nunca substitui o Light como base de design.
-
-### 2.2 Dark — “Cyber Luxury Dark”
-
-O tema Dark espelha a mesma paleta, mas reposiciona fundo, surfaces e contraste para ambientes escuros:
-
-- Fundos mais profundos, com contraste forte entre background e surfaces.
-- Texto sempre com contraste adequado (mínimo 4.5:1).
-- Accents (aqua/purple/gold) usados com moderação, principalmente para estados ativos e foco.
-
-> As cores base são **as mesmas da paleta oficial**; apenas os mapeamentos de `background`, `paper` e `text` mudam no MUI Theme + CSS vars.
+- **Precisão** – interfaces calculadas, alinhadas, sem excessos visuais.
+- **Clareza** – hierarquia clara, espaçamentos generosos, foco no conteúdo.
+- **Modernidade** – design contemporâneo com transições suaves e microinterações.
+- **Acessibilidade** – contraste adequado, foco visível, navegação por teclado.
 
 ---
 
-## 3. Tokens → MUI → CSS Variables
+## 2. Paleta de Cores (Tokens)
 
-Os tokens de cor passam por três camadas:
+A paleta de cores do NEXO é **imutável**. Você **não pode criar novos valores**, apenas usar os tokens existentes.
 
-1. **Paleta base** (esta seção): hexes oficiais.
-2. **MUI Theme**:
-   - `theme.palette.primary.main = #3E5BFF`
-   - `theme.palette.background.default = #F5F7FA`
-   - `theme.palette.text.primary = #0E1015`
-   - etc.
-3. **CSS Variables** (exemplo):
-   - `--valtaris-primary: #3E5BFF;`
-   - `--valtaris-bg: #F5F7FA;`
-   - `--valtaris-surface: #FFFFFF;`
-   - `--valtaris-border: #E2E5EC;`
-   - `--valtaris-text: #0E1015;`
-   - `--valtaris-accent-aqua: #22D3EE;`
+Todos os tokens são expostos via **CSS Variables `--nexo-*`** no arquivo `globals.css` (ou mapeados via Tailwind).
 
-Regra prática:
+### 2.1 Light Mode — Tema Padrão
 
-- **No MUI**, use `theme.palette.*`.
-- **Fora do MUI**, use `var(--valtaris-*)`.
+Tema padrão do sistema. Clean e profissional:
+
+| Token            | Valor     | Uso                      |
+| ---------------- | --------- | ------------------------ |
+| `background`     | `#F1F5F9` | Fundo geral da aplicação |
+| `surface`        | `#FFFFFF` | Cards, painéis, modais   |
+| `surface-subtle` | `#F8FAFC` | Backgrounds secundários  |
+| `text-primary`   | `#0F172A` | Texto principal          |
+| `text-secondary` | `#64748B` | Texto auxiliar, labels   |
+| `text-muted`     | `#94A3B8` | Placeholders, hints      |
+| `primary`        | `#0F2A4A` | Cor principal da marca   |
+| `accent`         | `#2563EB` | Links, ações, CTAs       |
+| `border`         | `#E2E8F0` | Bordas, divisores        |
+| `success`        | `#38D69B` | Estados de sucesso       |
+| `warning`        | `#F4B23E` | Estados de alerta        |
+| `danger`         | `#EF4444` | Estados de erro          |
+
+> Light é **sempre** o tema inicial. Dark é opt-in.
+
+### 2.2 Dark Mode — Premium
+
+Tema de alto contraste para uso noturno:
+
+| Token            | Valor     | Uso                     |
+| ---------------- | --------- | ----------------------- |
+| `background`     | `#020617` | Fundo geral             |
+| `surface`        | `#1E293B` | Cards, painéis          |
+| `surface-subtle` | `#0F172A` | Backgrounds secundários |
+| `text-primary`   | `#F8FAFC` | Texto principal         |
+| `text-secondary` | `#94A3B8` | Texto auxiliar          |
+| `text-muted`     | `#64748B` | Placeholders            |
+| `primary`        | `#3B82F6` | Cor principal           |
+| `accent`         | `#60A5FA` | Links, ações            |
+| `border`         | `#334155` | Bordas, divisores       |
+| `success`        | `#38D69B` | Sucesso                 |
+| `warning`        | `#F4B23E` | Alerta                  |
+| `danger`         | `#EF4444` | Erro                    |
+
+---
+
+## 3. CSS Variables
+
+As variáveis CSS são definidas em `:root` e sobrescritas com `.dark`:
+
+```css
+:root {
+  /* Backgrounds */
+  --background: 210 40% 96.1%; /* #F1F5F9 */
+  --foreground: 222.2 84% 4.9%; /* #0F172A */
+
+  --card: 0 0% 100%; /* #FFFFFF */
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 213 66% 17%; /* #0F2A4A */
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%; /* #E2E8F0 */
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%; /* #020617 */
+  --foreground: 210 40% 98%; /* #F8FAFC */
+
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 217.2 91.2% 59.8%; /* #3B82F6 */
+  --primary-foreground: 222.2 47.4% 11.2%;
+
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217.2 32.6% 17.5%; /* #334155 */
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+}
+```
 
 ---
 
@@ -88,119 +139,181 @@ Regra prática:
 
 ### 4.1 Fontes
 
-- **Primária:** `Space Grotesk` (ou equivalente geométrica)
-  Usada em títulos, métricas, botões e elementos que exigem presença.
+- **Primária:** `Inter` (sans-serif)
 
-- **Monoespaçada (opcional):** `JetBrains Mono`
-  Para códigos, IDs técnicos, números críticos ou labels em dashboards.
+  - Usada em todo o sistema: títulos, corpo, labels.
+  - Carregada via `next/font/google`.
 
-### 4.2 Hierarquia
+- **Monoespaçada:** `JetBrains Mono`
+  - Códigos, IDs, valores numéricos críticos.
 
-Sugestão de níveis (podem ser mapeados para `Typography` do MUI):
+### 4.2 Escala Tipográfica
 
-- `h1` – Títulos de página / visão global.
-- `h2` – Seções principais da página.
-- `h3` – Blocos internos (cards, agrupamentos).
-- `subtitle1` / `subtitle2` – Metadados e descrições curtas.
-- `body1` – Texto padrão.
-- `body2` – Texto auxiliar, rótulos longos, mensagens de sistema.
-- `caption` – Labels discretos, legendas e tooltips.
-
-Princípios:
-
-- Sempre garantir legibilidade em Light e Dark.
-- Evitar mais de 3 níveis diferentes na mesma tela.
+| Classe Tailwind | Tamanho | Peso | Uso                    |
+| --------------- | ------- | ---- | ---------------------- |
+| `text-xs`       | 12px    | 400  | Captions, badges       |
+| `text-sm`       | 14px    | 400  | Labels, texto auxiliar |
+| `text-base`     | 16px    | 400  | Texto padrão           |
+| `text-lg`       | 18px    | 500  | Subtítulos             |
+| `text-xl`       | 20px    | 600  | Títulos de seção       |
+| `text-2xl`      | 24px    | 700  | Títulos de card        |
+| `text-3xl`      | 30px    | 700  | Títulos de página      |
+| `text-4xl`      | 36px    | 800  | Métricas principais    |
 
 ---
 
-## 5. Espaçamento e Grid
+## 5. Espaçamento
 
-O VALTARIS usa uma base de espaçamento de **4px**:
+Base de espaçamento de **4px** (0.25rem) do Tailwind:
 
-- Unidade base: `4px`
-- Escala sugerida: `4, 8, 12, 16, 20, 24, 32, 40, 48px`
+| Token | Valor | Uso                     |
+| ----- | ----- | ----------------------- |
+| `1`   | 4px   | Micro espaçamentos      |
+| `2`   | 8px   | Entre elementos inline  |
+| `3`   | 12px  | Padding interno pequeno |
+| `4`   | 16px  | Padding padrão          |
+| `5`   | 20px  | Gap em grids            |
+| `6`   | 24px  | Padding de cards        |
+| `8`   | 32px  | Seções                  |
+| `10`  | 40px  | Gaps grandes            |
+| `12`  | 48px  | Separação de blocos     |
 
-Guidelines:
+**Guidelines:**
 
-- Cards e seções principais: padding interno de 20–24px.
-- Blocos de formulário: 16–24px entre grupos de campos.
-- Distância entre cards em dashboards: 16–24px.
-
-Grid:
-
-- Em `md+`: preferir layout com **2 ou 3 colunas** de cards, evitando listas infinitas.
-- Em `sm`: usar colunas únicas, com collapses/accordions para reduzir ruído visual.
-
----
-
-## 6. Materiais: Vidro, Metal e Neon
-
-### 6.1 Vidro
-
-- Usado em modais, overlays e painéis especiais.
-- Características:
-  - `backdrop-filter: blur(...)`
-  - Superficie semi-transparente
-  - Borda sutil com cor metálica
-
-### 6.2 Metal
-
-- Representado por bordas finas, linhas divisórias e ícones.
-- Combina com:
-  - Bordas `1px`
-  - Cores derivadas de `border` + accents sutis.
-
-### 6.3 Neon (Accents)
-
-- Principalmente `aqua` e `purple`.
-- Uso recomendado:
-  - Estados de foco
-  - Highlights em gráficos e status
-  - Ações de alta relevância (com moderação)
-
-Evitar telas “cheias de neon”: o luxo vem da contenção.
+- Cards: padding `p-6` (24px)
+- Formulários: gap `gap-4` (16px) entre campos
+- Seções: margin `my-8` (32px)
 
 ---
 
-## 7. Sombras e Elevação
+## 6. Bordas e Raios
 
-- **Shadow Light (card):** `0 10px 30px rgba(62, 91, 255, 0.06)`
-- **Shadow Dark (card):** `0 12px 32px rgba(0,0,0,0.35)`
-- **Hover (accent aqua):** `0 6px 18px rgba(34, 211, 238, 0.12)`
-- **Modais:** `0 24px 60px rgba(0,0,0,0.5)` + efeito de vidro
+### Border Radius
 
-Regras:
+| Token          | Valor  | Uso             |
+| -------------- | ------ | --------------- |
+| `rounded-sm`   | 6px    | Badges, chips   |
+| `rounded`      | 8px    | Inputs, buttons |
+| `rounded-lg`   | 12px   | Cards           |
+| `rounded-xl`   | 16px   | Modais          |
+| `rounded-full` | 9999px | Avatares, pills |
 
-- Não exagerar na quantidade de sombras.
-- Usar sombras mais fortes apenas para elementos realmente importantes (ex.: modal, drawer principal).
+### Borders
 
----
-
-## 8. Breakpoints
-
-Breakpoints compatíveis com o grid do MUI:
-
-- `xs: 0`
-- `sm: 600`
-- `md: 900`
-- `lg: 1200`
-- `xl: 1536`
-
-Diretrizes:
-
-- Ações primárias devem aparecer **acima da dobra** em `md`.
-- Em `sm`, reduzir ruído visual com:
-  - Accordions
-  - Steppers
-  - Resumos compactos
+- Cor padrão: `border-border` (mapeado para `--border`)
+- Espessura: `border` (1px)
 
 ---
 
-## 9. Princípios “Cyber Luxury”
+## 7. Sombras
 
-- **Contraste inteligente:** fundos suaves, superfícies de vidro, cor viva apenas onde importa.
-- **Materiais híbridos:** vidro (blur) + metal (borda fina) + neon (accents).
-- **Legibilidade técnica:** tipografia geométrica, espaçamento generoso e hierarquia clara.
-- **Consistência:** se um padrão visual foi usado em uma tela, deve ser repetido em telas da mesma família.
+| Token       | Valor | Uso               |
+| ----------- | ----- | ----------------- |
+| `shadow-sm` | Leve  | Inputs, badges    |
+| `shadow`    | Média | Cards             |
+| `shadow-lg` | Forte | Dropdowns, modais |
 
-Esses princípios somados garantem que o VALTARIS tenha uma cara única – não é um painel genérico qualquer.
+**Uso em Tailwind:**
+
+```tsx
+<div className="shadow-lg rounded-xl bg-card">...</div>
+```
+
+---
+
+## 8. Responsividade (OBRIGATÓRIO)
+
+> ⚠️ **REGRA INEGOCIÁVEL:** Toda página, componente e layout do NEXO **DEVE** ser responsivo.
+> PRs sem responsividade adequada **SERÃO REJEITADOS**.
+
+### 8.1 Filosofia Mobile-First
+
+O NEXO adota a abordagem **Mobile-First**:
+
+1. Escreva o CSS/classes pensando **primeiro no mobile**.
+2. Use breakpoints para **adicionar** estilos em telas maiores.
+3. **Nunca** faça o contrário (desktop-first com `max-width`).
+
+### 8.2 Breakpoints
+
+| Token | Min-width | Dispositivo       | Uso                                 |
+| ----- | --------- | ----------------- | ----------------------------------- |
+| Base  | 0px       | Mobile            | Estilos padrão (sem prefixo)        |
+| `sm`  | 640px     | Mobile landscape  | Ajustes leves                       |
+| `md`  | 768px     | Tablet            | Layouts 2 colunas                   |
+| `lg`  | 1024px    | Desktop           | Layouts 3+ colunas, sidebar visível |
+| `xl`  | 1280px    | Desktop wide      | Conteúdo mais espaçado              |
+| `2xl` | 1536px    | Monitores grandes | Máxima largura de containers        |
+
+### 8.3 Regras por Tipo de Componente
+
+| Componente        | Mobile                                | Tablet (md)                   | Desktop (lg+)           |
+| ----------------- | ------------------------------------- | ----------------------------- | ----------------------- |
+| **Grid de Cards** | 1 coluna                              | 2 colunas                     | 3-4 colunas             |
+| **Formulários**   | 1 coluna, campos full-width           | 2 colunas para campos curtos  | Máx 3 colunas           |
+| **Tabelas**       | Scroll horizontal ou cards empilhados | Tabela com colunas essenciais | Tabela completa         |
+| **Sidebar**       | Drawer (Sheet)                        | Drawer ou colapsada           | Fixa e expandida        |
+| **Modais**        | Full-screen ou quase                  | Centralizado, 80% largura     | Centralizado, max-width |
+| **Gráficos**      | Simplificado ou scroll                | Tamanho médio                 | Tamanho completo        |
+
+### 8.4 Padrões Obrigatórios
+
+```tsx
+// ✅ CORRETO: Mobile-first
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+// ❌ ERRADO: Desktop-first (não usar)
+<div className="grid grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4">
+
+// ✅ CORRETO: Container responsivo
+<div className="container mx-auto px-4 sm:px-6 lg:px-8">
+
+// ✅ CORRETO: Texto responsivo
+<h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
+
+// ✅ CORRETO: Espaçamento responsivo
+<section className="py-8 md:py-12 lg:py-16">
+```
+
+### 8.5 Checklist de Responsividade
+
+Antes de considerar uma página/componente pronto:
+
+- [ ] Testou em viewport 375px (iPhone SE)?
+- [ ] Testou em viewport 768px (iPad)?
+- [ ] Testou em viewport 1024px (Desktop)?
+- [ ] Textos não quebram de forma estranha?
+- [ ] Botões/links têm área de toque mínima de 44px?
+- [ ] Tabelas têm scroll horizontal ou alternativa mobile?
+- [ ] Modais não cortam conteúdo em telas pequenas?
+- [ ] Sidebar funciona como drawer no mobile?
+
+---
+
+## 9. Animações (Framer Motion)
+
+### Transições Padrão
+
+```typescript
+// Entrada suave
+export const fadeIn = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.2 },
+};
+
+// Slide up
+export const slideUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.3, ease: 'easeOut' },
+};
+```
+
+### Durações
+
+| Tipo   | Duração | Uso               |
+| ------ | ------- | ----------------- |
+| Rápida | 150ms   | Hover, focus      |
+| Normal | 200ms   | Transições gerais |
+| Suave  | 300ms   | Modais, drawers   |

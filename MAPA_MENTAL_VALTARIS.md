@@ -1,16 +1,16 @@
 ```mermaid
 graph LR
-    VALTARIS[VALTARIS]
+    NEXO[NEXO]
 
     V1_0[v1.0.0 - MVP Core05/12/2025]
     V1_1[v1.1.0 - Fidelidade10/02/2026]
     V1_2[v1.2.0 - Relatórios30/03/2026]
     V2_0[v2.0 - IA/Franquia20/12/2026]
 
-    VALTARIS --> V1_0
-    VALTARIS --> V1_1
-    VALTARIS --> V1_2
-    VALTARIS --> V2_0
+    NEXO --> V1_0
+    NEXO --> V1_1
+    NEXO --> V1_2
+    NEXO --> V2_0
 
     V1_0 --> V1_0_F1[Agendamento]
     V1_0 --> V1_0_F2[Lista da vez]
@@ -45,7 +45,7 @@ graph LR
     V2_0 --> V2_0_F5[API pública]
 
     RISCOS[Riscos Críticos]
-    VALTARIS --> RISCOS
+    NEXO --> RISCOS
     RISCOS --> R1[Tenant isolation]
     RISCOS --> R2[Integração Asaas]
     RISCOS --> R3[Google Agenda]
@@ -58,7 +58,7 @@ graph LR
     classDef dep fill:#ffecd2,stroke:#333,stroke-width:1px,color:#000
     classDef central fill:#667eea,stroke:#fff,stroke-width:3px,color:#fff
 
-    class VALTARIS central
+    class NEXO central
     class V1_0,V1_1,V1_2,V2_0 versao
     class V1_0_F1,V1_0_F2,V1_0_F3,V1_0_F4,V1_0_F5,V1_0_F6,V1_0_F7,V1_0_F8,V1_0_F9 feature
     class V1_1_F1,V1_1_F2,V1_1_F3 feature

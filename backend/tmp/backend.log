@@ -7,11 +7,13 @@ watching .
 watching bin
 watching cmd
 watching cmd/api
+watching cmd/auth-server
 watching internal
 watching internal/application
 watching internal/application/dto
 watching internal/application/mapper
 watching internal/application/usecase
+watching internal/application/usecase/auth
 watching internal/application/usecase/financial
 watching internal/application/usecase/metas
 watching internal/application/usecase/pricing
@@ -22,6 +24,7 @@ watching internal/domain/entity
 watching internal/domain/port
 watching internal/domain/valueobject
 watching internal/infra
+watching internal/infra/auth
 watching internal/infra/db
 watching internal/infra/db/queries
 watching internal/infra/db/schema
@@ -29,6 +32,8 @@ watching internal/infra/db/schema/migrations
 watching internal/infra/db/sqlc
 watching internal/infra/http
 watching internal/infra/http/handler
+watching internal/infra/http/middleware
+watching internal/infra/metrics
 watching internal/infra/repository
 watching internal/infra/repository/postgres
 watching internal/infra/scheduler
@@ -36,71 +41,5 @@ watching migrations
 !exclude tmp
 building...
 running...
-{"level":"info","ts":1763839776.3724194,"caller":"api/main.go:52","msg":"Conectado ao banco de dados PostgreSQL"}
-{"level":"info","ts":1763839776.3726108,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
-{"level":"info","ts":1763839776.3726478,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
-{"level":"info","ts":1763839776.3726604,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
-{"level":"info","ts":1763839776.3726704,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
-{"level":"info","ts":1763839776.3726916,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
-{"level":"info","ts":1763839776.372699,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
-{"level":"info","ts":1763839776.3727129,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
-{"level":"info","ts":1763839776.3730786,"caller":"api/main.go:327","msg":"🚀 Servidor iniciado","port":"8080"}
-
-   ____    __
-  / __/___/ /  ___
- / _// __/ _ \/ _ \
-/___/\__/_//_/\___/ v4.13.4
-High performance, minimalist Go web framework
-https://echo.labstack.com
-____________________________________O/_______
-                                    O\
-⇨ http server started on [::]:8080
-{"time":"2025-11-22T16:30:17.602053109-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/health","user_agent":"curl/7.81.0","status":200,"error":"","latency":78596,"latency_human":"78.596µs","bytes_in":0,"bytes_out":50}
-{"time":"2025-11-22T16:30:18.069876243-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/metas/monthly?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":459680405,"latency_human":"459.680405ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:30:18.367795975-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/metas/barbers?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":285104828,"latency_human":"285.104828ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:30:18.763583223-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/metas/ticket?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":386304603,"latency_human":"386.304603ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:30:19.100191423-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/pricing/config","user_agent":"curl/7.81.0","status":200,"error":"","latency":326612191,"latency_human":"326.612191ms","bytes_in":0,"bytes_out":246}
-{"level":"error","ts":1763839819.2587748,"caller":"handler/pricing_handler.go:409","msg":"Erro ao listar simulações","error":"erro ao listar simulações: erro ao listar simulações: ERROR: column \"custo_materiais\" does not exist (SQLSTATE 42703)","stacktrace":"github.com/andviana23/barber-analytics-backend/internal/infra/http/handler.(*PricingHandler).ListSimulacoes\n\t/home/andrey/Projetos/barber-analytics-proV2/backend/internal/infra/http/handler/pricing_handler.go:409\nmain.main.func2.1\n\t/home/andrey/Projetos/barber-analytics-proV2/backend/cmd/api/main.go:255\ngithub.com/labstack/echo/v4.(*Echo).add.func1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:581\ngithub.com/labstack/echo/v4/middleware.CORSWithConfig.func1.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/cors.go:215\nmain.main.Recover.RecoverWithConfig.func4.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/recover.go:130\ngithub.com/labstack/echo/v4/middleware.LoggerWithConfig.func2.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/logger.go:125\ngithub.com/labstack/echo/v4.(*Echo).ServeHTTP\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:668\nnet/http.serverHandler.ServeHTTP\n\t/usr/local/go/src/net/http/server.go:3301\nnet/http.(*conn).serve\n\t/usr/local/go/src/net/http/server.go:2102"}
-{"time":"2025-11-22T16:30:19.25891738-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/pricing/simulations?page=1&page_size=10","user_agent":"curl/7.81.0","status":500,"error":"","latency":149623816,"latency_human":"149.623816ms","bytes_in":0,"bytes_out":67}
-{"time":"2025-11-22T16:30:19.668665085-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/payables?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":395663480,"latency_human":"395.66348ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:30:20.077951412-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/receivables?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":397043641,"latency_human":"397.043641ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:30:20.376101299-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/compensations?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":283237825,"latency_human":"283.237825ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:30:20.795173401-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/cashflow?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":410783530,"latency_human":"410.78353ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:30:21.205474651-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/dre?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":400369579,"latency_human":"400.369579ms","bytes_in":0,"bytes_out":3}
-{"level":"error","ts":1763839896.6744816,"caller":"handler/pricing_handler.go:409","msg":"Erro ao listar simulações","error":"erro ao listar simulações: erro ao listar simulações: FATAL: prepared statement name is already in use (SQLSTATE 08P01)","stacktrace":"github.com/andviana23/barber-analytics-backend/internal/infra/http/handler.(*PricingHandler).ListSimulacoes\n\t/home/andrey/Projetos/barber-analytics-proV2/backend/internal/infra/http/handler/pricing_handler.go:409\nmain.main.func2.1\n\t/home/andrey/Projetos/barber-analytics-proV2/backend/cmd/api/main.go:255\ngithub.com/labstack/echo/v4.(*Echo).add.func1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:581\ngithub.com/labstack/echo/v4/middleware.CORSWithConfig.func1.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/cors.go:215\nmain.main.Recover.RecoverWithConfig.func4.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/recover.go:130\ngithub.com/labstack/echo/v4/middleware.LoggerWithConfig.func2.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/logger.go:125\ngithub.com/labstack/echo/v4.(*Echo).ServeHTTP\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:668\nnet/http.serverHandler.ServeHTTP\n\t/usr/local/go/src/net/http/server.go:3301\nnet/http.(*conn).serve\n\t/usr/local/go/src/net/http/server.go:2102"}
-{"time":"2025-11-22T16:31:36.674708165-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/pricing/simulations?page=1&page_size=10","user_agent":"curl/7.81.0","status":500,"error":"","latency":363088706,"latency_human":"363.088706ms","bytes_in":0,"bytes_out":67}
-{"time":"2025-11-22T16:33:00.200082304-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/health","user_agent":"curl/7.81.0","status":200,"error":"","latency":54521,"latency_human":"54.521µs","bytes_in":0,"bytes_out":50}
-{"time":"2025-11-22T16:33:01.976366019-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/metas/monthly?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":1766658752,"latency_human":"1.766658752s","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:02.389311462-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/metas/barbers?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":400031173,"latency_human":"400.031173ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:02.7952043-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/metas/ticket?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":389984196,"latency_human":"389.984196ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:03.206297111-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/pricing/config","user_agent":"curl/7.81.0","status":200,"error":"","latency":395231743,"latency_human":"395.231743ms","bytes_in":0,"bytes_out":246}
-{"time":"2025-11-22T16:33:03.614386652-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/pricing/simulations?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":390739977,"latency_human":"390.739977ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:04.024207798-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/payables?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":396159152,"latency_human":"396.159152ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:04.433108194-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/receivables?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":391743164,"latency_human":"391.743164ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:04.843565179-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/compensations?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":387874739,"latency_human":"387.874739ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:05.253841981-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/cashflow?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":393000098,"latency_human":"393.000098ms","bytes_in":0,"bytes_out":3}
-{"time":"2025-11-22T16:33:05.661632902-03:00","id":"","remote_ip":"127.0.0.1","host":"localhost:8080","method":"GET","uri":"/api/v1/financial/dre?page=1&page_size=10","user_agent":"curl/7.81.0","status":200,"error":"","latency":399218524,"latency_human":"399.218524ms","bytes_in":0,"bytes_out":3}
-internal/infra/http/handler/pricing_handler.go has changed
-building...
-running...
-{"level":"info","ts":1763839995.134193,"caller":"api/main.go:52","msg":"Conectado ao banco de dados PostgreSQL"}
-{"level":"info","ts":1763839995.134413,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
-{"level":"info","ts":1763839995.1344411,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
-{"level":"info","ts":1763839995.134453,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
-{"level":"info","ts":1763839995.1344624,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
-{"level":"info","ts":1763839995.1344748,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
-{"level":"info","ts":1763839995.1344807,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
-{"level":"info","ts":1763839995.1344922,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
-{"level":"info","ts":1763839995.1347694,"caller":"api/main.go:327","msg":"🚀 Servidor iniciado","port":"8080"}
-
-   ____    __
-  / __/___/ /  ___
- / _// __/ _ \/ _ \
-/___/\__/_//_/\___/ v4.13.4
-High performance, minimalist Go web framework
-https://echo.labstack.com
-____________________________________O/_______
-                                    O\
-⇨ http server started on [::]:8080
-cleaning...
-see you again~
+{"level":"fatal","ts":1764088456.30466,"caller":"api/main.go:45","msg":"DATABASE_URL não configurada","stacktrace":"main.main\n\t/home/andrey/Projetos/barber-analytics-proV2/backend/cmd/api/main.go:45\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1

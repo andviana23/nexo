@@ -39,4 +39,12 @@ var (
 	// Erros de precificação
 	ErrMargemInvalida = errors.New("margem inválida (deve estar entre 5-100%)")
 	ErrMarkupInvalido = errors.New("markup inválido (deve ser >= 1)")
+
+	// Erros de autenticação
+	ErrEmailNaoEncontrado   = errors.New("Email não encontrado")
+	ErrSenhaIncorreta       = errors.New("Senha incorreta")
+	ErrContaDesativada      = errors.New("Conta desativada")
+	ErrRefreshTokenInvalido = errors.New("Refresh token inválido ou expirado")
+	ErrUsuarioNaoEncontrado = errors.New("Usuário não encontrado")
+	ErrTokenInvalido        = errors.New("Token inválido")
 )

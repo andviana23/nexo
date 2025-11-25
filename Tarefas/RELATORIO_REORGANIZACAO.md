@@ -1,4 +1,4 @@
-# 📊 RELATÓRIO DE EVOLUÇÃO DO SISTEMA — VALTARIS v1.0
+# 📊 RELATÓRIO DE EVOLUÇÃO DO SISTEMA — NEXO v1.0
 
 **Última Atualização:** 22/11/2025 - 11:30
 **Período:** 21/11/2025 - 22/11/2025 (2 dias)
@@ -549,7 +549,7 @@ Tarefas/
    - `/Tarefas/01-BLOQUEIOS-BASE/02-backlog.md` ← Backlog técnico imediato
 
 4. **Para Contexto Geral:**
-   - `/PRD-VALTARIS.md` ← PRD oficial do produto
+   - `/PRD-NEXO.md` ← PRD oficial do produto
 
 ---
 

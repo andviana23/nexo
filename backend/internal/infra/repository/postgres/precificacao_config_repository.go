@@ -23,10 +23,7 @@ func NewPrecificacaoConfigRepository(queries *db.Queries) *PrecificacaoConfigRep
 
 // Create persiste uma nova configuração de precificação.
 func (r *PrecificacaoConfigRepository) Create(ctx context.Context, config *entity.PrecificacaoConfig) error {
-	tenantUUID, err := uuidStringToPgtype(config.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(config.TenantID)
 
 	params := db.CreatePrecificacaoConfigParams{
 		TenantID:                  tenantUUID,
@@ -50,15 +47,8 @@ func (r *PrecificacaoConfigRepository) Create(ctx context.Context, config *entit
 
 // FindByID busca uma configuração por ID.
 func (r *PrecificacaoConfigRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.PrecificacaoConfig, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	params := db.GetPrecificacaoConfigByIDParams{
 		ID:       idUUID,
@@ -75,10 +65,7 @@ func (r *PrecificacaoConfigRepository) FindByID(ctx context.Context, tenantID, i
 
 // FindByTenantID busca a configuração de um tenant.
 func (r *PrecificacaoConfigRepository) FindByTenantID(ctx context.Context, tenantID string) (*entity.PrecificacaoConfig, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	model, err := r.queries.GetPrecificacaoConfigByTenant(ctx, tenantUUID)
 	if err != nil {
@@ -90,15 +77,8 @@ func (r *PrecificacaoConfigRepository) FindByTenantID(ctx context.Context, tenan
 
 // Update atualiza uma configuração.
 func (r *PrecificacaoConfigRepository) Update(ctx context.Context, config *entity.PrecificacaoConfig) error {
-	tenantUUID, err := uuidStringToPgtype(config.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(config.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(config.TenantID)
+	idUUID := uuidStringToPgtype(config.ID)
 
 	params := db.UpdatePrecificacaoConfigParams{
 		ID:                        idUUID,
@@ -120,10 +100,7 @@ func (r *PrecificacaoConfigRepository) Update(ctx context.Context, config *entit
 
 // Delete remove uma configuração (por tenant - uma única config por tenant).
 func (r *PrecificacaoConfigRepository) Delete(ctx context.Context, tenantID string) error {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	// Primeiro buscar a config para obter o ID
 	config, err := r.FindByTenantID(ctx, tenantID)
@@ -131,10 +108,7 @@ func (r *PrecificacaoConfigRepository) Delete(ctx context.Context, tenantID stri
 		return fmt.Errorf("erro ao buscar configuração para deletar: %w", err)
 	}
 
-	idUUID, err := uuidStringToPgtype(config.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	idUUID := uuidStringToPgtype(config.ID)
 
 	params := db.DeletePrecificacaoConfigParams{
 		ID:       idUUID,

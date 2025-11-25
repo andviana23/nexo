@@ -1,0 +1,168 @@
+name: Backup Database
+on:
+  schedule:
+    # Executa diariamente às 03:00 UTC (00:00 BRT)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Permite execução manual
+
+env:
+  BACKUP_RETENTION_DAYS: 30
+
+jobs:
+  backup-database:
+    name: Backup PostgreSQL (Neon)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify pg_dump installation
+        run: pg_dump --version
+
+      - name: Create backup directory
+        run: mkdir -p /tmp/backups
+
+      - name: Generate backup filename
+        id: backup_info
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          FILENAME="barber_analytics_backup_${TIMESTAMP}.sql.gz"
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+          echo "Backup filename: ${FILENAME}"
+
+      - name: Run pg_dump backup
+        env:
+          PGPASSWORD: ${{ secrets.NEON_DB_PASSWORD }}
+        run: |
+          echo "Starting database backup..."
+          pg_dump \
+            --host=${{ secrets.NEON_DB_HOST }} \
+            --port=5432 \
+            --username=${{ secrets.NEON_DB_USER }} \
+            --dbname=${{ secrets.NEON_DB_NAME }} \
+            --format=plain \
+            --no-owner \
+            --no-acl \
+            --clean \
+            --if-exists \
+            --verbose \
+            | gzip > /tmp/backups/${{ steps.backup_info.outputs.filename }}
+
+          echo "Backup completed successfully!"
+          ls -lh /tmp/backups/${{ steps.backup_info.outputs.filename }}
+
+      - name: Verify backup file
+        run: |
+          if [ ! -f "/tmp/backups/${{ steps.backup_info.outputs.filename }}" ]; then
+            echo "ERROR: Backup file not found!"
+            exit 1
+          fi
+
+          FILE_SIZE=$(stat -f%z "/tmp/backups/${{ steps.backup_info.outputs.filename }}" 2>/dev/null || stat -c%s "/tmp/backups/${{ steps.backup_info.outputs.filename }}")
+
+          if [ "$FILE_SIZE" -lt 1000 ]; then
+            echo "ERROR: Backup file is too small ($FILE_SIZE bytes)!"
+            exit 1
+          fi
+
+          echo "Backup file verified: $FILE_SIZE bytes"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload to S3 with encryption
+        run: |
+          aws s3 cp \
+            /tmp/backups/${{ steps.backup_info.outputs.filename }} \
+            s3://${{ secrets.S3_BACKUP_BUCKET }}/database-backups/${{ steps.backup_info.outputs.filename }} \
+            --storage-class STANDARD_IA \
+            --server-side-encryption AES256 \
+            --metadata "timestamp=${{ steps.backup_info.outputs.timestamp }},source=github-actions"
+
+          echo "Backup uploaded to S3 successfully!"
+
+      - name: Verify S3 upload
+        run: |
+          aws s3 ls s3://${{ secrets.S3_BACKUP_BUCKET }}/database-backups/${{ steps.backup_info.outputs.filename }}
+
+      - name: Create backup manifest
+        run: |
+          cat > /tmp/backups/manifest.json <<EOF
+          {
+            "filename": "${{ steps.backup_info.outputs.filename }}",
+            "timestamp": "${{ steps.backup_info.outputs.timestamp }}",
+            "s3_bucket": "${{ secrets.S3_BACKUP_BUCKET }}",
+            "s3_key": "database-backups/${{ steps.backup_info.outputs.filename }}",
+            "database": "${{ secrets.NEON_DB_NAME }}",
+            "backup_type": "full",
+            "retention_days": ${{ env.BACKUP_RETENTION_DAYS }},
+            "github_run_id": "${{ github.run_id }}",
+            "github_run_number": "${{ github.run_number }}"
+          }
+          EOF
+
+          cat /tmp/backups/manifest.json
+
+      - name: Upload manifest to S3
+        run: |
+          aws s3 cp \
+            /tmp/backups/manifest.json \
+            s3://${{ secrets.S3_BACKUP_BUCKET }}/database-backups/manifests/manifest_${{ steps.backup_info.outputs.timestamp }}.json \
+            --server-side-encryption AES256
+
+      - name: Cleanup old backups (retention policy)
+        run: |
+          echo "Cleaning up backups older than ${{ env.BACKUP_RETENTION_DAYS }} days..."
+
+          CUTOFF_DATE=$(date -d "${{ env.BACKUP_RETENTION_DAYS }} days ago" +%Y%m%d || date -v-${{ env.BACKUP_RETENTION_DAYS }}d +%Y%m%d)
+
+          aws s3 ls s3://${{ secrets.S3_BACKUP_BUCKET }}/database-backups/ | while read -r line; do
+            FILE_DATE=$(echo $line | awk '{print $4}' | grep -oE '[0-9]{8}' | head -1)
+            FILE_NAME=$(echo $line | awk '{print $4}')
+
+            if [ ! -z "$FILE_DATE" ] && [ "$FILE_DATE" -lt "$CUTOFF_DATE" ]; then
+              echo "Deleting old backup: $FILE_NAME (date: $FILE_DATE)"
+              aws s3 rm s3://${{ secrets.S3_BACKUP_BUCKET }}/database-backups/$FILE_NAME
+            fi
+          done
+
+          echo "Cleanup completed!"
+
+      - name: Send notification on failure
+        if: failure()
+        run: |
+          echo "⚠️ BACKUP FAILED! ⚠️"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Timestamp: ${{ steps.backup_info.outputs.timestamp }}"
+          # TODO: Integrar com Slack/Discord/Email
+
+      - name: Cleanup local files
+        if: always()
+        run: |
+          rm -rf /tmp/backups
+          echo "Local backup files cleaned up"
+
+  verify-neon-pitr:
+    name: Verify Neon PITR Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Neon PITR status
+        run: |
+          echo "Verificando PITR no Neon..."
+          echo "PITR deve estar habilitado no console do Neon"
+          echo "Retenção configurada: 7 dias (Neon Free) ou 30 dias (Neon Pro)"
+          # TODO: Usar Neon API para verificar status programaticamente

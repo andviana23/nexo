@@ -1,79 +1,162 @@
-# VALTARIS v 1.0 — Guia de Desenvolvimento Frontend
+# NEXO — Guia de Desenvolvimento Frontend
 
-Guia prático para trabalhar no frontend do VALTARIS usando o Design System “Cyber Luxury”. Light é padrão; Dark é opt-in via store.
+Guia prático para desenvolvedores trabalharem no frontend do NEXO.
 
-## Stack Oficial (resumo)
-- Next.js 16 (App Router), React 19, TypeScript.
-- MUI 5 + Emotion (ThemeRegistry + `create-emotion-cache`).
-- CSS Variables `--valtaris-*` para light/dark.
-- Zustand (tema/prefs/layout), React Hook Form + Zod, TanStack Query.
-- Testes: Jest + Testing Library; Playwright para E2E.
+## 1. Setup Inicial
 
-## Setup Local
+Certifique-se de ter o Node.js 18+ e pnpm instalados.
+
 ```bash
-node --version   # >= 18.17
-npm install      # dentro de frontend/
-cp .env.example .env.local
-# configure NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-npm run dev
-```
-Abrir `http://localhost:3000`.
+# Instalar dependências
+pnpm install
 
-## Estrutura de Projeto (essencial)
-```
-frontend/
-  app/
-    layout.tsx              # Root; envolve ThemeRegistry
-    theme-registry.tsx      # Emotion + MUI + CSS vars
-    (dashboard)/...         # Telas privadas
-    (auth)/...              # Telas públicas
-    components/
-      ui/                   # Wrappers DS: VButton, VCard, VModal, etc.
-      forms/                # RHF + Zod wrappers
-      layout/               # Sidebar, Topbar, DashboardLayout
-    lib/                    # api client, hooks, utils, theme
-    store/                  # Zustand stores (tema, layout)
-  docs/03-frontend          # Documentação do DS
+# Rodar servidor de desenvolvimento
+pnpm dev
 ```
 
-## Como criar uma nova tela alinhada ao DS
-1) Garantir que o arquivo tem `"use client"` se usar hooks.  
-2) A página já está sob `ThemeRegistry` em `app/layout.tsx`.  
-3) Usar componentes do DS (`VButton`, `VCard`, `VModal`, wrappers de formulário).  
-4) Estilizar via `sx`/styled e `var(--valtaris-*)`, nunca hex direto.  
-5) Formulários: RHF + Zod + wrappers; mensagens de erro em `var(--valtaris-danger)`.  
-6) Dados: TanStack Query com chaves que incluem `tenantId`; loading com skeleton e não com `setTimeout`.  
-7) Agendadores/tabelas externas: classe `daypilot-valtaris` + CSS vars, sem CSS inline stringificado.  
-8) Acessibilidade: focus ring visível (`accent.aqua`), hit area 40px+.
+O projeto rodará em `http://localhost:3000`.
 
-## Convenções rápidas
-- Components: PascalCase (`ReceitaForm`). Hooks: `useX`. Types: PascalCase. Constantes: UPPER_SNAKE_CASE.
-- Imports agrupados; paths absolutos com `@/`.
-- Evite `any`; tipar mutations/queries com generics do TanStack Query.
+---
 
-## Styling e Tema
-- MUI é o layer principal; Tailwind é opcional como utilitário, se já existir.
-- Use `sx` com tokens: `sx={{ color: "var(--valtaris-text)" }}`.
-- Modais e overlays devem usar vidro (`backdrop-filter: blur(...)`), borda metálica e sombras definidas em `01-FOUNDATIONS.md`.
+## 2. Criando uma Nova Página
 
-## Estado & Dados
-- TanStack Query: instanciar `QueryClient` no provider do App Router. StaleTime padrão 5min para listas.
-- API client: axios com interceptors de auth; base URL via env.
-- Zustand: persistir tema (`valtaris-theme`) ao trocar light/dark.
+No Next.js App Router, as páginas são definidas pela estrutura de pastas em `src/app`.
 
-## Testing
-- Unit: Jest + Testing Library para componentes e hooks.
-- E2E: Playwright para fluxos críticos (login, receba/pagar, scheduler).
-- Snapshot só para componentes puros; evite para páginas dinâmicas.
+### Exemplo: Página de Clientes
 
-## Performance
-- Code splitting com `next/dynamic` para gráficos pesados.
-- `next/image` para assets; respeitar `priority` apenas em hero.
-- Memorize tabelas grandes (`React.memo`) e derive memos com `useMemo`.
+1.  Crie a pasta `src/app/(dashboard)/clientes`.
+2.  Crie o arquivo `page.tsx` dentro dela.
 
-## Pontes com a Documentação do DS
-- Tokens e materiais: `01-FOUNDATIONS.md`.
-- ThemeRegistry/Theme Store: `02-ARCHITECTURE.md`.
-- Componentes: `03-COMPONENTS.md`.
-- Padrões de formulários e acessibilidade: `04-PATTERNS.md`.
-- Componentes críticos e layouts: `COMPONENTES_CRITICOS.md`.
+```tsx
+// src/app/(dashboard)/clientes/page.tsx
+import { Metadata } from 'next';
+import { ClientsList } from './_components/clients-list';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Clientes | NEXO',
+};
+
+export default function ClientsPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" /> Novo Cliente
+        </Button>
+      </div>
+
+      <ClientsList />
+    </div>
+  );
+}
+```
+
+> **Dica:** Use `_components` dentro da pasta da rota para componentes que são específicos daquela página e não serão reutilizados globalmente.
+
+---
+
+## 3. Adicionando Componentes shadcn/ui
+
+Os componentes não vêm instalados por padrão. Você deve adicioná-los conforme a necessidade.
+
+```bash
+# Exemplo: Adicionar um Select
+npx shadcn@latest add select
+```
+
+Isso criará o arquivo `src/components/ui/select.tsx`.
+
+---
+
+## 4. Fazendo Chamadas à API
+
+Use os hooks customizados que encapsulam o `TanStack Query`.
+
+1.  Crie o hook em `src/hooks/use-something.ts` (ou `src/services/something/hooks.ts`).
+2.  Use o hook no seu componente.
+
+```tsx
+'use client';
+
+import { useClients } from '@/hooks/use-clients';
+import { DataTable } from '@/components/ui/data-table';
+import { columns } from './columns';
+
+export function ClientsList() {
+  const { data: clients, isLoading, isError } = useClients();
+
+  if (isLoading) return <div>Carregando...</div>;
+  if (isError) return <div>Erro ao carregar clientes.</div>;
+
+  return <DataTable columns={columns} data={clients} />;
+}
+```
+
+---
+
+## 5. Estilização com Tailwind
+
+Use classes utilitárias para quase tudo.
+
+- **Margem/Padding:** `m-4`, `p-6`, `gap-4`
+- **Flexbox:** `flex`, `items-center`, `justify-between`
+- **Grid:** `grid`, `grid-cols-1`, `md:grid-cols-3`
+- **Cores:** `bg-primary`, `text-muted-foreground`, `border-input`
+- **Tipografia:** `text-sm`, `font-bold`, `leading-none`
+
+Para estilos condicionais, use `cn()`:
+
+```tsx
+import { cn } from "@/lib/utils"
+
+<div className={cn(
+  "p-4 border rounded",
+  isActive && "border-primary bg-primary/10"
+)}>
+```
+
+---
+
+## 6. Checklist de Pull Request
+
+Antes de abrir um PR, verifique:
+
+### Build & Lint
+
+- [ ] O código compila sem erros (`pnpm build`).
+- [ ] Não há erros de lint (`pnpm lint`).
+- [ ] Não há `console.log` esquecido.
+
+### Responsividade (OBRIGATÓRIO)
+
+> ⚠️ **PRs sem responsividade adequada serão REJEITADOS.**
+
+- [ ] Testou em **375px** (mobile pequeno)?
+- [ ] Testou em **768px** (tablet)?
+- [ ] Testou em **1024px+** (desktop)?
+- [ ] Grids usam padrão mobile-first (`grid-cols-1 md:grid-cols-2`)?
+- [ ] Tabelas têm scroll horizontal ou versão mobile?
+- [ ] Modais não cortam conteúdo em telas pequenas?
+- [ ] Textos e botões têm tamanhos adequados para touch (min 44px)?
+
+### Tema & Acessibilidade
+
+- [ ] O tema Dark Mode funciona corretamente?
+- [ ] Contraste de cores está adequado (WCAG AA)?
+
+### Funcionalidade
+
+- [ ] Formulários têm validação (Zod)?
+- [ ] Estados de Loading e Error foram tratados?
+- [ ] Navegação por teclado funciona?
+
+---
+
+## 7. Debugging
+
+- **React Query Devtools:** Ótimo para debugar cache e queries.
+- **Zustand Devtools:** Para ver o estado global.
+- **Network Tab:** Verifique se o token JWT está sendo enviado no header `Authorization`.

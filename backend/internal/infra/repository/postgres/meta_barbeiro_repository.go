@@ -24,15 +24,8 @@ func NewMetaBarbeiroRepository(queries *db.Queries) *MetaBarbeiroRepository {
 
 // Create persiste uma nova meta de barbeiro.
 func (r *MetaBarbeiroRepository) Create(ctx context.Context, meta *entity.MetaBarbeiro) error {
-	tenantUUID, err := uuidStringToPgtype(meta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	barbeiroUUID, err := uuidStringToPgtype(meta.BarbeiroID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter barbeiro_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	barbeiroUUID := uuidStringToPgtype(meta.BarbeiroID)
 
 	params := db.CreateMetaBarbeiroParams{
 		TenantID:           tenantUUID,
@@ -57,15 +50,8 @@ func (r *MetaBarbeiroRepository) Create(ctx context.Context, meta *entity.MetaBa
 
 // FindByID busca uma meta por ID.
 func (r *MetaBarbeiroRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.MetaBarbeiro, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	result, err := r.queries.GetMetaBarbeiroByID(ctx, db.GetMetaBarbeiroByIDParams{
 		ID:       idUUID,
@@ -80,15 +66,8 @@ func (r *MetaBarbeiroRepository) FindByID(ctx context.Context, tenantID, id stri
 
 // FindByBarbeiroMesAno busca meta de um barbeiro em um mês.
 func (r *MetaBarbeiroRepository) FindByBarbeiroMesAno(ctx context.Context, tenantID, barbeiroID string, mesAno valueobject.MesAno) (*entity.MetaBarbeiro, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	barbeiroUUID, err := uuidStringToPgtype(barbeiroID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter barbeiro_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	barbeiroUUID := uuidStringToPgtype(barbeiroID)
 
 	result, err := r.queries.GetMetaBarbeiroByMesAno(ctx, db.GetMetaBarbeiroByMesAnoParams{
 		TenantID:   tenantUUID,
@@ -104,15 +83,8 @@ func (r *MetaBarbeiroRepository) FindByBarbeiroMesAno(ctx context.Context, tenan
 
 // Update atualiza uma meta existente.
 func (r *MetaBarbeiroRepository) Update(ctx context.Context, meta *entity.MetaBarbeiro) error {
-	tenantUUID, err := uuidStringToPgtype(meta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(meta.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	idUUID := uuidStringToPgtype(meta.ID)
 
 	params := db.UpdateMetaBarbeiroParams{
 		ID:                 idUUID,
@@ -133,17 +105,10 @@ func (r *MetaBarbeiroRepository) Update(ctx context.Context, meta *entity.MetaBa
 
 // Delete remove uma meta.
 func (r *MetaBarbeiroRepository) Delete(ctx context.Context, tenantID, id string) error {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
-
-	err = r.queries.DeleteMetaBarbeiro(ctx, db.DeleteMetaBarbeiroParams{
+	err := r.queries.DeleteMetaBarbeiro(ctx, db.DeleteMetaBarbeiroParams{
 		ID:       idUUID,
 		TenantID: tenantUUID,
 	})
@@ -156,15 +121,8 @@ func (r *MetaBarbeiroRepository) Delete(ctx context.Context, tenantID, id string
 
 // ListByBarbeiro lista todas as metas de um barbeiro.
 func (r *MetaBarbeiroRepository) ListByBarbeiro(ctx context.Context, tenantID, barbeiroID string) ([]*entity.MetaBarbeiro, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	barbeiroUUID, err := uuidStringToPgtype(barbeiroID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter barbeiro_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	barbeiroUUID := uuidStringToPgtype(barbeiroID)
 
 	results, err := r.queries.ListMetasBarbeiroByBarbeiro(ctx, db.ListMetasBarbeiroByBarbeiroParams{
 		TenantID:   tenantUUID,
@@ -181,10 +139,7 @@ func (r *MetaBarbeiroRepository) ListByBarbeiro(ctx context.Context, tenantID, b
 
 // ListByMesAno lista todas as metas de barbeiros de um mês.
 func (r *MetaBarbeiroRepository) ListByMesAno(ctx context.Context, tenantID string, mesAno valueobject.MesAno) ([]*entity.MetaBarbeiro, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListMetasBarbeiroByMesAno(ctx, db.ListMetasBarbeiroByMesAnoParams{
 		TenantID: tenantUUID,

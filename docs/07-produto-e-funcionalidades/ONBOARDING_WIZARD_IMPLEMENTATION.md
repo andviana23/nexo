@@ -9,7 +9,7 @@
 
 ## 📋 Resumo
 
-Implementação completa do fluxo de onboarding multi-step para o Barber Analytics Pro v2.0, integrando frontend Next.js 16.0.3 com o backend Go.
+Implementação completa do fluxo de onboarding multi-step para o Barber Analytics Pro v2.0, integrando frontend Next.js 14.2.4 (React 18.2.0 + MUI 5.15.21/Emotion 11.11) com o backend Go.
 
 ---
 
@@ -25,7 +25,7 @@ Implementação completa do fluxo de onboarding multi-step para o Barber Analyti
 
 **Arquivo:** `/frontend/app/lib/hooks/useOnboarding.ts`
 
-- ✅ Hook `useCompleteOnboarding()` com TanStack Query
+- ✅ Hook `useCompleteOnboarding()` com TanStack Query 4.36.1 (v4)
 - ✅ Invalidação de cache automática após sucesso
 - ✅ Toast de sucesso e erro usando Notistack
 - ✅ Redirecionamento automático para dashboard

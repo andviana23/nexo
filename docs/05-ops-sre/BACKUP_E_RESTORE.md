@@ -27,6 +27,7 @@
 ### Escopo
 
 Este documento descreve a estratégia de **Backup e Disaster Recovery (DR)** para o sistema **Barber Analytics Pro**, incluindo:
+
 - Backups automáticos do banco de dados (Neon PostgreSQL)
 - Backups complementares via `pg_dump`
 - Procedimentos de restore
@@ -35,14 +36,14 @@ Este documento descreve a estratégia de **Backup e Disaster Recovery (DR)** par
 
 ### Ativos Críticos
 
-| Ativo | Criticidade | Backup Necessário |
-|-------|-------------|-------------------|
-| **Database (Neon)** | 🔴 Crítico | ✅ SIM |
-| **Backend Go (código)** | 🟡 Alto | ✅ SIM (Git) |
-| **Frontend Next.js 16.0.3 (código)** | 🟡 Alto | ✅ SIM (Git) |
-| **Chaves JWT (keys/)** | 🔴 Crítico | ✅ SIM (secrets manager) |
-| **Variáveis de ambiente** | 🔴 Crítico | ✅ SIM (secrets manager) |
-| **Logs** | 🟢 Baixo | ⏳ Opcional (journald) |
+| Ativo                                | Criticidade | Backup Necessário        |
+| ------------------------------------ | ----------- | ------------------------ |
+| **Database (Neon)**                  | 🔴 Crítico  | ✅ SIM                   |
+| **Backend Go (código)**              | 🟡 Alto     | ✅ SIM (Git)             |
+| **Frontend Next.js 14.2.4 (código)** | 🟡 Alto     | ✅ SIM (Git)             |
+| **Chaves JWT (keys/)**               | 🔴 Crítico  | ✅ SIM (secrets manager) |
+| **Variáveis de ambiente**            | 🔴 Crítico  | ✅ SIM (secrets manager) |
+| **Logs**                             | 🟢 Baixo    | ⏳ Opcional (journald)   |
 
 ---
 
@@ -50,24 +51,25 @@ Este documento descreve a estratégia de **Backup e Disaster Recovery (DR)** par
 
 ### Retenção
 
-| Tipo de Backup | Frequência | Retenção | Responsável |
-|----------------|------------|----------|-------------|
-| **Neon PITR** | Contínuo (WAL) | 7 dias | Neon (automático) |
-| **pg_dump diário** | Diário (03:00 UTC) | 30 dias | GitHub Actions + S3 |
-| **Snapshot semanal** | Semanal (domingos) | 90 dias | GitHub Actions + S3 |
-| **Snapshot mensal** | Mensal (dia 1) | 1 ano | GitHub Actions + S3 |
-| **Código-fonte** | Cada push | Infinito | GitHub |
+| Tipo de Backup       | Frequência         | Retenção | Responsável         |
+| -------------------- | ------------------ | -------- | ------------------- |
+| **Neon PITR**        | Contínuo (WAL)     | 7 dias   | Neon (automático)   |
+| **pg_dump diário**   | Diário (03:00 UTC) | 30 dias  | GitHub Actions + S3 |
+| **Snapshot semanal** | Semanal (domingos) | 90 dias  | GitHub Actions + S3 |
+| **Snapshot mensal**  | Mensal (dia 1)     | 1 ano    | GitHub Actions + S3 |
+| **Código-fonte**     | Cada push          | Infinito | GitHub              |
 
 ### RPO/RTO
 
-| Cenário | RPO (Perda Máxima) | RTO (Tempo de Recuperação) |
-|---------|-------------------|---------------------------|
-| **Database corruption** | < 1 hora (Neon PITR) | < 2 horas |
-| **Database deletion acidental** | < 24 horas (pg_dump) | < 4 horas |
-| **Disaster total (AWS outage)** | < 24 horas | < 8 horas |
-| **Application bug** | 0 (rollback código) | < 30 minutos |
+| Cenário                         | RPO (Perda Máxima)   | RTO (Tempo de Recuperação) |
+| ------------------------------- | -------------------- | -------------------------- |
+| **Database corruption**         | < 1 hora (Neon PITR) | < 2 horas                  |
+| **Database deletion acidental** | < 24 horas (pg_dump) | < 4 horas                  |
+| **Disaster total (AWS outage)** | < 24 horas           | < 8 horas                  |
+| **Application bug**             | 0 (rollback código)  | < 30 minutos               |
 
 **Meta:**
+
 - **RPO:** < 24 horas
 - **RTO:** < 4 horas
 
@@ -78,10 +80,12 @@ Este documento descreve a estratégia de **Backup e Disaster Recovery (DR)** par
 ### Neon Point-in-Time Recovery (PITR)
 
 **O que é:**
+
 - Neon mantém backups contínuos via Write-Ahead Log (WAL)
 - Permite restaurar para qualquer ponto no tempo dentro da janela de retenção
 
 **Configuração atual:**
+
 ```yaml
 Plano: Pro
 Retenção PITR: 7 dias
@@ -92,6 +96,7 @@ Região: us-east-2 (AWS)
 **Como restaurar:**
 
 1. **Via Neon Console:**
+
    - Acessar: https://console.neon.tech
    - Selecionar projeto: `barber-analytics-prod`
    - Clicar em "Branches" → "Restore to point in time"
@@ -99,6 +104,7 @@ Região: us-east-2 (AWS)
    - Criar novo branch com dados restaurados
 
 2. **Via CLI:**
+
 ```bash
 # Instalar Neon CLI
 npm install -g neonctl
@@ -117,12 +123,14 @@ neonctl connection-string restore-2025-11-14
 ```
 
 **Vantagens:**
+
 - ✅ Automático (zero configuração)
 - ✅ Granularidade de segundos
 - ✅ Sem impacto em performance
 - ✅ Incluso no plano Pro
 
 **Limitações:**
+
 - ⚠️ Retenção limitada (7 dias no Pro, 30 dias no Business)
 - ⚠️ Não protege contra exclusão do projeto Neon
 
@@ -294,6 +302,7 @@ Validar que backups podem ser restaurados corretamente e o sistema funciona.
 ### Procedimento de Teste (Mensal)
 
 **1. Escolher backup para teste:**
+
 ```bash
 # Listar backups disponíveis
 aws s3 ls s3://barber-analytics-backups/daily/
@@ -303,6 +312,7 @@ BACKUP_FILE=barber-analytics-20251114-030000.sql.gz
 ```
 
 **2. Criar banco de teste (staging):**
+
 ```bash
 # Via Neon CLI: Criar branch de teste
 neonctl branches create \
@@ -315,6 +325,7 @@ TEST_DB_URL=$(neonctl connection-string restore-test-20251115)
 ```
 
 **3. Restaurar backup:**
+
 ```bash
 # Baixar backup do S3
 aws s3 cp "s3://barber-analytics-backups/daily/$BACKUP_FILE" .
@@ -327,6 +338,7 @@ psql "$TEST_DB_URL" < ${BACKUP_FILE%.gz}
 ```
 
 **4. Validar dados:**
+
 ```bash
 # Verificar contagem de registros
 psql "$TEST_DB_URL" -c "
@@ -345,6 +357,7 @@ SELECT
 ```
 
 **5. Testar aplicação:**
+
 ```bash
 # Atualizar .env com connection string de teste
 export DATABASE_URL="$TEST_DB_URL"
@@ -365,6 +378,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 ```
 
 **6. Medir tempo de restauração:**
+
 ```bash
 # Anotar duração total do processo:
 # - Download: X minutos
@@ -374,6 +388,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 ```
 
 **7. Limpar ambiente de teste:**
+
 ```bash
 # Deletar branch de teste após validação
 neonctl branches delete restore-test-20251115
@@ -402,6 +417,7 @@ Status: SUCESSO ✅
 #### Cenário 1: Corrupção de Dados (Acidental)
 
 **Sintomas:**
+
 - Dados inconsistentes (ex: receitas zeradas, usuários sumindo)
 - Erros de integridade referencial
 - Aplicação funciona mas dados corrompidos
@@ -409,6 +425,7 @@ Status: SUCESSO ✅
 **Ações:**
 
 1. **Identificar timestamp da corrupção:**
+
    ```bash
    # Revisar audit_logs
    psql "$DATABASE_URL" -c "
@@ -419,11 +436,13 @@ Status: SUCESSO ✅
    ```
 
 2. **Criar backup da situação atual (por segurança):**
+
    ```bash
    pg_dump "$DATABASE_URL" > corruption-backup-$(date +%Y%m%d).sql
    ```
 
 3. **Restaurar via Neon PITR:**
+
    ```bash
    # Criar branch com dados de antes da corrupção
    neonctl branches create \
@@ -435,12 +454,14 @@ Status: SUCESSO ✅
    ```
 
 4. **Validar dados restaurados:**
+
    ```bash
    # Testar queries críticas
    psql "$NEW_DB_URL" -c "SELECT COUNT(*) FROM receitas;"
    ```
 
 5. **Promover para produção:**
+
    ```bash
    # Atualizar DATABASE_URL nos secrets
    # Reiniciar backend com nova connection string
@@ -459,18 +480,21 @@ Status: SUCESSO ✅
 #### Cenário 2: Exclusão Acidental de Tabela
 
 **Sintomas:**
+
 - Erro: `relation "users" does not exist`
 - Backend crashando ao iniciar
 
 **Ações:**
 
 1. **Parar tráfego para aplicação:**
+
    ```bash
    # Retornar página de manutenção no NGINX
    ssh deploy@vps "sudo systemctl stop barber-api"
    ```
 
 2. **Baixar último backup pg_dump:**
+
    ```bash
    LATEST_BACKUP=$(aws s3 ls s3://barber-analytics-backups/daily/ | tail -1 | awk '{print $4}')
    aws s3 cp "s3://barber-analytics-backups/daily/$LATEST_BACKUP" .
@@ -478,6 +502,7 @@ Status: SUCESSO ✅
    ```
 
 3. **Restaurar apenas tabela deletada:**
+
    ```bash
    # Extrair apenas CREATE + INSERT da tabela users
    grep -A 10000 "CREATE TABLE users" ${LATEST_BACKUP%.gz} > users_restore.sql
@@ -487,6 +512,7 @@ Status: SUCESSO ✅
    ```
 
 4. **Recriar índices se necessário:**
+
    ```bash
    psql "$DATABASE_URL" -c "
    CREATE INDEX IF NOT EXISTS idx_users_tenant_id_email ON users(tenant_id, email);
@@ -505,6 +531,7 @@ Status: SUCESSO ✅
 #### Cenário 3: Disaster Total (AWS Region Down)
 
 **Sintomas:**
+
 - Neon inacessível
 - Toda região us-east-2 fora do ar
 - Aplicação completamente offline
@@ -512,10 +539,12 @@ Status: SUCESSO ✅
 **Ações:**
 
 1. **Ativar comunicação de emergência:**
+
    - Post em status page: "Sistema temporariamente indisponível"
    - Notificar clientes via email/WhatsApp
 
 2. **Provisionar novo banco em região diferente:**
+
    ```bash
    # Criar projeto Neon em us-west-2
    neonctl projects create \
@@ -524,6 +553,7 @@ Status: SUCESSO ✅
    ```
 
 3. **Restaurar último backup:**
+
    ```bash
    # Baixar backup mais recente
    LATEST_BACKUP=$(aws s3 ls s3://barber-analytics-backups/daily/ | tail -1 | awk '{print $4}')
@@ -536,18 +566,21 @@ Status: SUCESSO ✅
    ```
 
 4. **Atualizar DNS:**
+
    ```bash
    # Apontar api.barberpro.dev para novo VPS/região
    # (Assumindo VPS multi-região ou novo deploy)
    ```
 
 5. **Atualizar variáveis de ambiente:**
+
    ```bash
    # GitHub Secrets: DATABASE_URL → novo connection string
    # VPS: /opt/barber-api/.env → DATABASE_URL=$DR_DB_URL
    ```
 
 6. **Deploy em nova região:**
+
    ```bash
    # Trigger GitHub Actions deploy
    # ou SSH manual
@@ -565,12 +598,12 @@ Status: SUCESSO ✅
 
 ### Contatos de Emergência
 
-| Papel | Nome | Contato | Responsabilidade |
-|-------|------|---------|------------------|
-| **Tech Lead** | Andrey Viana | andrey@barberpro.dev | Decisão final em DR |
-| **DevOps Lead** | [TBD] | devops@barberpro.dev | Execução técnica |
-| **Neon Support** | support@neon.tech | Ticket + Slack | Suporte Neon |
-| **AWS Support** | - | Console AWS | Suporte S3/EC2 |
+| Papel            | Nome              | Contato              | Responsabilidade    |
+| ---------------- | ----------------- | -------------------- | ------------------- |
+| **Tech Lead**    | Andrey Viana      | andrey@barberpro.dev | Decisão final em DR |
+| **DevOps Lead**  | [TBD]             | devops@barberpro.dev | Execução técnica    |
+| **Neon Support** | support@neon.tech | Ticket + Slack       | Suporte Neon        |
+| **AWS Support**  | -                 | Console AWS          | Suporte S3/EC2      |
 
 ### Checklist de Ativação DR
 
@@ -593,23 +626,25 @@ Status: SUCESSO ✅
 
 ### Metas Atuais
 
-| Serviço | RPO | RTO | Implementação |
-|---------|-----|-----|---------------|
-| **Database** | < 1 hora | < 2 horas | Neon PITR (7 dias) |
-| **Database (disaster)** | < 24 horas | < 4 horas | pg_dump + S3 (30 dias) |
-| **Backend (código)** | 0 (Git) | < 30 min | Git + CI/CD |
-| **Frontend (código)** | 0 (Git) | < 30 min | Git + Vercel |
-| **Chaves JWT** | N/A | < 1 hora | Secrets manager + backup manual |
+| Serviço                 | RPO        | RTO       | Implementação                   |
+| ----------------------- | ---------- | --------- | ------------------------------- |
+| **Database**            | < 1 hora   | < 2 horas | Neon PITR (7 dias)              |
+| **Database (disaster)** | < 24 horas | < 4 horas | pg_dump + S3 (30 dias)          |
+| **Backend (código)**    | 0 (Git)    | < 30 min  | Git + CI/CD                     |
+| **Frontend (código)**   | 0 (Git)    | < 30 min  | Git + Vercel                    |
+| **Chaves JWT**          | N/A        | < 1 hora  | Secrets manager + backup manual |
 
 ### Medição de Sucesso
 
 **Critérios:**
+
 - ✅ Testes de restore mensais passando
 - ✅ RTO real < meta definida
 - ✅ RPO real < meta definida
 - ✅ Zero perda de dados críticos em 12 meses
 
 **Métricas:**
+
 - Última restauração testada: [Data]
 - Tempo de restore médio: [X minutos]
 - Taxa de sucesso de backups: [99.x%]
@@ -619,6 +654,7 @@ Status: SUCESSO ✅
 ## ✅ Checklist de Validação
 
 ### Setup Inicial
+
 - [ ] Neon PITR habilitado (7 dias retenção)
 - [ ] GitHub Actions workflow criado (backup-database.yml)
 - [ ] S3 bucket criado (barber-analytics-backups)
@@ -626,6 +662,7 @@ Status: SUCESSO ✅
 - [ ] Secrets configurados (DATABASE_URL, AWS keys)
 
 ### Operacional
+
 - [ ] Backups diários rodando com sucesso
 - [ ] Alertas configurados (falha de backup → Slack)
 - [ ] Teste de restore realizado (mensal)
@@ -633,6 +670,7 @@ Status: SUCESSO ✅
 - [ ] Equipe treinada em procedimentos DR
 
 ### Validação Trimestral
+
 - [ ] Exercício de DR completo (simular disaster)
 - [ ] Review de RTO/RPO (ajustar metas se necessário)
 - [ ] Atualizar contatos de emergência

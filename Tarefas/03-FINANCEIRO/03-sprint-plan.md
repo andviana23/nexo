@@ -5,7 +5,7 @@
 3. [x] Fluxo Compensado (T-FIN-003) ✅ **COMPLETO**
 4. [ ] Comissões Automáticas (T-FIN-004) ⏸️ Pendente (baixa prioridade)
 5. [x] DRE Completo (T-FIN-005) ✅ **COMPLETO**
-6. [ ] Dashboard Financeiro (T-FIN-006) ⏳ Aguardando frontend
+6. [x] Dashboard Financeiro (T-FIN-006) ✅ **COMPLETO**
 
 **Status Atual:**
 

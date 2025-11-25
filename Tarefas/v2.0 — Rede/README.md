@@ -11,7 +11,7 @@
 
 ## 🎯 Visão Geral
 
-A versão **v2.0** transforma o VALTARIS em um **sistema empresarial completo**, capaz de gerenciar redes de barbearias, franquias e incorporar **inteligência artificial** para previsões e otimizações.
+A versão **v2.0** transforma o NEXO em um **sistema empresarial completo**, capaz de gerenciar redes de barbearias, franquias e incorporar **inteligência artificial** para previsões e otimizações.
 
 **Principais Módulos:**
 
@@ -319,9 +319,9 @@ v2.0 estará **PRONTO** quando:
 
 ## 📚 Referências
 
-- [PRD - Integrações](../../PRD-VALTARIS.md#415-integrações)
-- [PRD - Multi-unidade](../../PRD-VALTARIS.md#416-multi-unidade--franquias)
-- [PRD - Notas Fiscais](../../PRD-VALTARIS.md#417-notas-fiscais-futuro)
+- [PRD - Integrações](../../PRD-NEXO.md#415-integrações)
+- [PRD - Multi-unidade](../../PRD-NEXO.md#416-multi-unidade--franquias)
+- [PRD - Notas Fiscais](../../PRD-NEXO.md#417-notas-fiscais-futuro)
 - [Roadmap](../../docs/07-produto-e-funcionalidades/ROADMAP_PRODUTO.md)
 
 ---

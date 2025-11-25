@@ -3,7 +3,7 @@
 # ============================================================================
 # Descrição: Automação para desenvolvimento local (Backend Go + Frontend Next.js)
 # Backend: Air (hot-reload Go)
-# Frontend: Next.js 16 (Turbopack)
+# Frontend: Next.js 14.2.4 (compatível com React 18.2.0 + MUI 5.15.21/Emotion 11.11)
 # Database: Neon PostgreSQL (remoto)
 # ============================================================================
 
@@ -19,7 +19,9 @@ FRONTEND_PID := $(FRONTEND_DIR)/.frontend.pid
 BACKEND_LOG := $(BACKEND_DIR)/tmp/backend.log
 FRONTEND_LOG := $(FRONTEND_DIR)/tmp/frontend.log
 
-DATABASE_URL := postgresql://neondb_owner:npg_83COkAjHMotv@ep-winter-leaf-adhqz08p-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
+# DATABASE_URL deve ser definida via variável de ambiente (.env)
+# Exemplo: export DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
+DATABASE_URL ?= $(shell echo $$DATABASE_URL)
 API_URL ?= http://localhost:8080
 
 GREEN := \033[0;32m

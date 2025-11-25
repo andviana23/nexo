@@ -1,0 +1,308 @@
+package financial
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
+	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+	"go.uber.org/zap"
+)
+
+// GetDashboardInput representa os parâmetros para obter o dashboard
+type GetDashboardInput struct {
+	TenantID  uuid.UUID
+	StartDate time.Time
+	EndDate   time.Time
+	Month     string // formato: "2025-11"
+}
+
+// DashboardMetrics representa métricas calculadas do dashboard
+type DashboardMetrics struct {
+	BreakEvenPoint decimal.Decimal `json:"break_even_point"`
+	BurnRate       decimal.Decimal `json:"burn_rate"`
+	Runway         float64         `json:"runway"` // em meses
+	AverageTicket  decimal.Decimal `json:"average_ticket"`
+}
+
+// DashboardSummary contém o resumo financeiro completo
+type DashboardSummary struct {
+	// Payables
+	PayablesTotal     decimal.Decimal `json:"payables_total"`
+	PayablesPaid      decimal.Decimal `json:"payables_paid"`
+	PayablesPending   decimal.Decimal `json:"payables_pending"`
+	PayablesOverdue   decimal.Decimal `json:"payables_overdue"`
+	PayablesThisMonth decimal.Decimal `json:"payables_this_month"`
+
+	// Receivables
+	ReceivablesTotal     decimal.Decimal `json:"receivables_total"`
+	ReceivablesReceived  decimal.Decimal `json:"receivables_received"`
+	ReceivablesPending   decimal.Decimal `json:"receivables_pending"`
+	ReceivablesOverdue   decimal.Decimal `json:"receivables_overdue"`
+	ReceivablesThisMonth decimal.Decimal `json:"receivables_this_month"`
+
+	// Cashflow
+	CurrentBalance   decimal.Decimal `json:"current_balance"`
+	ProjectedBalance decimal.Decimal `json:"projected_balance"`
+	TotalIncome      decimal.Decimal `json:"total_income"`
+	TotalExpense     decimal.Decimal `json:"total_expense"`
+	NetCashflow      decimal.Decimal `json:"net_cashflow"`
+
+	// DRE
+	ReceitaBruta     decimal.Decimal `json:"receita_bruta"`
+	ReceitaLiquida   decimal.Decimal `json:"receita_liquida"`
+	CustoTotal       decimal.Decimal `json:"custo_total"`
+	LucroOperacional decimal.Decimal `json:"lucro_operacional"`
+	MargemLucro      decimal.Decimal `json:"margem_lucro"`
+	EBITDA           decimal.Decimal `json:"ebitda"`
+
+	// Metrics
+	Metrics DashboardMetrics `json:"metrics"`
+}
+
+// GetDashboardOutput representa a saída do dashboard
+type GetDashboardOutput struct {
+	Summary DashboardSummary  `json:"summary"`
+	Period  GetDashboardInput `json:"period"`
+}
+
+// GetDashboardUseCase agrega dados financeiros para o dashboard
+type GetDashboardUseCase struct {
+	payablesRepo    port.ContaPagarRepository
+	receivablesRepo port.ContaReceberRepository
+	cashflowRepo    port.FluxoCaixaRepository
+	dreRepo         port.DRERepository
+	logger          *zap.Logger
+	cacheClient     CacheClient // Interface para Redis
+}
+
+// CacheClient define interface para cache
+type CacheClient interface {
+	Get(ctx context.Context, key string) ([]byte, error)
+	Set(ctx context.Context, key string, value []byte, expiration time.Duration) error
+	Delete(ctx context.Context, key string) error
+}
+
+// NewGetDashboardUseCase cria uma nova instância do use case
+func NewGetDashboardUseCase(
+	payablesRepo port.ContaPagarRepository,
+	receivablesRepo port.ContaReceberRepository,
+	cashflowRepo port.FluxoCaixaRepository,
+	dreRepo port.DRERepository,
+	cache CacheClient,
+	logger *zap.Logger,
+) *GetDashboardUseCase {
+	return &GetDashboardUseCase{
+		payablesRepo:    payablesRepo,
+		receivablesRepo: receivablesRepo,
+		cashflowRepo:    cashflowRepo,
+		dreRepo:         dreRepo,
+		cacheClient:     cache,
+		logger:          logger,
+	}
+}
+
+// Execute executa o use case de dashboard
+func (uc *GetDashboardUseCase) Execute(ctx context.Context, input GetDashboardInput) (*GetDashboardOutput, error) {
+	// Tentar buscar do cache primeiro
+	cacheKey := fmt.Sprintf("dashboard:%s:%s:%s", input.TenantID.String(), input.StartDate.Format("2006-01-02"), input.EndDate.Format("2006-01-02"))
+
+	if uc.cacheClient != nil {
+		cached, err := uc.cacheClient.Get(ctx, cacheKey)
+		if err == nil && len(cached) > 0 {
+			var output GetDashboardOutput
+			if json.Unmarshal(cached, &output) == nil {
+				uc.logger.Debug("Dashboard data loaded from cache", zap.String("key", cacheKey))
+				return &output, nil
+			}
+		}
+	}
+
+	// Buscar dados em paralelo
+	payablesCh := make(chan []*entity.ContaPagar)
+	receivablesCh := make(chan []*entity.ContaReceber)
+	cashflowCh := make(chan []*entity.FluxoCaixaDiario)
+	dreCh := make(chan *entity.DREMensal)
+	errCh := make(chan error, 4)
+
+	// Buscar Payables
+	go func() {
+		payables, err := uc.payablesRepo.FindByTenantAndDateRange(ctx, input.TenantID, input.StartDate, input.EndDate)
+		if err != nil {
+			errCh <- fmt.Errorf("erro ao buscar payables: %w", err)
+			return
+		}
+		payablesCh <- payables
+	}()
+
+	// Buscar Receivables
+	go func() {
+		receivables, err := uc.receivablesRepo.FindByTenantAndDateRange(ctx, input.TenantID, input.StartDate, input.EndDate)
+		if err != nil {
+			errCh <- fmt.Errorf("erro ao buscar receivables: %w", err)
+			return
+		}
+		receivablesCh <- receivables
+	}()
+
+	// Buscar Cashflow
+	go func() {
+		cashflow, err := uc.cashflowRepo.FindByPeriod(ctx, input.TenantID, input.StartDate, input.EndDate)
+		if err != nil {
+			errCh <- fmt.Errorf("erro ao buscar cashflow: %w", err)
+			return
+		}
+		cashflowCh <- cashflow
+	}()
+
+	// Buscar DRE
+	go func() {
+		dre, err := uc.dreRepo.FindByMesAno(ctx, input.TenantID, input.Month)
+		if err != nil {
+			uc.logger.Warn("DRE não encontrado para o mês", zap.String("month", input.Month), zap.Error(err))
+			dreCh <- nil
+			return
+		}
+		dreCh <- dre
+	}()
+
+	// Coletar resultados
+	var payables []*entity.ContaPagar
+	var receivables []*entity.ContaReceber
+	var cashflow []*entity.FluxoCaixaDiario
+	var dre *entity.DREMensal
+
+	for i := 0; i < 4; i++ {
+		select {
+		case err := <-errCh:
+			return nil, err
+		case p := <-payablesCh:
+			payables = p
+		case r := <-receivablesCh:
+			receivables = r
+		case c := <-cashflowCh:
+			cashflow = c
+		case d := <-dreCh:
+			dre = d
+		}
+	}
+
+	// Calcular agregações
+	summary := uc.calculateSummary(payables, receivables, cashflow, dre)
+
+	output := &GetDashboardOutput{
+		Summary: summary,
+		Period:  input,
+	}
+
+	// Salvar no cache (2 minutos)
+	if uc.cacheClient != nil {
+		if data, err := json.Marshal(output); err == nil {
+			_ = uc.cacheClient.Set(ctx, cacheKey, data, 2*time.Minute)
+		}
+	}
+
+	return output, nil
+}
+
+func (uc *GetDashboardUseCase) calculateSummary(
+	payables []*entity.ContaPagar,
+	receivables []*entity.ContaReceber,
+	cashflow []*entity.FluxoCaixaDiario,
+	dre *entity.DREMensal,
+) DashboardSummary {
+	summary := DashboardSummary{}
+
+	// Calcular Payables
+	for _, p := range payables {
+		summary.PayablesTotal = summary.PayablesTotal.Add(p.Valor())
+		switch p.Status() {
+		case "PAGO":
+			summary.PayablesPaid = summary.PayablesPaid.Add(p.Valor())
+		case "ABERTO":
+			summary.PayablesPending = summary.PayablesPending.Add(p.Valor())
+		case "ATRASADO":
+			summary.PayablesOverdue = summary.PayablesOverdue.Add(p.Valor())
+		}
+	}
+	summary.PayablesThisMonth = summary.PayablesTotal
+
+	// Calcular Receivables
+	for _, r := range receivables {
+		summary.ReceivablesTotal = summary.ReceivablesTotal.Add(r.Valor())
+		switch r.Status() {
+		case "RECEBIDO":
+			summary.ReceivablesReceived = summary.ReceivablesReceived.Add(r.Valor())
+		case "PENDENTE":
+			summary.ReceivablesPending = summary.ReceivablesPending.Add(r.Valor())
+		case "ATRASADO":
+			summary.ReceivablesOverdue = summary.ReceivablesOverdue.Add(r.Valor())
+		}
+	}
+	summary.ReceivablesThisMonth = summary.ReceivablesTotal
+
+	// Calcular Cashflow
+	if len(cashflow) > 0 {
+		lastCashflow := cashflow[len(cashflow)-1]
+		summary.CurrentBalance = lastCashflow.SaldoFinal()
+		summary.ProjectedBalance = lastCashflow.SaldoProjetado()
+
+		for _, c := range cashflow {
+			summary.TotalIncome = summary.TotalIncome.Add(c.TotalEntradas())
+			summary.TotalExpense = summary.TotalExpense.Add(c.TotalSaidas())
+		}
+		summary.NetCashflow = summary.TotalIncome.Sub(summary.TotalExpense)
+	}
+
+	// Calcular DRE
+	if dre != nil {
+		summary.ReceitaBruta = dre.ReceitaBruta()
+		summary.ReceitaLiquida = dre.ReceitaLiquida()
+		summary.CustoTotal = dre.CustoTotal()
+		summary.LucroOperacional = dre.LucroOperacional()
+		summary.MargemLucro = dre.MargemLucro()
+		summary.EBITDA = dre.EBITDA()
+	}
+
+	// Calcular métricas
+	summary.Metrics = uc.calculateMetrics(summary, receivables)
+
+	return summary
+}
+
+func (uc *GetDashboardUseCase) calculateMetrics(summary DashboardSummary, receivables []*entity.ContaReceber) DashboardMetrics {
+	metrics := DashboardMetrics{
+		BreakEvenPoint: summary.CustoTotal,
+		BurnRate:       summary.TotalExpense,
+	}
+
+	// Calcular Runway (saldo atual / burn rate)
+	if summary.TotalExpense.GreaterThan(decimal.Zero) {
+		runwayDecimal := summary.CurrentBalance.Div(summary.TotalExpense)
+		runway, _ := runwayDecimal.Float64()
+		metrics.Runway = runway
+	}
+
+	// Calcular Average Ticket
+	if len(receivables) > 0 {
+		metrics.AverageTicket = summary.ReceivablesTotal.Div(decimal.NewFromInt(int64(len(receivables))))
+	}
+
+	return metrics
+}
+
+// InvalidateCache invalida o cache do dashboard
+func (uc *GetDashboardUseCase) InvalidateCache(ctx context.Context, tenantID uuid.UUID) error {
+	if uc.cacheClient == nil {
+		return nil
+	}
+
+	pattern := fmt.Sprintf("dashboard:%s:*", tenantID.String())
+	uc.logger.Debug("Invalidando cache de dashboard", zap.String("pattern", pattern))
+
+	return uc.cacheClient.Delete(ctx, pattern)
+}

@@ -5,6 +5,7 @@
 - **Escopo:** backend (agregações, cache), frontend (cards/gráficos responsivos), integrações com módulos financeiros existentes.
 
 ## Plano de Execução (após payables/receivables/fluxo/comissões/DRE)
+
 - **Banco de Dados:** usar views/materializações/snapshots existentes (receitas, despesas, payables, receivables, compensações, comissões, DRE).
 - **Backend:** endpoint `/financial/dashboard` agregando KPIs e cache Redis; invalidar em eventos críticos.
 - **Frontend:** cards e gráficos (linha/coluna), status de metas/PE, alertas de atraso/inadimplência.
@@ -21,7 +22,7 @@
 
 - Repositórios `receitas`, `despesas`, `assinatura_invoices`, `contas_a_pagar`, `contas_a_receber`, `metas_financeiras` (novo) via sqlc.
 - Jobs de snapshot financeiro (`docs/05-ops-sre/FLUXO_CRONS.md`) e cache Redis para agregações.
-- Design System (Next.js 16 + tokens MUI/shadcn) para UI.
+- Design System (Next.js 14.2.4 + tokens MUI 5.15.21/shadcn) para UI.
 - RBAC (owner/manager/accountant) para acesso.
 
 ## Riscos

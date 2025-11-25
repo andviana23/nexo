@@ -1,30 +1,77 @@
-# VALTARIS v 1.0 — Mapa de Telas
+# NEXO — Mapa de Telas
 
-Roteiro das telas principais e como o Design System se encaixa. Light é padrão; todas usam tokens do tema.
+> Estrutura de navegação e principais telas do sistema.
 
-- **Login / Onboarding**  
-  - Layout público `(auth)`; usa `VCard` + `VButton` primário; formulários com RHF+Zod.
+---
 
-- **Dashboard (KPIs)**  
-  - Home de `(dashboard)`; cards com vidro (`VCard`), badges de status e gráficos tematizados.
+## 1. Autenticação `(auth)`
 
-- **Financeiro: Receitas / Despesas / Fluxo de Caixa**  
-  - Tabelas `VTable`, filtros com `FormInput`, modais `VModal`.  
-  - Agregações e filtros sempre com cache TanStack Query incluindo `tenantId`.
+Layout público, centralizado, sem sidebar.
 
-- **Financeiro: Contas a Pagar/Receber**  
-  - Formulários com estados de erro em `var(--valtaris-danger)`; badges de status oficiais.
+- **/login:** Formulário de login (Email/Senha). Link para recuperação.
+- **/register:** Cadastro de novos tenants (Wizard de Onboarding).
+- **/forgot-password:** Solicitação de reset de senha.
+- **/reset-password:** Definição de nova senha.
 
-- **Assinaturas (planos, assinantes)**  
-  - Forms e tabelas; usar `StatusBadge` para ciclo de cobrança; modais com vidro.
+---
 
-- **Lista da Vez / Agendamentos**  
-  - DayPilot com classe `daypilot-valtaris` e CSS vars; não usar estilos inline.
+## 2. Dashboard `(dashboard)`
 
-- **Cadastros (clientes, profissionais, serviços, produtos, meios, cupons)**  
-  - Reutilizar wrappers de formulário; tabelas com `compact mode` opcional.
+Layout protegido, com Sidebar lateral e Header.
 
-- **Design System Preview / Storybook**  
-  - Página demo para tokens + componentes; referenciar `01-FOUNDATIONS.md` e `03-COMPONENTS.md`.
+### 2.1 Visão Geral
 
-Para rotas/URLs detalhadas, ver `frontend/app/(dashboard)` e `API_REFERENCE.md`.
+- **/dashboard:** KPIs principais (Faturamento, Agendamentos, Novos Clientes). Gráficos de desempenho.
+
+### 2.2 Agenda
+
+- **/agenda:** Calendário interativo (Day/Week/Month view).
+  - Modal de Novo Agendamento.
+  - Detalhes do Agendamento (Status, Pagamento).
+
+### 2.3 Clientes
+
+- **/clientes:** Listagem de clientes (DataTable).
+- **/clientes/novo:** Formulário de cadastro.
+- **/clientes/[id]:** Perfil do cliente (Histórico, Dados, Métricas).
+
+### 2.4 Financeiro
+
+- **/financeiro/transacoes:** Lista de receitas e despesas.
+- **/financeiro/caixa:** Fluxo de caixa diário/mensal.
+- **/financeiro/comissoes:** Relatório e pagamento de comissões.
+
+### 2.5 Serviços & Produtos
+
+- **/servicos:** Catálogo de serviços (Preço, Duração, Profissionais).
+- **/produtos:** Controle de estoque e venda de produtos.
+
+### 2.6 Configurações
+
+- **/configuracoes/perfil:** Dados do usuário logado.
+- **/configuracoes/empresa:** Dados da barbearia (Logo, Endereço).
+- **/configuracoes/equipe:** Gestão de profissionais e permissões.
+- **/configuracoes/horarios:** Horário de funcionamento.
+
+---
+
+## 3. Componentes Chave por Tela
+
+| Tela           | Componentes Principais                                   | Dados (Hooks)         |
+| -------------- | -------------------------------------------------------- | --------------------- |
+| **Login**      | `Card`, `Form`, `Input`, `Button`                        | `useAuth`             |
+| **Dashboard**  | `Card` (Metrics), `Chart` (Recharts), `DateRangePicker`  | `useDashboardMetrics` |
+| **Agenda**     | `Calendar` (FullCalendar/DayPilot), `Dialog` (New Event) | `useAppointments`     |
+| **Clientes**   | `DataTable` (Pagination, Filter), `Sheet` (Quick View)   | `useClients`          |
+| **Financeiro** | `DataTable`, `Select` (Period), `Badge` (Status)         | `useTransactions`     |
+
+---
+
+## 4. Fluxos Críticos
+
+1.  **Agendamento:**
+    - Cliente/Admin seleciona Serviço -> Profissional -> Horário -> Confirma.
+2.  **Checkout:**
+    - Finalizar agendamento -> Adicionar produtos (opcional) -> Selecionar forma de pagamento -> Baixa no estoque/Financeiro.
+3.  **Onboarding:**
+    - Cadastro Empresa -> Configuração Horários -> Cadastro Serviços -> Convite Equipe.

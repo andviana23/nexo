@@ -207,9 +207,9 @@ v1.1.0 estará **PRONTO** quando:
 
 ## 📚 Referências
 
-- [PRD - Fidelidade](../../PRD-VALTARIS.md#48-módulo-de-fidelidade-cashback)
-- [PRD - Gamificação](../../PRD-VALTARIS.md#49-módulo-de-gamificação--plano-de-carreira)
-- [PRD - Metas](../../PRD-VALTARIS.md#410-módulo-de-metas--kpis)
+- [PRD - Fidelidade](../../PRD-NEXO.md#48-módulo-de-fidelidade-cashback)
+- [PRD - Gamificação](../../PRD-NEXO.md#49-módulo-de-gamificação--plano-de-carreira)
+- [PRD - Metas](../../PRD-NEXO.md#410-módulo-de-metas--kpis)
 
 ---
 

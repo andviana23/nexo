@@ -24,18 +24,11 @@ func NewPrecificacaoSimulacaoRepository(queries *db.Queries) *PrecificacaoSimula
 
 // Create persiste uma nova simulação de precificação.
 func (r *PrecificacaoSimulacaoRepository) Create(ctx context.Context, simulacao *entity.PrecificacaoSimulacao) error {
-	tenantUUID, err := uuidStringToPgtype(simulacao.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	itemUUID, err := uuidStringToPgtype(simulacao.ItemID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter item_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(simulacao.TenantID)
+	itemUUID := uuidStringToPgtype(simulacao.ItemID)
 
 	// CriadoPor pode vir de contexto - usar UUID zero por padrão
-	criadoPorUUID, _ := uuidStringToPgtype("00000000-0000-0000-0000-000000000000")
+	criadoPorUUID := uuidStringToPgtype("00000000-0000-0000-0000-000000000000")
 
 	params := db.CreatePrecificacaoSimulacaoParams{
 		TenantID:            tenantUUID,
@@ -44,10 +37,10 @@ func (r *PrecificacaoSimulacaoRepository) Create(ctx context.Context, simulacao 
 		CustoMateriais:      moneyToNumeric(simulacao.CustoMateriais),
 		CustoMaoDeObra:      moneyToNumeric(simulacao.CustoMaoDeObra),
 		CustoTotal:          moneyToNumeric(simulacao.CustoTotal),
-		MargemDesejada:      percentageToDecimal(simulacao.MargemDesejada),
-		ComissaoPercentual:  percentageToDecimal(simulacao.ComissaoPercentual),
-		ImpostoPercentual:   percentageToDecimal(simulacao.ImpostoPercentual),
-		PrecoSugerido:       moneyToDecimal(simulacao.PrecoSugerido),
+		MargemDesejada:      percentageToRawDecimal(simulacao.MargemDesejada),
+		ComissaoPercentual:  percentageToRawDecimal(simulacao.ComissaoPercentual),
+		ImpostoPercentual:   percentageToRawDecimal(simulacao.ImpostoPercentual),
+		PrecoSugerido:       moneyToRawDecimal(simulacao.PrecoSugerido),
 		PrecoAtual:          moneyToNumeric(simulacao.PrecoAtual),
 		DiferencaPercentual: percentageToNumeric(simulacao.DiferencaPercentual),
 		LucroEstimado:       moneyToNumeric(simulacao.LucroEstimado),
@@ -69,15 +62,8 @@ func (r *PrecificacaoSimulacaoRepository) Create(ctx context.Context, simulacao 
 
 // FindByID busca uma simulação por ID.
 func (r *PrecificacaoSimulacaoRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.PrecificacaoSimulacao, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	params := db.GetPrecificacaoSimulacaoByIDParams{
 		ID:       idUUID,
@@ -94,10 +80,7 @@ func (r *PrecificacaoSimulacaoRepository) FindByID(ctx context.Context, tenantID
 
 // ListByTenant lista todas as simulações de um tenant.
 func (r *PrecificacaoSimulacaoRepository) ListByTenant(ctx context.Context, tenantID string, limit, offset int32) ([]*entity.PrecificacaoSimulacao, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	params := db.ListSimulacoesByTenantParams{
 		TenantID: tenantUUID,
@@ -115,15 +98,8 @@ func (r *PrecificacaoSimulacaoRepository) ListByTenant(ctx context.Context, tena
 
 // ListByItemInternal lista simulações de um item específico (método interno).
 func (r *PrecificacaoSimulacaoRepository) ListByItemInternal(ctx context.Context, tenantID, itemID string, limit, offset int32) ([]*entity.PrecificacaoSimulacao, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	itemUUID, err := uuidStringToPgtype(itemID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter item_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	itemUUID := uuidStringToPgtype(itemID)
 
 	params := db.ListSimulacoesByItemParams{
 		TenantID: tenantUUID,
@@ -157,10 +133,7 @@ func (r *PrecificacaoSimulacaoRepository) ListByItem(ctx context.Context, tenant
 
 // ListByTipoItem lista simulações por tipo (SERVICO ou PRODUTO).
 func (r *PrecificacaoSimulacaoRepository) ListByTipoItem(ctx context.Context, tenantID, tipoItem string, limit, offset int32) ([]*entity.PrecificacaoSimulacao, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	params := db.ListSimulacoesByTipoItemParams{
 		TenantID: tenantUUID,
@@ -179,15 +152,8 @@ func (r *PrecificacaoSimulacaoRepository) ListByTipoItem(ctx context.Context, te
 
 // GetUltimaByItem busca a última simulação de um item.
 func (r *PrecificacaoSimulacaoRepository) GetUltimaByItem(ctx context.Context, tenantID, itemID string) (*entity.PrecificacaoSimulacao, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	itemUUID, err := uuidStringToPgtype(itemID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter item_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	itemUUID := uuidStringToPgtype(itemID)
 
 	params := db.GetUltimaSimulacaoByItemParams{
 		TenantID: tenantUUID,
@@ -204,22 +170,15 @@ func (r *PrecificacaoSimulacaoRepository) GetUltimaByItem(ctx context.Context, t
 
 // Delete remove uma simulação.
 func (r *PrecificacaoSimulacaoRepository) Delete(ctx context.Context, tenantID, id string) error {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	params := db.DeletePrecificacaoSimulacaoParams{
 		ID:       idUUID,
 		TenantID: tenantUUID,
 	}
 
-	err = r.queries.DeletePrecificacaoSimulacao(ctx, params)
+	err := r.queries.DeletePrecificacaoSimulacao(ctx, params)
 	if err != nil {
 		return fmt.Errorf("erro ao deletar simulação: %w", err)
 	}
@@ -263,17 +222,17 @@ func (r *PrecificacaoSimulacaoRepository) toDomain(model *db.PrecificacaoSimulac
 		tipoItem = *model.TipoItem
 	}
 
-	margemDesejada, err := decimalToPercentage(model.MargemDesejada)
+	margemDesejada, err := rawDecimalToPercentage(model.MargemDesejada)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao converter margem_desejada: %w", err)
 	}
 
-	comissaoPercentual, err := decimalToPercentage(model.ComissaoPercentual)
+	comissaoPercentual, err := rawDecimalToPercentage(model.ComissaoPercentual)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao converter comissao_percentual: %w", err)
 	}
 
-	impostoPercentual, err := decimalToPercentage(model.ImpostoPercentual)
+	impostoPercentual, err := rawDecimalToPercentage(model.ImpostoPercentual)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao converter imposto_percentual: %w", err)
 	}
@@ -299,7 +258,7 @@ func (r *PrecificacaoSimulacaoRepository) toDomain(model *db.PrecificacaoSimulac
 		MargemDesejada:      margemDesejada,
 		ComissaoPercentual:  comissaoPercentual,
 		ImpostoPercentual:   impostoPercentual,
-		PrecoSugerido:       decimalToMoney(model.PrecoSugerido),
+		PrecoSugerido:       rawDecimalToMoney(model.PrecoSugerido),
 		PrecoAtual:          numericToMoney(model.PrecoAtual),
 		DiferencaPercentual: diferencaPercentual,
 		LucroEstimado:       numericToMoney(model.LucroEstimado),

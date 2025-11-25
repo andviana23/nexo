@@ -1,4 +1,4 @@
-# 📊 RELATÓRIO EXECUTIVO - Implementação VALTARIS v1.0
+# 📊 RELATÓRIO EXECUTIVO - Implementação NEXO v1.0
 
 **Data:** 22/11/2025 - 12:00
 **Período:** 21-22/11/2025 (2 dias intensivos)

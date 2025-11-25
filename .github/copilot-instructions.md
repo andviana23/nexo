@@ -9,11 +9,13 @@ Tom: firme, direto, técnico. Idioma: **pt-BR**. Se houver conflito com a docume
 Para QUALQUER tarefa, antes de gerar, modificar ou remover código, o Copilot/Claude/Cursor deve OBRIGATORIAMENTE ler os documentos na seguinte ordem de prioridade:
 
 ### 1. Produto & Regras de Negócio
+
 - `docs/07-produto-e-funcionalidades/PRD-VALTARIS.md`
 - `docs/07-produto-e-funcionalidades/FLUXOS/*`
 - `docs/07-produto-e-funcionalidades/CATALOGO_FUNCIONALIDADES.md`
 
 ### 2. Arquitetura do Sistema
+
 - `docs/02-arquitetura/ARQUITETURA.md`
 - `docs/02-arquitetura/DOMAIN_MODELS.md`
 - `docs/02-arquitetura/MODELO_DE_DADOS.md`
@@ -22,6 +24,7 @@ Para QUALQUER tarefa, antes de gerar, modificar ou remover código, o Copilot/Cl
 - `docs/02-arquitetura/INTEGRACOES_EXTERNAS.md`
 
 ### 3. Backend
+
 - `docs/04-backend/GUIA_DEV_BACKEND.md`
 - `docs/04-backend/API_INTERNA.md`
 - `docs/04-backend/API_PUBLICA.md`
@@ -31,6 +34,7 @@ Para QUALQUER tarefa, antes de gerar, modificar ou remover código, o Copilot/Cl
 - `docs/04-backend/performance/*`
 
 ### 4. Frontend
+
 - `docs/03-frontend/01-FOUNDATIONS.md`
 - `docs/03-frontend/02-ARCHITECTURE.md`
 - `docs/03-frontend/03-COMPONENTS.md`
@@ -40,15 +44,18 @@ Para QUALQUER tarefa, antes de gerar, modificar ou remover código, o Copilot/Cl
 - `docs/03-frontend/GUIA_FRONTEND.md`
 
 ### 5. Banco de Dados
+
 - Sempre validar nomes de tabela e colunas via MCP `@pgsql`
 - Nunca supor nomes
 - Nunca criar SQL fora de repositórios
 - Sempre respeitar tenant_id e RLS
 
 ### 6. Cálculos (FONTE DA VERDADE FINANCEIRA)
+
 - Local: `docs/10-calculos/*`
 
 Antes de implementar QUALQUER lógica relacionada a:
+
 - comissões
 - ocupação
 - ticket médio
@@ -62,18 +69,22 @@ Antes de implementar QUALQUER lógica relacionada a:
 - DRE
 
 O agente deve OBRIGATORIAMENTE:
+
 1. Ler o arquivo correspondente dentro de `docs/10-calculos/`.
 2. Usar EXATAMENTE a fórmula documentada.
 3. Nunca “inventar” cálculos se o documento existir.
 4. Se faltar fórmula → solicitar revisão do documento ANTES de codar.
 
 ### 7. Negócio e Métricas
+
 - `docs/08-negocio-e-metricas/*`
 
 ### 8. Segurança
+
 - `docs/06-seguranca/*`
 
 ### 9. Operações / SRE
+
 - Logs
 - Monitoramento
 - Padrões de erro
@@ -82,6 +93,7 @@ O agente deve OBRIGATORIAMENTE:
 
 **Regra de Ouro:**
 Se houver conflito entre código existente e documentação, a prioridade é:
+
 1. PRD
 2. Fluxos
 3. Cálculos
@@ -120,17 +132,18 @@ Sempre consulte nesta ordem antes de sugerir mudanças relevantes (arquitetura, 
 
 Se a tarefa depender de outro tópico, encontre a referência em `docs/` antes de propor qualquer alteração.
 
-> Sempre que a tarefa envolver regra de negócio dos módulos core (agendamento, lista da vez, assinatura, financeiro, comissões, estoque, CRM, relatórios, permissões):  
-> 1) Ler `PRD-VALTARIS.md`.  
-> 2) Ler o fluxo correspondente em `docs/11-Fluxos/FLUXO_*.md`.  
-> 3) Só então gerar ou alterar código.
+> Sempre que a tarefa envolver regra de negócio dos módulos core (agendamento, lista da vez, assinatura, financeiro, comissões, estoque, CRM, relatórios, permissões):
+>
+> 1. Ler `PRD-VALTARIS.md`.
+> 2. Ler o fluxo correspondente em `docs/11-Fluxos/FLUXO_*.md`.
+> 3. Só então gerar ou alterar código.
 
 ---
 
 ## Stack oficial do projeto
 
 - Backend: Go + sqlc + Clean Architecture.
-- Frontend: Next.js 16 + TypeScript + App Router + Design System (MUI/Shadcn + tokens oficiais).
+- Frontend: Next.js 15.5.6 + TypeScript + App Router + Design System (MUI/Shadcn + tokens oficiais).
 - Banco principal: **PostgreSQL (Neon)**.
 
 Implicações para Copilot/Codex:
@@ -191,7 +204,7 @@ Implicações para Copilot/Codex:
 - ✔ Usar tokens do DS (cores/tipografia/spacing/radius).
 - ✔ Usar MUI ou shadcn/ui conforme `DESIGN_SYSTEM.md`.
 - ✔ Formulários com **Zod + React Hook Form**.
-- ✔ Arquitetura Next.js 16 (App Router).
+- ✔ Arquitetura Next.js 15.5.6 (App Router).
 - ✔ Tipagem completa; sem `any`.
 
 ### 5.4 Prettier + ESLint — Sempre em conformidade
@@ -301,6 +314,7 @@ Fluxos críticos: Assinaturas, Lista da Vez, Relatórios Financeiros, Cronjobs d
 ## 11. Fluxos de Negócio (docs/11-Fluxos)
 
 - Antes de criar, editar ou remover QUALQUER lógica relacionada aos módulos abaixo, é OBRIGATÓRIO ler o fluxo correspondente em `docs/11-Fluxos`:
+
   - Agendamento → `FLUXO_AGENDAMENTO.md`
   - Lista da Vez → `FLUXO_LISTA_DA_VEZ.md`
   - Assinaturas (Asaas) → `FLUXO_ASSINATURA.md`
@@ -312,16 +326,18 @@ Fluxos críticos: Assinaturas, Lista da Vez, Relatórios Financeiros, Cronjobs d
   - Relatórios Simples → `FLUXO_RELATORIOS_SIMPLES.md`
 
 - Esses arquivos de fluxo definem:
+
   - Passo a passo da jornada do usuário.
   - Decisões de negócio (ifs, condições, status).
   - Entradas e saídas esperadas.
 
 - O comportamento do sistema deve SEMPRE seguir esses fluxos.
 - Se houver conflito entre:
+
   - código atual
   - PRD
   - arquivos de fluxo
-  a prioridade é:
+    a prioridade é:
     1. PRD-VALTARIS
     2. `docs/11-Fluxos/FLUXO_*.md`
     3. código existente (pode estar errado/desatualizado).

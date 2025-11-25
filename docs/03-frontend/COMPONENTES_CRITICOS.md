@@ -1,29 +1,91 @@
-# VALTARIS v 1.0 — Componentes Críticos
+# NEXO — Componentes Críticos
 
-Camada mínima que garante consistência “Cyber Luxury” e uso dos tokens. Light é padrão; todos respeitam CSS vars e MUI palette.
+> Lista de componentes e módulos vitais para o funcionamento do sistema.
+> **Atenção:** Alterações nestes arquivos exigem revisão redobrada e testes de regressão.
 
-- **ThemeRegistry / ThemeProvider**  
-  - Local: `app/theme-registry.tsx` (ver `02-ARCHITECTURE.md`).  
-  - Responsável por injetar Emotion + MUI + CSS vars (`--valtaris-*`) e aplicar `.theme-dark`.
+---
 
-- **Layout Base (DashboardLayout)**  
-  - Inclui Sidebar, Topbar, conteúdo com `max-width` opcional e grid de 24–32px.  
-  - Usa `VCard` para seções e `VButton` para CTAs principais.
+## 1. Core Infrastructure
 
-- **Formulários-chave (RHF + Zod + MUI)**  
-  - FinancialModal, SubscriptionForms, cadastros gerais.  
-  - Sempre com wrappers (`FormInput`, `FormSelect`) e estados de erro em `var(--valtaris-danger)`.  
-  - Ver `04-PATTERNS.md` para standard de validação.
+### 1.1 `src/app/layout.tsx` & `src/app/providers.tsx`
 
-- **Hooks de Dados (TanStack Query)**  
-  - `useReceitas`, `useDespesas`, `useSubscriptions`, `useDashboard` etc.  
-  - Cache keys devem incluir `tenantId`; staleTime mínimo 5min para listas.  
-  - Erros renderizados com `StatusBadge`/empty states padrão.
+Responsáveis por envolver a aplicação com os contextos globais:
 
-- **Lista da Vez / Scheduler (DayPilot)**  
-  - Classe `daypilot-valtaris` + CSS vars (ver `02-ARCHITECTURE.md`).  
-  - Nunca usar estilos inline stringificados; tema reage ao light/dark automaticamente.
+- `QueryClientProvider` (TanStack Query)
+- `ThemeProvider` (next-themes)
+- `Toaster` (Sonner)
+- `AuthProvider` (se houver contexto de auth)
 
-- **Design System base**  
-  - `VButton`, `VTextField/FormInput`, `VCard`, `VModal`, `StatusBadge`, `VTable`.  
-  - Sempre referenciar tokens (`sx`/CSS vars), sem novas cores ou sombras fora do contrato.
+### 1.2 `src/lib/axios.ts`
+
+Configuração do cliente HTTP.
+
+- Interceptors de Request (Injeção de Token).
+- Interceptors de Response (Tratamento de erro 401/Refresh Token).
+- Base URL dinâmica.
+
+### 1.3 `src/store/auth-store.ts`
+
+Gerenciamento do estado de autenticação (Token, User).
+
+- Persistência segura.
+- Métodos de login/logout.
+
+---
+
+## 2. UI Components (Base)
+
+Estes componentes são usados em >80% das telas. Quebrá-los quebra o sistema todo.
+
+- **Button:** `src/components/ui/button.tsx`
+- **Input:** `src/components/ui/input.tsx`
+- **Card:** `src/components/ui/card.tsx`
+- **Dialog:** `src/components/ui/dialog.tsx`
+- **Form:** `src/components/ui/form.tsx` (Wrapper do RHF)
+
+---
+
+## 3. Business Components
+
+### 3.1 `DataTable` (`src/components/ui/data-table.tsx`)
+
+A tabela padrão do sistema.
+
+- Deve suportar paginação server-side.
+- Deve suportar ordenação e filtros.
+- Deve ser responsiva.
+
+### 3.2 `Sidebar` (`src/components/layout/sidebar.tsx`)
+
+Navegação principal.
+
+- Deve gerenciar estado mobile (drawer) e desktop (fixo/colapsável).
+- Deve destacar a rota ativa.
+
+### 3.3 `UserNav` (`src/components/layout/user-nav.tsx`)
+
+Menu do usuário no header.
+
+- Logout.
+- Acesso ao perfil.
+- Troca de tema.
+
+---
+
+## 4. Hooks Críticos
+
+- **`useAuth`:** Verifica permissões e estado de login.
+- **`useToast`:** Feedback ao usuário.
+- **`useDebounce`:** Para inputs de busca em tempo real.
+
+---
+
+## 5. Testes de Regressão
+
+Sempre que tocar nestes componentes, verificar:
+
+1.  O login continua funcionando?
+2.  A navegação entre páginas quebra?
+3.  O tema Dark Mode aplica corretamente?
+4.  Os formulários validam e enviam dados?
+5.  As tabelas carregam dados e paginam?

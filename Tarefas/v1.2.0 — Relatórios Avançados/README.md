@@ -316,9 +316,9 @@ v1.2.0 estará **PRONTO** quando:
 
 ## 📚 Referências
 
-- [PRD - Relatórios](../../PRD-VALTARIS.md#412-módulo-de-relatórios)
-- [PRD - Precificação](../../PRD-VALTARIS.md#411-módulo-de-precificação-inteligente)
-- [PRD - Apps](../../PRD-VALTARIS.md#413-app-do-barbeiro)
+- [PRD - Relatórios](../../PRD-NEXO.md#412-módulo-de-relatórios)
+- [PRD - Precificação](../../PRD-NEXO.md#411-módulo-de-precificação-inteligente)
+- [PRD - Apps](../../PRD-NEXO.md#413-app-do-barbeiro)
 - [Cálculos](../../docs/10-calculos/)
 
 ---

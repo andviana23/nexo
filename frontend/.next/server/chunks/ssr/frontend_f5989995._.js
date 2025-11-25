@@ -1,3 +1,0 @@
-module.exports=[77451,a=>{a.n(a.i(44210))},33842,a=>{a.n(a.i(48011))},49401,a=>{a.n(a.i(7863))},66578,a=>{a.n(a.i(75144))},40036,a=>{a.n(a.i(62539))},83808,a=>{"use strict";var b=a.i(56194);function c(){return(0,b.jsxs)("main",{style:{padding:"2rem"},children:[(0,b.jsx)("h1",{children:"VALTARIS v1.0 — Cyber Luxury"}),(0,b.jsx)("p",{children:"Frontend base com Design System carregado (light por padrão, dark opt-in)."})]})}a.s(["default",()=>c])}];
-
-//# sourceMappingURL=frontend_f5989995._.js.map

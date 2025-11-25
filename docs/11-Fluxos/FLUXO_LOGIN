@@ -1,0 +1,178 @@
+1. Tela de Login (Frontend)
+Usuário informa:
+
+Email
+
+Senha
+
+Validação no front:
+
+Email em formato válido
+
+Senha não vazia
+
+Feedback imediato se campo falta
+
+Ação:
+
+Enviar POST /auth/login
+
+2. Envio da Requisição (Frontend → Backend)
+Endpoint:
+POST /auth/login
+
+Body:
+{
+  "email": "exemplo@dominio.com",
+  "password": "minhasenha"
+}
+
+3. Backend — Etapas de Validação
+
+Buscar usuário por email
+
+Validar senha com bcrypt/argon2
+
+Verificar:
+
+usuário ativo
+
+email verificado (se existir essa regra)
+
+empresa ativa / tenant ativo
+
+Se falhar → retornar erro específico e claro:
+
+"Email não encontrado"
+
+"Senha incorreta"
+
+"Conta desativada"
+
+4. Tokens Gerados pelo Backend
+Access Token (JWT)
+
+expira em 15–30 minutos
+
+contém:
+
+user_id
+
+tenant_id
+
+role
+
+Refresh Token
+
+expira em 7–30 dias
+
+salvo no servidor (banco ou Redis)
+
+enviado ao front em cookie HttpOnly
+
+5. Resposta do Backend para o Front
+{
+  "access_token": "xxxxx-access",
+  "user": {
+    "id": "123",
+    "name": "Andrey",
+    "role": "admin",
+    "tenant_id": "999"
+  }
+}
+
+
+O Refresh Token vai em cookie HttpOnly (não aparece no JSON).
+
+6. Armazenamento (Frontend)
+Salvar:
+
+Access Token → memória (Zustand, Context, Redux)
+
+User → memória
+
+Nunca:
+
+salvar tokens em localStorage
+
+salvar refresh token em lugar acessível pelo JS
+
+7. Acesso às Rotas Protegidas
+
+Cada requisição:
+
+Front envia o Access Token no header
+
+Authorization: Bearer {access_token}
+
+
+Backend valida:
+
+Assinatura do JWT
+
+Expiração
+
+tenant_id obrigatório
+
+Permissões pela role
+
+8. Renovação de Token (Refresh Flow)
+
+Quando o Access Token expira:
+
+Front chama:
+POST /auth/refresh
+
+
+Backend:
+
+valida o refresh token (via cookie HttpOnly)
+
+gera novo Access Token
+
+retorna pro front
+
+sessão continua sem logout automático
+
+9. Logout
+Endpoint:
+POST /auth/logout
+
+
+Backend:
+
+invalida o refresh token no servidor
+
+Frontend:
+
+limpa estado do usuário da memória
+
+Usuário volta à tela de login.
+
+10. Erros e Tratamentos (UX Simples e Clara)
+Exibir mensagens:
+
+"Usuário não encontrado"
+
+"Senha incorreta"
+
+"Sua conta está inativa"
+
+"Sessão expirada — faça login novamente"
+
+Nada genérico tipo: “Erro no login”.
+Isso só irrita usuário e parece sistema de amador.
+
+11. Segurança Essencial (Sem isso você está errado)
+
+Senhas sempre com bcrypt/argon2
+
+Refresh token só em cookie HttpOnly
+
+Access token só em memória
+
+RLS obrigatório por tenant_id
+
+Bloquear múltiplas tentativas de login
+
+Logar falhas (IP, horário, email digitado)

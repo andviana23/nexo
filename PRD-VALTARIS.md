@@ -1,4 +1,4 @@
-# PRD — VALTARIS
+# PRD — NEXO
 
 ERP + CRM para Barbearias Premium
 
@@ -11,13 +11,13 @@ ERP + CRM para Barbearias Premium
 
 ## 1. Visão Geral do Produto
 
-### 1.1 Missão do VALTARIS
+### 1.1 Missão do NEXO
 
 Ajudar donos, gerentes e gestores de barbearia a administrar o negócio de forma **profissional e eficiente**, enquanto os barbeiros têm acesso em tempo real ao seu desempenho, comissão e metas, aumentando a consciência financeira e o resultado da operação.
 
 ### 1.2 Diferencial Competitivo
 
-VALTARIS não é apenas um sistema de agendamento.
+NEXO não é apenas um sistema de agendamento.
 É um **ERP + CRM exclusivo para barbearias**, desenhado para resolver os principais problemas reais do dono de barbearia:
 
 - Gestão financeira completa (caixa, DRE, fluxo, metas, análise por período).
@@ -107,7 +107,7 @@ Estar entre os **5 ERPs mais usados para barbearias no Brasil**, consolidado em 
 ### 2.3 Multi-unidade / Rede / Franquia
 
 - **Sim**.
-  O VALTARIS deve suportar multi-unidade:
+  O NEXO deve suportar multi-unidade:
 - Cada unidade com operação própria.
 - Consolidação de dados em nível de rede.
 

@@ -1,5 +1,0 @@
-[00:00:00.517] Server  ERROR   (node:109077) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/andrey/Projetos/barber-analytics-proV2/frontend/next.config.js is not specified and it doesn't parse as CommonJS.
-Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
-To eliminate this warning, add "type": "module" to /home/andrey/Projetos/barber-analytics-proV2/frontend/package.json.
-(Use `node --trace-warnings ...` to show where the warning was created)
-[00:00:00.739] Server  LOG      ✓ Ready in 548ms

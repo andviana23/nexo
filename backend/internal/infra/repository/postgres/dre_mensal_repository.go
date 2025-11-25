@@ -28,10 +28,7 @@ func NewDREMensalRepository(queries *db.Queries) *DREMensalRepository {
 
 // Create persiste uma nova DRE Mensal no banco de dados.
 func (r *DREMensalRepository) Create(ctx context.Context, dre *entity.DREMensal) error {
-	tenantUUID, err := uuidStringToPgtype(dre.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(dre.TenantID)
 
 	params := db.CreateDREMensalParams{
 		TenantID:             tenantUUID,
@@ -69,15 +66,8 @@ func (r *DREMensalRepository) Create(ctx context.Context, dre *entity.DREMensal)
 
 // FindByID busca uma DRE Mensal pelo ID.
 func (r *DREMensalRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.DREMensal, error) {
-	idPg, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
-
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	idPg := uuidStringToPgtype(id)
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.GetDREMensalByID(ctx, db.GetDREMensalByIDParams{
 		ID:       idPg,
@@ -92,10 +82,7 @@ func (r *DREMensalRepository) FindByID(ctx context.Context, tenantID, id string)
 
 // FindByMesAno busca uma DRE Mensal por mês/ano.
 func (r *DREMensalRepository) FindByMesAno(ctx context.Context, tenantID string, mesAno valueobject.MesAno) (*entity.DREMensal, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.GetDREMensalByMesAno(ctx, db.GetDREMensalByMesAnoParams{
 		TenantID: tenantPg,
@@ -110,10 +97,7 @@ func (r *DREMensalRepository) FindByMesAno(ctx context.Context, tenantID string,
 
 // List lista DREs Mensais paginadas.
 func (r *DREMensalRepository) List(ctx context.Context, tenantID string, filters port.DREListFilters) ([]*entity.DREMensal, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	page := filters.Page
 	if page <= 0 {
@@ -148,10 +132,7 @@ func (r *DREMensalRepository) List(ctx context.Context, tenantID string, filters
 
 // ListByPeriod lista DREs Mensais por período.
 func (r *DREMensalRepository) ListByPeriod(ctx context.Context, tenantID string, inicio, fim valueobject.MesAno) ([]*entity.DREMensal, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListDREMensalByPeriod(ctx, db.ListDREMensalByPeriodParams{
 		TenantID: tenantPg,
@@ -176,15 +157,8 @@ func (r *DREMensalRepository) ListByPeriod(ctx context.Context, tenantID string,
 
 // Update atualiza uma DRE Mensal existente.
 func (r *DREMensalRepository) Update(ctx context.Context, dre *entity.DREMensal) error {
-	idPg, err := uuidStringToPgtype(dre.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
-
-	tenantPg, err := uuidStringToPgtype(dre.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	idPg := uuidStringToPgtype(dre.ID)
+	tenantPg := uuidStringToPgtype(dre.TenantID)
 
 	params := db.UpdateDREMensalParams{
 		ID:                   idPg,
@@ -219,17 +193,10 @@ func (r *DREMensalRepository) Update(ctx context.Context, dre *entity.DREMensal)
 
 // Delete remove uma DRE Mensal.
 func (r *DREMensalRepository) Delete(ctx context.Context, tenantID, id string) error {
-	idPg, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	idPg := uuidStringToPgtype(id)
+	tenantPg := uuidStringToPgtype(tenantID)
 
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	err = r.queries.DeleteDREMensal(ctx, db.DeleteDREMensalParams{
+	err := r.queries.DeleteDREMensal(ctx, db.DeleteDREMensalParams{
 		ID:       idPg,
 		TenantID: tenantPg,
 	})
@@ -242,10 +209,7 @@ func (r *DREMensalRepository) Delete(ctx context.Context, tenantID, id string) e
 
 // SumReceitasByPeriod soma as receitas por período.
 func (r *DREMensalRepository) SumReceitasByPeriod(ctx context.Context, tenantID string, inicio, fim valueobject.MesAno) (valueobject.Money, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return valueobject.Money{}, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.SumReceitasByPeriod(ctx, db.SumReceitasByPeriodParams{
 		TenantID: tenantPg,
@@ -266,10 +230,7 @@ func (r *DREMensalRepository) SumReceitasByPeriod(ctx context.Context, tenantID 
 
 // SumDespesasByPeriod soma as despesas por período.
 func (r *DREMensalRepository) SumDespesasByPeriod(ctx context.Context, tenantID string, inicio, fim valueobject.MesAno) (valueobject.Money, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return valueobject.Money{}, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.SumDespesasByPeriod(ctx, db.SumDespesasByPeriodParams{
 		TenantID: tenantPg,
@@ -290,10 +251,7 @@ func (r *DREMensalRepository) SumDespesasByPeriod(ctx context.Context, tenantID 
 
 // AvgMargemBrutaByPeriod calcula a margem bruta média por período.
 func (r *DREMensalRepository) AvgMargemBrutaByPeriod(ctx context.Context, tenantID string, inicio, fim valueobject.MesAno) (valueobject.Percentage, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return valueobject.Percentage{}, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.AvgMargemBrutaByPeriod(ctx, db.AvgMargemBrutaByPeriodParams{
 		TenantID: tenantPg,
@@ -314,10 +272,7 @@ func (r *DREMensalRepository) AvgMargemBrutaByPeriod(ctx context.Context, tenant
 
 // AvgMargemOperacionalByPeriod calcula a margem operacional média por período.
 func (r *DREMensalRepository) AvgMargemOperacionalByPeriod(ctx context.Context, tenantID string, inicio, fim valueobject.MesAno) (valueobject.Percentage, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return valueobject.Percentage{}, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.AvgMargemOperacionalByPeriod(ctx, db.AvgMargemOperacionalByPeriodParams{
 		TenantID: tenantPg,

@@ -24,12 +24,12 @@
 | **Node.js**        | 20.x LTS                    | Runtime para Next.js frontend                         |
 | **pnpm**           | 9.x                         | Gerenciador de pacotes frontend (mais rápido que npm) |
 | **PostgreSQL**     | 14+                         | Banco de dados principal (Neon recomendado)           |
-| **Next.js**        | 16.0.3                      | Framework frontend (App Router)                       |
-| **React**          | 19.0.0                      | Biblioteca UI                                         |
-| **TypeScript**     | 5.x                         | Linguagem frontend                                    |
+| **Next.js**        | 14.2.4                      | Framework frontend (App Router)                       |
+| **React/React DOM**| 18.2.0                      | Biblioteca UI                                         |
+| **TypeScript**     | 5.3                         | Linguagem frontend                                    |
 | **Echo**           | v4.13.4                     | Framework HTTP para Go                                |
 | **SQLC**           | Latest                      | Type-safe SQL code generator                          |
-| **golang-migrate** | Latest                      | Gerenciamento de 
+| **golang-migrate** | Latest                      | Gerenciamento de                                      |
 | **Git**            | 2.x+                        | Controle de versão                                    |
 | **Make**           | 4.x+                        | Automação de tarefas                                  |
 

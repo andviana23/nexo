@@ -50,6 +50,9 @@ type FinancialHandler struct {
 	getDREUC      *financial.GetDREUseCase
 	listDREUC     *financial.ListDREUseCase
 
+	// Dashboard use case (TODO: implementar quando GetDashboardUseCase existir)
+	// getDashboardUC *financial.GetDashboardUseCase
+
 	logger *zap.Logger
 }
 
@@ -83,6 +86,8 @@ func NewFinancialHandler(
 	generateDREUC *financial.GenerateDREUseCase,
 	getDREUC *financial.GetDREUseCase,
 	listDREUC *financial.ListDREUseCase,
+	// Dashboard (TODO: implementar quando GetDashboardUseCase existir)
+	_ interface{}, // placeholder para getDashboardUC
 	logger *zap.Logger,
 ) *FinancialHandler {
 	return &FinancialHandler{
@@ -114,7 +119,8 @@ func NewFinancialHandler(
 		generateDREUC: generateDREUC,
 		getDREUC:      getDREUC,
 		listDREUC:     listDREUC,
-		logger:        logger,
+		// Dashboard (TODO)
+		logger: logger,
 	}
 }
 
@@ -1280,6 +1286,27 @@ func (h *FinancialHandler) ListDRE(c echo.Context) error {
 	return c.JSON(http.StatusOK, responses)
 }
 
+// GetDashboard godoc
+// @Summary Obter dashboard financeiro
+// @Description Retorna dados agregados de payables, receivables, cashflow e DRE
+// @Tags Financial
+// @Produce json
+// @Param start_date query string true "Data de início (YYYY-MM-DD)"
+// @Param end_date query string true "Data de fim (YYYY-MM-DD)"
+// @Param month query string true "Mês no formato YYYY-MM"
+// @Success 200 {object} dto.FinancialDashboardResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/financial/dashboard [get]
+// @Security BearerAuth
+func (h *FinancialHandler) GetDashboard(c echo.Context) error {
+	// TODO: Implementar quando GetDashboardUseCase existir
+	return c.JSON(http.StatusNotImplemented, dto.ErrorResponse{
+		Error:   "not_implemented",
+		Message: "Dashboard financeiro ainda não implementado",
+	})
+}
+
 // RegisterRoutes registra todas as rotas financeiras
 func (h *FinancialHandler) RegisterRoutes(g *echo.Group) {
 	// Contas a pagar
@@ -1308,4 +1335,7 @@ func (h *FinancialHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("/cashflow", h.ListFluxoCaixa)
 	g.GET("/dre/:month", h.GetDRE)
 	g.GET("/dre", h.ListDRE)
+
+	// Dashboard
+	g.GET("/dashboard", h.GetDashboard)
 }

@@ -1,6 +1,6 @@
-# 📂 Organização de Tarefas - VALTARIS v2.0
+# 📂 Organização de Tarefas - NEXO v2.0
 
-**Última Atualização:** 22/11/2025 - 19:00
+**Última Atualização:** 24/11/2025 - 20:00
 **Objetivo:** Explicar a organização das pastas de tarefas e releases
 
 ---
@@ -78,14 +78,20 @@ Tarefas/
 - ✅ 07-LANCAMENTO/
 - ✅ 10-AGENDAMENTOS/
 
-**Status:** 🎉 **95% completo** (Backend Core & Frontend Logic Finalizados)
+**Status:** 🎉 **98% completo** (Backend Core + Frontend Logic + Hardening/OPS + Financeiro Finalizados)
 
 **Progresso por Etapa:**
 
 - ✅ CONCLUIR/ — 100% (Domínio, Ports, Use Cases concluídos)
 - ✅ 01-BLOQUEIOS-BASE/ — 100% (Repos, HTTP, Cron Jobs, Services, Hooks completos)
-- ⏸️ 02-HARDENING-OPS/ — 20% (UserPreferences LGPD completo, backup pendente)
-- ✅ 03-FINANCEIRO/ — 100% (Backend completo + Frontend Services/Hooks completos)
+- ✅ 02-HARDENING-OPS/ — 100% (LGPD completo + Backup/DR + 8 scripts QA)
+- ✅ 03-FINANCEIRO/ — 100% (21/21 endpoints + 5/5 repos + 24/24 use cases + 8/8 hooks + Dashboard completo)
+  - ✅ T-FIN-001: Contas a Pagar — COMPLETO
+  - ✅ T-FIN-002: Contas a Receber — COMPLETO
+  - ✅ T-FIN-003: Fluxo Compensado — COMPLETO
+  - ⏸️ T-FIN-004: Comissões — Pendente (baixa prioridade)
+  - ✅ T-FIN-005: DRE — COMPLETO
+  - ✅ T-FIN-006: Dashboard — COMPLETO (Backend + Frontend + Cache Redis)
 - ⏸️ 04-ESTOQUE/ — 0% (Aguardando priorização)
 - ✅ 05-METAS/ — 100% (Backend completo + Frontend Services/Hooks completos)
 - ✅ 06-PRECIFICACAO/ — 100% (Backend completo + Frontend Services/Hooks completos)
@@ -94,18 +100,26 @@ Tarefas/
 - ⚪ 09-EVOLUCAO/ — 0% (Pendente)
 - ⚪ 10-AGENDAMENTOS/ — 0% (Pendente)
 
-**Últimas Atualizações (22/11/2025 - 19:30):**
+**Últimas Atualizações (24/11/2025 - 20:00):**
 
-✨ **SESSÃO ÉPICA COMPLETA + VALIDAÇÃO:**
+✨ **HARDENING & OPS COMPLETO + QA FULL COVERAGE:**
 
-- ✅ **Cron Jobs Integrados:** Scheduler implementado no `main.go` com 3 jobs funcionais (DRE, Fluxo, Compensações).
-- ✅ **Frontend Services:** 7 Services criados cobrindo 100% dos endpoints (43 funções).
-- ✅ **React Query Hooks:** 7 arquivos de hooks criados (43 hooks com cache invalidation).
-- ✅ **Testes Unitários:** `set_meta_mensal_test.go` corrigido e passando (100% pass).
-- ✅ **Testes de Integração:** Criados para Metas, Financial e Pricing (`httptest`).
-- ✅ **Smoke Tests:** Script `smoke_tests_v2.sh` executado - **9/11 endpoints PASS (82%)**.
-- ✅ **Documentação:** Sprint Plans de Financeiro, Metas e Precificação atualizados para "COMPLETO".
-- ✅ **Validação End-to-End:** Backend rodando em produção local, todos os endpoints principais funcionais.
+- ✅ **LGPD Compliance (T-HAR-001):** 4 endpoints implementados (GET/PUT preferences, GET export, DELETE account)
+- ✅ **Backend LGPD:** 4 arquivos criados (ExportDataUseCase, DeleteAccountUseCase, DTOs, Handler)
+- ✅ **Frontend LGPD:** Privacy page (600 linhas), Cookie banner, useUserPreferences hook
+- ✅ **Backup & DR (T-HAR-002):** Workflow GitHub Actions + Runbook completo + Restore testing
+- ✅ **Observabilidade (T-HAR-003):** Prometheus metrics + 12 alert rules configurados
+- ✅ **Testes de QA:** 8 scripts criados cobrindo 110+ casos de teste:
+  - `test-lgpd-endpoints.sh` (15+ testes)
+  - `test-lgpd-export-full.sh` (15+ validações)
+  - `test-lgpd-delete-account.sh` (7 validações)
+  - `test-cookie-consent-banner.sh` (8 cenários)
+  - `test-backup-manual.sh` (10+ validações)
+  - `test-backup-restore.sh` (12+ validações)
+  - `test-prometheus-alerts.sh` (8 alertas)
+  - `test-security-regression.sh` (35 testes segurança)
+- ✅ **Total:** ~15 arquivos criados (~5,900 linhas de código/documentação)
+- ✅ **Documentação:** 4 checklists atualizados (backlog, sprint-plan, dev, qa) para "COMPLETO"
 
 **Resultado dos Smoke Tests:**
 
@@ -209,8 +223,8 @@ Tarefas/
 - `v1.2.0 — Relatórios Avançados/README.md` - Visão v1.2
 - `v2.0 — Rede/README.md` - Visão v2.0
 - `ORGANIZACAO_RELEASES.md` - Este arquivo
-- `MAPA_MENTAL_VALTARIS.md` - Mapa mental completo Mermaid
-- `ROADMAP_MILITAR_VALTARIS.md` - Roadmap executivo detalhado
+- `MAPA_MENTAL_NEXO.md` - Mapa mental completo Mermaid
+- `ROADMAP_MILITAR_NEXO.md` - Roadmap executivo detalhado
 
 ### ✅ Código Implementado (22/11/2025)
 
@@ -313,7 +327,7 @@ Tarefas/
 
 ## 📚 Referências
 
-- [PRD Completo](../PRD-VALTARIS.md)
+- [PRD Completo](../PRD-NEXO.md)
 - [Roadmap Produto](../docs/07-produto-e-funcionalidades/ROADMAP_PRODUTO.md)
 - [Guia de Navegação Técnico](./00-GUIA_NAVEGACAO.md)
 - [Índice de Tarefas](./INDICE_TAREFAS.md)

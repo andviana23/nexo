@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///home/andrey/Projetos/barber-analytics-proV2/frontend/app/page.tsx"],"sourcesContent":["export default function Home() {\n  return (\n    <main style={{ padding: '2rem' }}>\n      <h1>🏋️ Barber Analytics Pro v2.0</h1>\n      <p>Frontend em construção...</p>\n      <p>\n        API disponível em:{' '}\n        <a href=\"http://localhost:8080\" target=\"_blank\" rel=\"noopener noreferrer\">\n          http://localhost:8080\n        </a>\n      </p>\n    </main>\n  );\n}\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,4XAAC;QAAK,OAAO;YAAE,SAAS;QAAO;;0BAC7B,4XAAC;0BAAG;;;;;;0BACJ,4XAAC;0BAAE;;;;;;0BACH,4XAAC;;oBAAE;oBACkB;kCACnB,4XAAC;wBAAE,MAAK;wBAAwB,QAAO;wBAAS,KAAI;kCAAsB;;;;;;;;;;;;;;;;;;AAMlF"}}]
-}

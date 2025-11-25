@@ -1,4 +1,4 @@
-# Fluxo da Lista da Vez — VALTARIS
+# Fluxo da Lista da Vez — NEXO
 ```
 [Início]
    ↓

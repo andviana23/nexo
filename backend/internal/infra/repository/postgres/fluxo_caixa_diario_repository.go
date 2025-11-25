@@ -22,10 +22,7 @@ func NewFluxoCaixaDiarioRepository(queries *db.Queries) *FluxoCaixaDiarioReposit
 
 // Create insere um novo fluxo diário.
 func (r *FluxoCaixaDiarioRepository) Create(ctx context.Context, fluxo *entity.FluxoCaixaDiario) error {
-	tenantID, err := uuidStringToPgtype(fluxo.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantID := uuidStringToPgtype(fluxo.TenantID)
 
 	result, err := r.queries.CreateFluxoCaixaDiario(ctx, db.CreateFluxoCaixaDiarioParams{
 		TenantID:            tenantID,
@@ -53,14 +50,8 @@ func (r *FluxoCaixaDiarioRepository) Create(ctx context.Context, fluxo *entity.F
 
 // FindByID busca um fluxo diário pelo ID.
 func (r *FluxoCaixaDiarioRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.FluxoCaixaDiario, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-	idPg, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
+	idPg := uuidStringToPgtype(id)
 
 	result, err := r.queries.GetFluxoCaixaDiarioByID(ctx, db.GetFluxoCaixaDiarioByIDParams{
 		ID:       idPg,
@@ -75,10 +66,7 @@ func (r *FluxoCaixaDiarioRepository) FindByID(ctx context.Context, tenantID, id 
 
 // FindByData busca um fluxo diário por data.
 func (r *FluxoCaixaDiarioRepository) FindByData(ctx context.Context, tenantID string, data time.Time) (*entity.FluxoCaixaDiario, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.GetFluxoCaixaDiarioByData(ctx, db.GetFluxoCaixaDiarioByDataParams{
 		TenantID: tenantPg,
@@ -93,14 +81,8 @@ func (r *FluxoCaixaDiarioRepository) FindByData(ctx context.Context, tenantID st
 
 // Update atualiza um fluxo diário.
 func (r *FluxoCaixaDiarioRepository) Update(ctx context.Context, fluxo *entity.FluxoCaixaDiario) error {
-	tenantPg, err := uuidStringToPgtype(fluxo.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-	idPg, err := uuidStringToPgtype(fluxo.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(fluxo.TenantID)
+	idPg := uuidStringToPgtype(fluxo.ID)
 
 	result, err := r.queries.UpdateFluxoCaixaDiario(ctx, db.UpdateFluxoCaixaDiarioParams{
 		ID:                  idPg,
@@ -123,14 +105,8 @@ func (r *FluxoCaixaDiarioRepository) Update(ctx context.Context, fluxo *entity.F
 
 // Delete remove um fluxo diário.
 func (r *FluxoCaixaDiarioRepository) Delete(ctx context.Context, tenantID, id string) error {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-	idPg, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
+	idPg := uuidStringToPgtype(id)
 
 	if err := r.queries.DeleteFluxoCaixaDiario(ctx, db.DeleteFluxoCaixaDiarioParams{
 		ID:       idPg,
@@ -143,10 +119,7 @@ func (r *FluxoCaixaDiarioRepository) Delete(ctx context.Context, tenantID, id st
 
 // ListByDateRange lista fluxos por período.
 func (r *FluxoCaixaDiarioRepository) ListByDateRange(ctx context.Context, tenantID string, inicio, fim time.Time) ([]*entity.FluxoCaixaDiario, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListFluxoCaixaDiarioByPeriod(ctx, db.ListFluxoCaixaDiarioByPeriodParams{
 		TenantID: tenantPg,
@@ -178,10 +151,7 @@ func (r *FluxoCaixaDiarioRepository) List(ctx context.Context, tenantID string, 
 	}
 	offset := (page - 1) * pageSize
 
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListFluxoCaixaDiarioByTenant(ctx, db.ListFluxoCaixaDiarioByTenantParams{
 		TenantID: tenantPg,
@@ -205,10 +175,7 @@ func (r *FluxoCaixaDiarioRepository) List(ctx context.Context, tenantID string, 
 
 // SumEntradas soma entradas em um período.
 func (r *FluxoCaixaDiarioRepository) SumEntradas(ctx context.Context, tenantID string, inicio, fim time.Time) (valueobject.Money, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return valueobject.Money{}, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.SumEntradasByPeriod(ctx, db.SumEntradasByPeriodParams{
 		TenantID: tenantPg,
@@ -228,10 +195,7 @@ func (r *FluxoCaixaDiarioRepository) SumEntradas(ctx context.Context, tenantID s
 
 // SumSaidas soma saídas em um período.
 func (r *FluxoCaixaDiarioRepository) SumSaidas(ctx context.Context, tenantID string, inicio, fim time.Time) (valueobject.Money, error) {
-	tenantPg, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return valueobject.Money{}, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantPg := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.SumSaidasByPeriod(ctx, db.SumSaidasByPeriodParams{
 		TenantID: tenantPg,

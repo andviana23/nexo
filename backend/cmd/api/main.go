@@ -5,20 +5,28 @@ import (
 	"log"
 	"os"
 
+	authUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/auth"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/financial"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/metas"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/pricing"
+	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/stock"
+	"github.com/andviana23/barber-analytics-backend/internal/infra/auth"
 	db "github.com/andviana23/barber-analytics-backend/internal/infra/db/sqlc"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/http/handler"
+	mw "github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/scheduler"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 )
 
 func main() {
+	// Load .env file (ignore error in production where env vars are set directly)
+	_ = godotenv.Load()
+
 	// Initialize logger
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -69,6 +77,11 @@ func main() {
 	compensacaoRepo := postgres.NewCompensacaoBancariaRepository(queries)
 	fluxoCaixaRepo := postgres.NewFluxoCaixaDiarioRepository(queries)
 	dreRepo := postgres.NewDREMensalRepository(queries)
+
+	// Stock repositories
+	produtoRepo := postgres.NewProdutoRepository(queries)
+	fornecedorRepo := postgres.NewFornecedorRepositoryPG(queries)
+	movimentacaoRepo := postgres.NewMovimentacaoEstoqueRepositoryPG(queries)
 
 	// Initialize use cases - Meta Mensal
 	setMetaMensalUC := metas.NewSetMetaMensalUseCase(metaMensalRepo, logger)
@@ -131,6 +144,21 @@ func main() {
 	generateDREUC := financial.NewGenerateDREUseCase(dreRepo, contaPagarRepo, contaReceberRepo, logger)
 	getDREUC := financial.NewGetDREUseCase(dreRepo, logger)
 	listDREUC := financial.NewListDREUseCase(dreRepo, logger)
+
+	// Initialize use cases - Stock (4 use cases)
+	registrarEntradaUC := stock.NewRegistrarEntradaUseCase(produtoRepo, movimentacaoRepo, fornecedorRepo)
+	registrarSaidaUC := stock.NewRegistrarSaidaUseCase(produtoRepo, movimentacaoRepo)
+	ajustarEstoqueUC := stock.NewAjustarEstoqueUseCase(produtoRepo, movimentacaoRepo)
+	listarAlertasUC := stock.NewListarAlertasEstoqueBaixoUseCase(produtoRepo)
+
+	// Initialize JWT Manager
+	jwtManager := auth.NewJWTManager()
+
+	// Initialize use cases - Auth (4 use cases)
+	loginUC := authUC.NewLoginUseCase(queries, jwtManager, logger)
+	refreshUC := authUC.NewRefreshUseCase(queries, jwtManager, logger)
+	meUC := authUC.NewMeUseCase(queries, logger)
+	logoutUC := authUC.NewLogoutUseCase(queries, logger)
 
 	// Initialize scheduler for cron jobs
 	sched := scheduler.New(logger)
@@ -217,6 +245,24 @@ func main() {
 		generateDREUC,
 		getDREUC,
 		listDREUC,
+		nil, // getDashboardUC TODO: implementar
+		logger,
+	)
+
+	// Initialize handlers - Stock (4 use cases)
+	stockHandler := handler.NewStockHandler(
+		registrarEntradaUC,
+		registrarSaidaUC,
+		ajustarEstoqueUC,
+		listarAlertasUC,
+	)
+
+	// Initialize handlers - Auth (4 use cases)
+	authHandler := handler.NewAuthHandler(
+		loginUC,
+		refreshUC,
+		meUC,
+		logoutUC,
 		logger,
 	)
 
@@ -227,8 +273,10 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:3000", "http://localhost:8000"},
-		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8000"},
+		AllowMethods:     []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
+		AllowCredentials: true, // Permite cookies (refresh token)
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 
 	// Health Check Endpoint
@@ -242,22 +290,19 @@ func main() {
 	// API Routes
 	api := e.Group("/api/v1")
 
-	// Middleware para injetar tenant_id (mock por enquanto - TODO: implementar JWT)
-	api.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// TODO: Extrair de JWT
-			// Por enquanto, aceita via header para testes
-			tenantID := c.Request().Header.Get("X-Tenant-ID")
-			if tenantID == "" {
-				tenantID = "00000000-0000-0000-0000-000000000001" // tenant mock
-			}
-			c.Set("tenant_id", tenantID)
-			return next(c)
-		}
-	})
+	// Auth routes - PÚBLICAS (sem middleware JWT)
+	authGroup := api.Group("/auth")
+	authGroup.POST("/login", authHandler.Login)                                // POST /api/v1/auth/login
+	authGroup.POST("/refresh", authHandler.Refresh)                            // POST /api/v1/auth/refresh
+	authGroup.POST("/logout", authHandler.Logout)                              // POST /api/v1/auth/logout
+	authGroup.GET("/me", authHandler.Me, mw.JWTMiddleware(jwtManager, logger)) // GET /api/v1/auth/me (protegido)
 
-	// Metas routes - 15 endpoints completos
-	metasGroup := api.Group("/metas")
+	// Middleware JWT para rotas protegidas
+	protected := api.Group("")
+	protected.Use(mw.JWTMiddleware(jwtManager, logger))
+
+	// Metas routes - 15 endpoints completos (PROTEGIDAS)
+	metasGroup := protected.Group("/metas")
 
 	// Meta Mensal (5 endpoints)
 	metasGroup.POST("/monthly", metasHandler.SetMetaMensal)
@@ -280,12 +325,12 @@ func main() {
 	metasGroup.PUT("/ticket/:id", metasHandler.UpdateMetaTicket)
 	metasGroup.DELETE("/ticket/:id", metasHandler.DeleteMetaTicket)
 
-	// Pricing routes - 9 endpoints
-	pricingGroup := api.Group("/pricing")
+	// Pricing routes - 9 endpoints (PROTEGIDAS com JWT)
+	pricingGroup := protected.Group("/pricing")
 	pricingHandler.RegisterRoutes(pricingGroup)
 
-	// Financial routes - 19 endpoints (20 total, mas 1 é cronjob)
-	financialGroup := api.Group("/financial")
+	// Financial routes - 19 endpoints (PROTEGIDAS com JWT)
+	financialGroup := protected.Group("/financial")
 
 	// ContaPagar (6 endpoints: 5 CRUD + 1 marcarPagamento)
 	financialGroup.POST("/payables", financialHandler.CreateContaPagar)
@@ -315,6 +360,13 @@ func main() {
 	// DRE (2 endpoints: Get, List)
 	financialGroup.GET("/dre/:month", financialHandler.GetDRE)
 	financialGroup.GET("/dre", financialHandler.ListDRE)
+
+	// Stock routes - 4 endpoints
+	stockGroup := api.Group("/stock")
+	stockGroup.POST("/entries", stockHandler.RegistrarEntrada) // Registrar entrada
+	stockGroup.POST("/exit", stockHandler.RegistrarSaida)      // Registrar saída
+	stockGroup.POST("/adjust", stockHandler.AjustarEstoque)    // Ajustar estoque
+	stockGroup.GET("/alerts", stockHandler.ListarAlertas)      // Listar alertas
 
 	// Placeholder endpoint
 	api.GET("/ping", func(c echo.Context) error {

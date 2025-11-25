@@ -1,22 +1,6 @@
 {
-  "/(dashboard)/agenda/page": "app/(dashboard)/agenda/page.js",
-  "/(dashboard)/agenda/scheduler/page": "app/(dashboard)/agenda/scheduler/page.js",
-  "/(dashboard)/assinaturas/[id]/page": "app/(dashboard)/assinaturas/[id]/page.js",
-  "/(dashboard)/assinaturas/page": "app/(dashboard)/assinaturas/page.js",
-  "/(dashboard)/cadastros/clientes/page": "app/(dashboard)/cadastros/clientes/page.js",
-  "/(dashboard)/cadastros/cupons/page": "app/(dashboard)/cadastros/cupons/page.js",
-  "/(dashboard)/cadastros/meios-pagamento/page": "app/(dashboard)/cadastros/meios-pagamento/page.js",
-  "/(dashboard)/cadastros/produtos/page": "app/(dashboard)/cadastros/produtos/page.js",
-  "/(dashboard)/cadastros/profissionais/page": "app/(dashboard)/cadastros/profissionais/page.js",
-  "/(dashboard)/cadastros/servicos/page": "app/(dashboard)/cadastros/servicos/page.js",
-  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
-  "/(dashboard)/financeiro/despesas/page": "app/(dashboard)/financeiro/despesas/page.js",
-  "/(dashboard)/financeiro/fluxo/page": "app/(dashboard)/financeiro/fluxo/page.js",
-  "/(dashboard)/financeiro/pagar/page": "app/(dashboard)/financeiro/pagar/page.js",
-  "/(dashboard)/financeiro/page": "app/(dashboard)/financeiro/page.js",
-  "/(dashboard)/financeiro/receber/page": "app/(dashboard)/financeiro/receber/page.js",
-  "/(dashboard)/financeiro/receitas/page": "app/(dashboard)/financeiro/receitas/page.js",
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js"
 }

@@ -1,4 +1,4 @@
-# Fluxo de Assinatura — VALTARIS
+# Fluxo de Assinatura — NEXO
 
 ```
 [Início]

@@ -1,0 +1,249 @@
+name: Test Backup Restore
+
+on:
+  workflow_dispatch: # Execução manual
+  schedule:
+    # Executa trimestralmente (1º dia de Jan, Abr, Jul, Out às 10:00 UTC)
+    - cron: '0 10 1 1,4,7,10 *'
+
+env:
+  STAGING_BRANCH_NAME: restore-test-$(date +%Y%m%d-%H%M%S)
+
+jobs:
+  test-restore:
+    name: Test Backup Restore in Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Download latest backup from S3
+        id: download
+        run: |
+          echo "Listando backups disponíveis..."
+          aws s3 ls s3://${{ secrets.S3_BACKUP_BUCKET }}/database-backups/ --recursive | sort | tail -5
+
+          echo "Baixando backup mais recente..."
+          LATEST_BACKUP=$(aws s3 ls s3://${{ secrets.S3_BACKUP_BUCKET }}/database-backups/ --recursive | sort | tail -1 | awk '{print $4}')
+
+          if [ -z "$LATEST_BACKUP" ]; then
+            echo "ERROR: Nenhum backup encontrado no S3!"
+            exit 1
+          fi
+
+          echo "latest_backup=${LATEST_BACKUP}" >> $GITHUB_OUTPUT
+          echo "Downloading: ${LATEST_BACKUP}"
+
+          aws s3 cp s3://${{ secrets.S3_BACKUP_BUCKET }}/${LATEST_BACKUP} /tmp/backup.sql.gz
+
+          ls -lh /tmp/backup.sql.gz
+
+      - name: Verify backup file integrity
+        run: |
+          echo "Verificando integridade do arquivo..."
+
+          FILE_SIZE=$(stat -c%s /tmp/backup.sql.gz)
+
+          if [ "$FILE_SIZE" -lt 1000 ]; then
+            echo "ERROR: Arquivo de backup muito pequeno ($FILE_SIZE bytes)!"
+            exit 1
+          fi
+
+          echo "✓ Arquivo válido: $FILE_SIZE bytes"
+
+          # Testar descompactação
+          gunzip -t /tmp/backup.sql.gz
+          echo "✓ Arquivo compactado está íntegro"
+
+      - name: Extract backup
+        run: |
+          echo "Descompactando backup..."
+          gunzip /tmp/backup.sql.gz
+          ls -lh /tmp/backup.sql
+
+          # Verificar primeiras linhas
+          head -20 /tmp/backup.sql
+
+      - name: Create Neon branch for testing
+        id: create_branch
+        run: |
+          echo "🌿 Criando branch de teste no Neon..."
+          echo "Branch name: restore-test-$(date +%Y%m%d-%H%M%S)"
+
+          # TODO: Usar Neon API para criar branch programaticamente
+          # Por enquanto, instruções manuais:
+          echo "⚠️  AÇÃO MANUAL NECESSÁRIA:"
+          echo "1. Acesse: https://console.neon.tech"
+          echo "2. Crie novo branch: restore-test-$(date +%Y%m%d-%H%M%S)"
+          echo "3. Configure secrets do GitHub com connection string do novo branch"
+          echo "4. Re-execute este workflow"
+
+          # Se branch já existe (manual), prosseguir
+          if [ ! -z "${{ secrets.NEON_STAGING_HOST }}" ]; then
+            echo "✓ Branch staging detectado, prosseguindo..."
+            echo "branch_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "branch_exists=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Restore backup to staging branch
+        if: steps.create_branch.outputs.branch_exists == 'true'
+        env:
+          PGPASSWORD: ${{ secrets.NEON_STAGING_PASSWORD }}
+        run: |
+          echo "📥 Restaurando backup em staging..."
+
+          START_TIME=$(date +%s)
+
+          psql \
+            --host=${{ secrets.NEON_STAGING_HOST }} \
+            --port=5432 \
+            --username=${{ secrets.NEON_STAGING_USER }} \
+            --dbname=${{ secrets.NEON_STAGING_NAME }} \
+            < /tmp/backup.sql
+
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+
+          echo "✓ Restore concluído em ${DURATION} segundos"
+
+      - name: Validate restored data
+        if: steps.create_branch.outputs.branch_exists == 'true'
+        env:
+          PGPASSWORD: ${{ secrets.NEON_STAGING_PASSWORD }}
+        run: |
+          echo "🔍 Validando dados restaurados..."
+
+          # 1. Contar tabelas
+          TABLES_COUNT=$(psql \
+            --host=${{ secrets.NEON_STAGING_HOST }} \
+            --port=5432 \
+            --username=${{ secrets.NEON_STAGING_USER }} \
+            --dbname=${{ secrets.NEON_STAGING_NAME }} \
+            -t -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';" | xargs)
+
+          echo "Tabelas encontradas: $TABLES_COUNT"
+
+          if [ "$TABLES_COUNT" -lt 40 ]; then
+            echo "ERROR: Número de tabelas insuficiente ($TABLES_COUNT < 40)"
+            exit 1
+          fi
+
+          # 2. Validar dados críticos
+          psql \
+            --host=${{ secrets.NEON_STAGING_HOST }} \
+            --port=5432 \
+            --username=${{ secrets.NEON_STAGING_USER }} \
+            --dbname=${{ secrets.NEON_STAGING_NAME }} \
+            -c "
+              SELECT
+                'tenants' as table_name, COUNT(*) as count FROM tenants
+              UNION ALL
+              SELECT 'users', COUNT(*) FROM users
+              UNION ALL
+              SELECT 'receitas', COUNT(*) FROM receitas
+              UNION ALL
+              SELECT 'despesas', COUNT(*) FROM despesas
+              UNION ALL
+              SELECT 'user_preferences', COUNT(*) FROM user_preferences;
+            "
+
+          # 3. Validar constraints
+          CONSTRAINTS_COUNT=$(psql \
+            --host=${{ secrets.NEON_STAGING_HOST }} \
+            --port=5432 \
+            --username=${{ secrets.NEON_STAGING_USER }} \
+            --dbname=${{ secrets.NEON_STAGING_NAME }} \
+            -t -c "SELECT COUNT(*) FROM information_schema.table_constraints WHERE constraint_schema = 'public';" | xargs)
+
+          echo "Constraints encontrados: $CONSTRAINTS_COUNT"
+
+          # 4. Validar índices
+          INDEXES_COUNT=$(psql \
+            --host=${{ secrets.NEON_STAGING_HOST }} \
+            --port=5432 \
+            --username=${{ secrets.NEON_STAGING_USER }} \
+            --dbname=${{ secrets.NEON_STAGING_NAME }} \
+            -t -c "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = 'public';" | xargs)
+
+          echo "Índices encontrados: $INDEXES_COUNT"
+
+          if [ "$INDEXES_COUNT" -lt 100 ]; then
+            echo "WARNING: Número de índices menor que esperado ($INDEXES_COUNT < 100)"
+          fi
+
+          echo "✅ Validação concluída com sucesso!"
+
+      - name: Generate restore report
+        if: always()
+        run: |
+          cat > /tmp/restore-report.md <<EOF
+          # 📊 Relatório de Teste de Restore
+
+          **Data:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Workflow Run:** #${{ github.run_number }}
+          **Backup Testado:** ${{ steps.download.outputs.latest_backup }}
+
+          ## Resultados
+
+          | Check | Status |
+          |-------|--------|
+          | Download backup | ✅ Sucesso |
+          | Integridade arquivo | ✅ Válido |
+          | Criação branch staging | ${{ steps.create_branch.outputs.branch_exists == 'true' && '✅ Sucesso' || '⚠️  Manual' }} |
+          | Restore database | ${{ job.status == 'success' && '✅ Sucesso' || '❌ Falha' }} |
+          | Validação dados | ${{ job.status == 'success' && '✅ Aprovado' || '❌ Reprovado' }} |
+
+          ## Próximo Teste Agendado
+
+          - **Frequência:** Trimestral (1º dia de Jan/Abr/Jul/Out)
+          - **Próxima Data:** $(date -d "+3 months" +"%Y-%m-%d")
+
+          ## Ações Recomendadas
+
+          - [ ] Documentar tempo de restore no runbook
+          - [ ] Atualizar RTO se necessário
+          - [ ] Deletar branch staging após validação
+
+          EOF
+
+          cat /tmp/restore-report.md
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-test-report
+          path: /tmp/restore-report.md
+          retention-days: 90
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 TESTE DE RESTORE FALHOU!"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "AÇÃO URGENTE NECESSÁRIA: Investigar falha de restore!"
+          # TODO: Integrar com Slack/Discord para notificação crítica
+
+      - name: Cleanup - Delete staging branch
+        if: always() && steps.create_branch.outputs.branch_exists == 'true'
+        run: |
+          echo "🧹 Limpando branch staging..."
+          echo "⚠️  AÇÃO MANUAL: Deletar branch 'restore-test-*' no Neon Console"
+          # TODO: Usar Neon API para deletar branch programaticamente

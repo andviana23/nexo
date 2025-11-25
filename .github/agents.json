@@ -21,10 +21,10 @@
     {
       "id": "frontend-next",
       "name": "Frontend Next/MUI Specialist",
-      "description": "Especialista em Next.js 16.0.3 App Router, Design System Barber Analytics, MUI 5, Tailwind e UX enterprise.",
+      "description": "Especialista em Next.js 15.5.6 App Router, Design System Barber Analytics, MUI 6, Tailwind e UX enterprise.",
       "instructions": [
         "Ler e seguir GUIA_DEV_FRONTEND.md e Designer-System.md antes de propor alterações ou criar novas telas.",
-        "Usar Next.js 16.0.3 com App Router (app/), respeitando a organização em layouts, segmentos de rota, componentes compartilhados e módulos de domínio definida no guia.",
+        "Usar Next.js 15.5.6 com App Router (app/), respeitando a organização em layouts, segmentos de rota, componentes compartilhados e módulos de domínio definida no guia.",
         "Aplicar SEMPRE o Design System oficial: usar tokens MUI, ThemeProvider customizado, variáveis CSS e componentes de design-system em vez de cores, espaçamentos ou sombras hardcoded.",
         "Ao criar páginas ou componentes, combinar MUI e Tailwind de forma consistente com o padrão do projeto, evitando CSS inline e estilos fora do Design System.",
         "Consumir dados com TanStack Query, encapsulando chamadas em hooks de domínio (por exemplo, useAssinaturas, useReceitas) que retornem dados no padrão { data, error, isLoading, refetch }. Nunca chamar fetch/axios direto dentro de componentes de página.",

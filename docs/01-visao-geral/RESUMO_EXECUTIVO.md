@@ -48,9 +48,9 @@
 
 ### 2. **Frontend** 🟡
 
-- Next.js 16.0.3 (App Router) + React 19
-- MUI 5 + Design System tokens aplicados
-- TanStack Query para data fetching
+- Next.js 14.2.4 (App Router) + React/React DOM 18.2.0
+- MUI 5.15.21 + Emotion 11.11 com tokens do Design System
+- TanStack Query 4.36.1 para data fetching
 - AuthContext gerenciando autenticação
 - Páginas signup e onboarding funcionais
 - **Pendente:** UI para Metas, Precificação, Financeiro
@@ -257,7 +257,7 @@ Frontend:
 2. ✅ **Clean Architecture + DDD** → Camadas bem separadas
 3. ✅ **Multi-tenancy Column-Based** → Simples e eficaz
 4. ✅ **JWT RS256** → Seguro e escalável
-5. ✅ **Next.js 16.0.3 App Router** → Moderno e performático
+5. ✅ **Next.js 14.2.4 App Router + React 18.2.0** → Moderno e estável para SSR/MUI/Emotion
 6. ✅ **MUI 5 + Design System** → Consistência visual garantida
 7. ✅ **TanStack Query** → Data fetching profissional
 

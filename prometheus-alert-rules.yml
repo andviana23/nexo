@@ -1,0 +1,117 @@
+groups:
+  - name: lgpd_alerts
+    interval: 1m
+    rules:
+      - alert: LGPDExportHighFailureRate
+        expr: |
+          rate(lgpd_export_requests_total{status="error"}[5m])
+          /
+          rate(lgpd_export_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Alta taxa de falhas em exportação LGPD'
+          description: '{{ $value | humanizePercentage }} de falhas em exportações nas últimas 5 min'
+
+      - alert: LGPDExportSlow
+        expr: histogram_quantile(0.95, rate(lgpd_export_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Exportação LGPD lenta'
+          description: 'P95 de exportações está em {{ $value }}s (limite: 10s)'
+
+  - name: backup_alerts
+    interval: 5m
+    rules:
+      - alert: BackupFailed
+        expr: time() - backup_last_success_timestamp > 86400
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Backup não executado nas últimas 24h'
+          description: 'Último backup bem-sucedido: {{ $value | humanizeDuration }} atrás'
+
+      - alert: BackupTooSlow
+        expr: backup_duration_seconds > 1800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Backup demorando mais que 30 minutos'
+          description: 'Duração atual: {{ $value | humanizeDuration }}'
+
+      - alert: BackupFileTooSmall
+        expr: backup_file_size_bytes < 1000000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Arquivo de backup muito pequeno'
+          description: 'Tamanho: {{ $value | humanize }}B (esperado: >1MB)'
+
+      - alert: BackupHighFailureRate
+        expr: increase(backup_failures_total[24h]) > 2
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Múltiplas falhas de backup em 24h'
+          description: '{{ $value }} falhas detectadas'
+
+  - name: api_alerts
+    interval: 1m
+    rules:
+      - alert: APIHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Alta taxa de erros na API'
+          description: '{{ $value | humanizePercentage }} de erros 5xx nas últimas 5 min'
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Alta latência na API'
+          description: 'P95 está em {{ $value }}s (limite: 1s)'
+
+      - alert: APIHighTraffic
+        expr: sum(rate(http_requests_total[1m])) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Tráfego alto na API'
+          description: '{{ $value }} req/s (limite: 1000 req/s)'
+
+  - name: database_alerts
+    interval: 1m
+    rules:
+      - alert: DatabaseSlowQueries
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Queries lentas no banco de dados'
+          description: 'P95 de queries: {{ $value }}s (limite: 1s)'
+
+      - alert: DatabaseHighQueryRate
+        expr: sum(rate(db_queries_total[1m])) > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Alta taxa de queries no banco'
+          description: '{{ $value }} queries/s (limite: 500 q/s)'

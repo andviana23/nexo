@@ -7,22 +7,26 @@
 ## ⚡ Regras de Ouro (NÃO NEGOCIÁVEIS)
 
 ### 1. Banco de Dados
+
 - ❌ Nunca SQL direto no código
 - ✅ Sempre usar repositories (`internal/infrastructure/repository`)
 - ✅ Sempre filtrar por `tenant_id`
 
 ### 2. Arquitetura
+
 - ✅ Clean Architecture: Domain → Application → Infrastructure
 - ❌ Nunca lógica de negócio em handlers/componentes React
 - ✅ Use Cases retornam `(data, error)`
 
 ### 3. Frontend (Design System)
+
 - ❌ Nunca cores hardcoded (#3B82F6)
 - ✅ Sempre usar tokens de `@/app/theme/tokens`
 - ✅ MUI 5 via `sx` prop ou `useTheme()`
 - ✅ Contrast mínimo 4.5:1 (WCAG AA)
 
 ### 4. Multi-Tenancy
+
 - ✅ Sempre extrair `tenant_id` do contexto
 - ✅ Sempre filtrar por `tenant_id` em queries
 - ❌ Nunca cruzar dados entre tenants
@@ -32,6 +36,7 @@
 ## 📁 Estrutura
 
 ### Backend (Go)
+
 ```
 internal/
 ├── domain/         → Entidades, Value Objects, interfaces
@@ -39,7 +44,8 @@ internal/
 └── infrastructure/ → HTTP, repositories, scheduler
 ```
 
-### Frontend (Next.js 16.0.3)
+### Frontend (Next.js 15.5.6)
+
 ```
 app/
 ├── (auth)/         → Rotas públicas
@@ -54,12 +60,14 @@ app/
 ## 🎯 Convenções
 
 ### Backend
+
 - Pacotes: `package financial` (lowercase)
 - Entidades: `type Receita struct` (PascalCase)
 - Use Cases: `CreateReceitaUseCase` (PascalCase + UseCase)
 - DTOs: `CreateReceitaRequest` (PascalCase + Request/Response)
 
 ### Frontend
+
 - Componentes: `function ReceitaForm()` (PascalCase)
 - Hooks: `function useReceitas()` (camelCase + use)
 - Types: `type Receita = {...}` (PascalCase)
@@ -115,11 +123,13 @@ export function useReceitas(tenantId: string) {
 // 2. Componente (components/ui/Button.tsx)
 import { tokens } from '@/app/theme/tokens';
 
-<Box sx={{
-  padding: tokens.spacing.md,
-  color: tokens.colors.primary[500],
-  borderRadius: tokens.borders.radius.md
-}} />
+<Box
+  sx={{
+    padding: tokens.spacing.md,
+    color: tokens.colors.primary[500],
+    borderRadius: tokens.borders.radius.md,
+  }}
+/>;
 
 // 3. Form (components/financial/ReceitaForm.tsx)
 const schema = z.object({
@@ -166,12 +176,12 @@ CREATE INDEX idx_nome_tenant ON nome_tabela(tenant_id);
 
 ## 📖 Docs Principais
 
-| Doc | Quando Usar |
-|-----|-------------|
-| [Designer-System.md](../docs/Designer-System.md) | **SEMPRE** antes de criar componentes visuais |
-| [ARQUITETURA.md](../docs/ARQUITETURA.md) | Dúvidas sobre camadas |
-| [GUIA_DEV_BACKEND.md](../docs/GUIA_DEV_BACKEND.md) | Padrões Go |
-| [GUIA_DEV_FRONTEND.md](../docs/GUIA_DEV_FRONTEND.md) | Padrões React/Next.js |
+| Doc                                                  | Quando Usar                                   |
+| ---------------------------------------------------- | --------------------------------------------- |
+| [Designer-System.md](../docs/Designer-System.md)     | **SEMPRE** antes de criar componentes visuais |
+| [ARQUITETURA.md](../docs/ARQUITETURA.md)             | Dúvidas sobre camadas                         |
+| [GUIA_DEV_BACKEND.md](../docs/GUIA_DEV_BACKEND.md)   | Padrões Go                                    |
+| [GUIA_DEV_FRONTEND.md](../docs/GUIA_DEV_FRONTEND.md) | Padrões React/Next.js                         |
 
 ---
 

@@ -25,18 +25,11 @@ func NewMetasTicketMedioRepository(queries *db.Queries) *MetasTicketMedioReposit
 
 // Create persiste uma nova meta de ticket médio.
 func (r *MetasTicketMedioRepository) Create(ctx context.Context, meta *entity.MetaTicketMedio) error {
-	tenantUUID, err := uuidStringToPgtype(meta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(meta.TenantID)
 
 	barbeiroUUID := pgtype.UUID{Valid: false}
 	if meta.BarbeiroID != nil {
-		bid, err := uuidStringToPgtype(*meta.BarbeiroID)
-		if err != nil {
-			return fmt.Errorf("erro ao converter barbeiro_id: %w", err)
-		}
-		barbeiroUUID = bid
+		barbeiroUUID = uuidStringToPgtype(*meta.BarbeiroID)
 	}
 
 	tipoStr := string(meta.Tipo)
@@ -46,7 +39,7 @@ func (r *MetasTicketMedioRepository) Create(ctx context.Context, meta *entity.Me
 		Tipo:       &tipoStr,
 		BarbeiroID: barbeiroUUID,
 		MesAno:     meta.MesAno.String(),
-		MetaValor:  moneyToDecimal(meta.MetaValor),
+		MetaValor:  moneyToRawDecimal(meta.MetaValor),
 	}
 
 	result, err := r.queries.CreateMetaTicketMedio(ctx, params)
@@ -63,15 +56,8 @@ func (r *MetasTicketMedioRepository) Create(ctx context.Context, meta *entity.Me
 
 // FindByID busca uma meta por ID.
 func (r *MetasTicketMedioRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.MetaTicketMedio, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
 	result, err := r.queries.GetMetaTicketMedioByID(ctx, db.GetMetaTicketMedioByIDParams{
 		ID:       idUUID,
@@ -86,10 +72,7 @@ func (r *MetasTicketMedioRepository) FindByID(ctx context.Context, tenantID, id 
 
 // FindGeralByMesAno busca meta geral de um mês.
 func (r *MetasTicketMedioRepository) FindGeralByMesAno(ctx context.Context, tenantID string, mesAno valueobject.MesAno) (*entity.MetaTicketMedio, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	result, err := r.queries.GetMetaTicketMedioGeralByMesAno(ctx, db.GetMetaTicketMedioGeralByMesAnoParams{
 		TenantID: tenantUUID,
@@ -104,15 +87,8 @@ func (r *MetasTicketMedioRepository) FindGeralByMesAno(ctx context.Context, tena
 
 // FindBarbeiroByMesAno busca meta de um barbeiro em um mês.
 func (r *MetasTicketMedioRepository) FindBarbeiroByMesAno(ctx context.Context, tenantID, barbeiroID string, mesAno valueobject.MesAno) (*entity.MetaTicketMedio, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	barbeiroUUID, err := uuidStringToPgtype(barbeiroID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter barbeiro_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	barbeiroUUID := uuidStringToPgtype(barbeiroID)
 
 	result, err := r.queries.GetMetaTicketMedioBarbeiroByMesAno(ctx, db.GetMetaTicketMedioBarbeiroByMesAnoParams{
 		TenantID:   tenantUUID,
@@ -128,20 +104,13 @@ func (r *MetasTicketMedioRepository) FindBarbeiroByMesAno(ctx context.Context, t
 
 // Update atualiza uma meta existente.
 func (r *MetasTicketMedioRepository) Update(ctx context.Context, meta *entity.MetaTicketMedio) error {
-	tenantUUID, err := uuidStringToPgtype(meta.TenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	idUUID, err := uuidStringToPgtype(meta.ID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	idUUID := uuidStringToPgtype(meta.ID)
 
 	params := db.UpdateMetaTicketMedioParams{
 		ID:        idUUID,
 		TenantID:  tenantUUID,
-		MetaValor: moneyToDecimal(meta.MetaValor),
+		MetaValor: moneyToRawDecimal(meta.MetaValor),
 	}
 
 	result, err := r.queries.UpdateMetaTicketMedio(ctx, params)
@@ -155,17 +124,10 @@ func (r *MetasTicketMedioRepository) Update(ctx context.Context, meta *entity.Me
 
 // Delete remove uma meta.
 func (r *MetasTicketMedioRepository) Delete(ctx context.Context, tenantID, id string) error {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	idUUID := uuidStringToPgtype(id)
 
-	idUUID, err := uuidStringToPgtype(id)
-	if err != nil {
-		return fmt.Errorf("erro ao converter id: %w", err)
-	}
-
-	err = r.queries.DeleteMetaTicketMedio(ctx, db.DeleteMetaTicketMedioParams{
+	err := r.queries.DeleteMetaTicketMedio(ctx, db.DeleteMetaTicketMedioParams{
 		ID:       idUUID,
 		TenantID: tenantUUID,
 	})
@@ -178,10 +140,7 @@ func (r *MetasTicketMedioRepository) Delete(ctx context.Context, tenantID, id st
 
 // ListByMesAno lista todas as metas de um mês (gerais e por barbeiro).
 func (r *MetasTicketMedioRepository) ListByMesAno(ctx context.Context, tenantID string, mesAno valueobject.MesAno) ([]*entity.MetaTicketMedio, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
 
 	results, err := r.queries.ListMetasTicketMedioByMesAno(ctx, db.ListMetasTicketMedioByMesAnoParams{
 		TenantID: tenantUUID,
@@ -196,15 +155,8 @@ func (r *MetasTicketMedioRepository) ListByMesAno(ctx context.Context, tenantID 
 
 // ListByBarbeiro lista metas de ticket médio de um barbeiro específico.
 func (r *MetasTicketMedioRepository) ListByBarbeiro(ctx context.Context, tenantID, barbeiroID string) ([]*entity.MetaTicketMedio, error) {
-	tenantUUID, err := uuidStringToPgtype(tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter tenant_id: %w", err)
-	}
-
-	barbeiroUUID, err := uuidStringToPgtype(barbeiroID)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao converter barbeiro_id: %w", err)
-	}
+	tenantUUID := uuidStringToPgtype(tenantID)
+	barbeiroUUID := uuidStringToPgtype(barbeiroID)
 
 	results, err := r.queries.ListMetasTicketMedioByBarbeiro(ctx, db.ListMetasTicketMedioByBarbeiroParams{
 		TenantID:   tenantUUID,
@@ -241,7 +193,7 @@ func (r *MetasTicketMedioRepository) toDomain(model *db.MetasTicketMedio) (*enti
 		Tipo:                 tipo,
 		BarbeiroID:           barbeiroID,
 		MesAno:               mesAno,
-		MetaValor:            decimalToMoney(model.MetaValor),
+		MetaValor:            rawDecimalToMoney(model.MetaValor),
 		TicketMedioRealizado: valueobject.Zero(),
 		Percentual:           valueobject.ZeroPercent(),
 		CriadoEm:             timestamptzToTime(model.CriadoEm),

@@ -9,7 +9,6 @@
 import type { Tenant, User } from '@/types';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
 
 // =============================================================================
 // TIPOS
@@ -50,6 +49,18 @@ const TOKEN_COOKIE_NAME = 'nexo-token';
 function setCookie(name: string, value: string, days = 7): void {
   if (typeof window === 'undefined') return;
 
+  // DEBUG: Ver o que está sendo salvo
+  console.log('🍪 [setCookie] Salvando cookie:', {
+    name,
+    valueType: typeof value,
+    valueLength: value?.length,
+    valuePreview: value?.substring(0, 30),
+    isUndefined: value === undefined,
+    isNull: value === null,
+    isString: typeof value === 'string',
+    rawValue: value,
+  });
+
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
 
@@ -57,9 +68,20 @@ function setCookie(name: string, value: string, days = 7): void {
   const secure = window.location.protocol === 'https:';
   const sameSite = 'Lax';
 
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=${sameSite}${
+  const cookieString = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=${sameSite}${
     secure ? ';Secure' : ''
   }`;
+
+  console.log('🍪 [setCookie] Cookie string:', cookieString.substring(0, 100) + '...');
+
+  document.cookie = cookieString;
+
+  // Verifica se foi salvo
+  const saved = getCookie(name);
+  console.log('🍪 [setCookie] Verificação após salvar:', {
+    wasSaved: !!saved,
+    savedValue: saved?.substring(0, 30),
+  });
 }
 
 /**
@@ -92,7 +114,7 @@ function getCookie(name: string): string | null {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    immer((set) => ({
+    (set) => ({
       // Estado inicial
       token: null,
       user: null,
@@ -105,15 +127,24 @@ export const useAuthStore = create<AuthState>()(
        * Define autenticação após login bem-sucedido
        */
       setAuth: (token, user, tenant) => {
+        // DEBUG: Ver o que está sendo passado
+        console.log('🔐 [setAuth] Recebeu:', {
+          tokenType: typeof token,
+          tokenLength: token?.length,
+          tokenPreview: token?.substring(0, 30),
+          hasUser: !!user,
+          hasTenant: !!tenant,
+        });
+
         // Salva token no cookie para SSR/middleware
         setCookie(TOKEN_COOKIE_NAME, token, 7);
 
-        set((state) => {
-          state.token = token;
-          state.user = user;
-          state.tenant = tenant;
-          state.isAuthenticated = true;
-          state.isLoading = false;
+        set({
+          token,
+          user,
+          tenant,
+          isAuthenticated: true,
+          isLoading: false,
         });
       },
 
@@ -121,22 +152,18 @@ export const useAuthStore = create<AuthState>()(
        * Atualiza dados do usuário parcialmente
        */
       updateUser: (userData) => {
-        set((state) => {
-          if (state.user) {
-            state.user = { ...state.user, ...userData };
-          }
-        });
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        }));
       },
 
       /**
        * Atualiza dados do tenant parcialmente
        */
       updateTenant: (tenantData) => {
-        set((state) => {
-          if (state.tenant) {
-            state.tenant = { ...state.tenant, ...tenantData };
-          }
-        });
+        set((state) => ({
+          tenant: state.tenant ? { ...state.tenant, ...tenantData } : null,
+        }));
       },
 
       /**
@@ -147,12 +174,12 @@ export const useAuthStore = create<AuthState>()(
         removeCookie(TOKEN_COOKIE_NAME);
 
         // Limpa estado
-        set((state) => {
-          state.token = null;
-          state.user = null;
-          state.tenant = null;
-          state.isAuthenticated = false;
-          state.isLoading = false;
+        set({
+          token: null,
+          user: null,
+          tenant: null,
+          isAuthenticated: false,
+          isLoading: false,
         });
       },
 
@@ -160,21 +187,16 @@ export const useAuthStore = create<AuthState>()(
        * Define estado de loading
        */
       setLoading: (loading) => {
-        set((state) => {
-          state.isLoading = loading;
-        });
+        set({ isLoading: loading });
       },
 
       /**
        * Marca store como hidratado (sincronizado com localStorage)
        */
       setHydrated: () => {
-        set((state) => {
-          state.isHydrated = true;
-          state.isLoading = false;
-        });
+        set({ isHydrated: true, isLoading: false });
       },
-    })),
+    }),
     {
       name: AUTH_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),

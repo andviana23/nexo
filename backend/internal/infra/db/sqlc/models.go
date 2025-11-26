@@ -9,6 +9,30 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type Appointment struct {
+	ID                    pgtype.UUID        `json:"id"`
+	TenantID              pgtype.UUID        `json:"tenant_id"`
+	ProfessionalID        pgtype.UUID        `json:"professional_id"`
+	CustomerID            pgtype.UUID        `json:"customer_id"`
+	StartTime             pgtype.Timestamptz `json:"start_time"`
+	EndTime               pgtype.Timestamptz `json:"end_time"`
+	Status                string             `json:"status"`
+	TotalPrice            decimal.Decimal    `json:"total_price"`
+	Notes                 *string            `json:"notes"`
+	CanceledReason        *string            `json:"canceled_reason"`
+	GoogleCalendarEventID *string            `json:"google_calendar_event_id"`
+	CreatedAt             pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+}
+
+type AppointmentService struct {
+	AppointmentID     pgtype.UUID        `json:"appointment_id"`
+	ServiceID         pgtype.UUID        `json:"service_id"`
+	PriceAtBooking    decimal.Decimal    `json:"price_at_booking"`
+	DurationAtBooking int32              `json:"duration_at_booking"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+}
+
 type Categoria struct {
 	ID        pgtype.UUID        `json:"id"`
 	TenantID  pgtype.UUID        `json:"tenant_id"`
@@ -18,6 +42,29 @@ type Categoria struct {
 	Ativa     *bool              `json:"ativa"`
 	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
 	TipoCusto *string            `json:"tipo_custo"`
+}
+
+type Cliente struct {
+	ID                  pgtype.UUID        `json:"id"`
+	TenantID            pgtype.UUID        `json:"tenant_id"`
+	Nome                string             `json:"nome"`
+	Email               *string            `json:"email"`
+	Telefone            string             `json:"telefone"`
+	Cpf                 *string            `json:"cpf"`
+	DataNascimento      pgtype.Date        `json:"data_nascimento"`
+	Genero              *string            `json:"genero"`
+	EnderecoLogradouro  *string            `json:"endereco_logradouro"`
+	EnderecoNumero      *string            `json:"endereco_numero"`
+	EnderecoComplemento *string            `json:"endereco_complemento"`
+	EnderecoBairro      *string            `json:"endereco_bairro"`
+	EnderecoCidade      *string            `json:"endereco_cidade"`
+	EnderecoEstado      *string            `json:"endereco_estado"`
+	EnderecoCep         *string            `json:"endereco_cep"`
+	Observacoes         *string            `json:"observacoes"`
+	Tags                []string           `json:"tags"`
+	Ativo               *bool              `json:"ativo"`
+	CriadoEm            pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm        pgtype.Timestamptz `json:"atualizado_em"`
 }
 
 // Compensações bancárias com D+ para fluxo de caixa compensado
@@ -280,12 +327,54 @@ type ProdutoFornecedor struct {
 	AtualizadoEm           pgtype.Timestamptz `json:"atualizado_em"`
 }
 
+type Profissionai struct {
+	ID              pgtype.UUID        `json:"id"`
+	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UserID          pgtype.UUID        `json:"user_id"`
+	Nome            string             `json:"nome"`
+	Email           string             `json:"email"`
+	Telefone        string             `json:"telefone"`
+	Cpf             string             `json:"cpf"`
+	Especialidades  []string           `json:"especialidades"`
+	Comissao        pgtype.Numeric     `json:"comissao"`
+	TipoComissao    *string            `json:"tipo_comissao"`
+	Foto            *string            `json:"foto"`
+	DataAdmissao    pgtype.Date        `json:"data_admissao"`
+	DataDemissao    pgtype.Date        `json:"data_demissao"`
+	Status          *string            `json:"status"`
+	HorarioTrabalho []byte             `json:"horario_trabalho"`
+	Observacoes     *string            `json:"observacoes"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	Tipo            string             `json:"tipo"`
+	Cor             *string            `json:"cor"`
+}
+
 type RefreshToken struct {
 	ID        pgtype.UUID        `json:"id"`
 	UserID    pgtype.UUID        `json:"user_id"`
 	Token     string             `json:"token"`
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type Servico struct {
+	ID               pgtype.UUID        `json:"id"`
+	TenantID         pgtype.UUID        `json:"tenant_id"`
+	CategoriaID      pgtype.UUID        `json:"categoria_id"`
+	Nome             string             `json:"nome"`
+	Descricao        *string            `json:"descricao"`
+	Preco            decimal.Decimal    `json:"preco"`
+	Duracao          int32              `json:"duracao"`
+	Comissao         pgtype.Numeric     `json:"comissao"`
+	Cor              *string            `json:"cor"`
+	Imagem           *string            `json:"imagem"`
+	ProfissionaisIds []pgtype.UUID      `json:"profissionais_ids"`
+	Observacoes      *string            `json:"observacoes"`
+	Tags             []string           `json:"tags"`
+	Ativo            *bool              `json:"ativo"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
 }
 
 type Tenant struct {

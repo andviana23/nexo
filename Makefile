@@ -10,8 +10,9 @@
 # ============================================================================
 # Variáveis
 # ============================================================================
-BACKEND_DIR := /home/andrey/Projetos/barber-analytics-proV2/backend
-FRONTEND_DIR := /home/andrey/Projetos/barber-analytics-proV2/frontend
+PROJECT_ROOT := $(shell pwd)
+BACKEND_DIR := $(PROJECT_ROOT)/backend
+FRONTEND_DIR := $(PROJECT_ROOT)/frontend
 
 BACKEND_PID := $(BACKEND_DIR)/.backend.pid
 FRONTEND_PID := $(FRONTEND_DIR)/.frontend.pid
@@ -64,34 +65,31 @@ dev: ## Iniciar backend + frontend em paralelo
 .PHONY: backend
 backend: ## Iniciar apenas o backend (Air + Go)
 	@echo "$(YELLOW)🔧 Backend (Go + Air)...$(NC)"
-	@mkdir -p $(BACKEND_DIR)/tmp
-	@if [ -f $(BACKEND_PID) ]; then \
-		echo "$(RED)❌ Backend já está rodando (PID: $$(cat $(BACKEND_PID)))$(NC)"; \
+	@mkdir -p "$(BACKEND_DIR)/tmp"
+	@if [ -f "$(BACKEND_PID)" ]; then \
+		echo "$(RED)❌ Backend já está rodando (PID: $$(cat "$(BACKEND_PID)"))$(NC)"; \
 		exit 1; \
 	fi
-	@cd $(BACKEND_DIR) && \
-		export DATABASE_URL="$(DATABASE_URL)" && \
-		export PORT=8080 && \
-		export ENV=development && \
-		nohup air > $(BACKEND_LOG) 2>&1 & echo $$! > $(BACKEND_PID)
+	@cd "$(BACKEND_DIR)" && \
+		nohup ./start-dev.sh > "$(BACKEND_LOG)" 2>&1 & echo $$! > "$(BACKEND_PID)"
 	@sleep 2
-	@if ps -p $$(cat $(BACKEND_PID)) > /dev/null 2>&1; then \
-		echo "$(GREEN)✅ Backend rodando (PID: $$(cat $(BACKEND_PID)))$(NC)"; \
+	@if ps -p $$(cat "$(BACKEND_PID)") > /dev/null 2>&1; then \
+		echo "$(GREEN)✅ Backend rodando (PID: $$(cat "$(BACKEND_PID)"))$(NC)"; \
 		echo "$(BLUE)   Logs:$(NC) tail -f $(BACKEND_LOG)"; \
 		echo "$(BLUE)   URL:$(NC)  http://localhost:8080"; \
 	else \
 		echo "$(RED)❌ Falha ao iniciar backend$(NC)"; \
-		cat $(BACKEND_LOG); \
-		rm -f $(BACKEND_PID); \
+		cat "$(BACKEND_LOG)"; \
+		rm -f "$(BACKEND_PID)"; \
 		exit 1; \
 	fi
 
 .PHONY: frontend
 frontend: ## Iniciar apenas o frontend (Next.js)
 	@echo "$(YELLOW)⚛️  Frontend (Next.js)...$(NC)"
-	@mkdir -p $(FRONTEND_DIR)/tmp
-	@if [ -f $(FRONTEND_PID) ]; then \
-		echo "$(RED)❌ Frontend já está rodando (PID: $$(cat $(FRONTEND_PID)))$(NC)"; \
+	@mkdir -p "$(FRONTEND_DIR)/tmp"
+	@if [ -f "$(FRONTEND_PID)" ]; then \
+		echo "$(RED)❌ Frontend já está rodando (PID: $$(cat "$(FRONTEND_PID)"))$(NC)"; \
 		exit 1; \
 	fi
 	@echo "   Verificando porta 3000..."
@@ -101,43 +99,43 @@ frontend: ## Iniciar apenas o frontend (Next.js)
 		sleep 1; \
 	fi
 	@echo "   Removendo locks anteriores..."
-	@rm -rf $(FRONTEND_DIR)/.next/dev/lock 2>/dev/null || true
-	@if [ ! -d $(FRONTEND_DIR)/node_modules ]; then \
+	@rm -rf "$(FRONTEND_DIR)/.next/dev/lock" 2>/dev/null || true
+	@if [ ! -d "$(FRONTEND_DIR)/node_modules" ]; then \
 		echo "$(YELLOW)📦 Instalando dependências...$(NC)"; \
-		cd $(FRONTEND_DIR) && pnpm install; \
+		cd "$(FRONTEND_DIR)" && pnpm install; \
 	fi
-	@cd $(FRONTEND_DIR) && \
-		nohup pnpm dev > $(FRONTEND_LOG) 2>&1 & echo $$! > $(FRONTEND_PID)
+	@cd "$(FRONTEND_DIR)" && \
+		nohup pnpm dev > "$(FRONTEND_LOG)" 2>&1 & echo $$! > "$(FRONTEND_PID)"
 	@sleep 3
-	@if ps -p $$(cat $(FRONTEND_PID)) > /dev/null 2>&1; then \
-		echo "$(GREEN)✅ Frontend rodando (PID: $$(cat $(FRONTEND_PID)))$(NC)"; \
+	@if ps -p $$(cat "$(FRONTEND_PID)") > /dev/null 2>&1; then \
+		echo "$(GREEN)✅ Frontend rodando (PID: $$(cat "$(FRONTEND_PID)"))$(NC)"; \
 		echo "$(BLUE)   Logs:$(NC) tail -f $(FRONTEND_LOG)"; \
 		echo "$(BLUE)   URL:$(NC)  http://localhost:3000"; \
 	else \
 		echo "$(RED)❌ Falha ao iniciar frontend$(NC)"; \
-		cat $(FRONTEND_LOG); \
-		rm -f $(FRONTEND_PID); \
+		cat "$(FRONTEND_LOG)"; \
+		rm -f "$(FRONTEND_PID)"; \
 		exit 1; \
 	fi
 
 .PHONY: stop
 stop: ## Parar backend + frontend
 	@echo "$(RED)🛑 Parando serviços...$(NC)"
-	@if [ -f $(BACKEND_PID) ]; then \
-		echo "   Parando backend (PID: $$(cat $(BACKEND_PID)))..."; \
-		kill $$(cat $(BACKEND_PID)) 2>/dev/null || true; \
-		pkill -P $$(cat $(BACKEND_PID)) 2>/dev/null || true; \
-		rm -f $(BACKEND_PID); \
+	@if [ -f "$(BACKEND_PID)" ]; then \
+		echo "   Parando backend (PID: $$(cat "$(BACKEND_PID)"))..."; \
+		kill $$(cat "$(BACKEND_PID)") 2>/dev/null || true; \
+		pkill -P $$(cat "$(BACKEND_PID)") 2>/dev/null || true; \
+		rm -f "$(BACKEND_PID)"; \
 		echo "   $(GREEN)✅ Backend parado$(NC)"; \
 	else \
 		echo "   $(YELLOW)⚠️  Backend não estava rodando$(NC)"; \
 	fi
-	@if [ -f $(FRONTEND_PID) ]; then \
-		echo "   Parando frontend (PID: $$(cat $(FRONTEND_PID)))..."; \
-		kill -TERM $$(cat $(FRONTEND_PID)) 2>/dev/null || true; \
+	@if [ -f "$(FRONTEND_PID)" ]; then \
+		echo "   Parando frontend (PID: $$(cat "$(FRONTEND_PID)"))..."; \
+		kill -TERM $$(cat "$(FRONTEND_PID)") 2>/dev/null || true; \
 		sleep 1; \
-		pkill -P $$(cat $(FRONTEND_PID)) 2>/dev/null || true; \
-		rm -f $(FRONTEND_PID); \
+		pkill -P $$(cat "$(FRONTEND_PID)") 2>/dev/null || true; \
+		rm -f "$(FRONTEND_PID)"; \
 		echo "   $(GREEN)✅ Frontend parado$(NC)"; \
 	else \
 		echo "   $(YELLOW)⚠️  Frontend não estava rodando$(NC)"; \
@@ -150,14 +148,20 @@ stop: ## Parar backend + frontend
 	@lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 	@lsof -ti:8080 | xargs kill -9 2>/dev/null || true
 	@echo "   Removendo arquivos de lock..."
-	@rm -rf $(FRONTEND_DIR)/.next/dev/lock 2>/dev/null || true
-	@rm -rf $(FRONTEND_DIR)/.next/cache/webpack 2>/dev/null || true
+	@rm -rf "$(FRONTEND_DIR)/.next/dev/lock" 2>/dev/null || true
+	@rm -rf "$(FRONTEND_DIR)/.next/cache/webpack" 2>/dev/null || true
 	@sleep 1
 	@echo ""
 	@echo "$(GREEN)✅ Todos os serviços foram parados$(NC)"
 
 .PHONY: restart
-restart: stop dev ## Reiniciar backend + frontend
+restart: ## Reiniciar backend + frontend
+	@echo "$(YELLOW)🔄 Reiniciando sistema...$(NC)"
+	@echo ""
+	@$(MAKE) stop
+	@echo ""
+	@sleep 2
+	@$(MAKE) dev
 
 .PHONY: force-stop
 force-stop: ## Parar TODOS os processos (emergência - mata tudo brutalmente)
@@ -179,19 +183,19 @@ status: ## Verificar status dos serviços
 	@echo "$(BLUE)║$(NC)  📊 Status dos Serviços"
 	@echo "$(BLUE)╚════════════════════════════════════════════════════════════╝$(NC)"
 	@echo ""
-	@if [ -f $(BACKEND_PID) ] && ps -p $$(cat $(BACKEND_PID)) > /dev/null 2>&1; then \
-		echo "$(GREEN)✅ Backend:$(NC)  Rodando (PID: $$(cat $(BACKEND_PID)))"; \
+	@if [ -f "$(BACKEND_PID)" ] && ps -p $$(cat "$(BACKEND_PID)") > /dev/null 2>&1; then \
+		echo "$(GREEN)✅ Backend:$(NC)  Rodando (PID: $$(cat "$(BACKEND_PID)"))"; \
 		echo "   $(BLUE)URL:$(NC) http://localhost:8080"; \
 	else \
 		echo "$(RED)❌ Backend:$(NC)  Parado"; \
-		rm -f $(BACKEND_PID) 2>/dev/null || true; \
+		rm -f "$(BACKEND_PID)" 2>/dev/null || true; \
 	fi
-	@if [ -f $(FRONTEND_PID) ] && ps -p $$(cat $(FRONTEND_PID)) > /dev/null 2>&1; then \
-		echo "$(GREEN)✅ Frontend:$(NC) Rodando (PID: $$(cat $(FRONTEND_PID)))"; \
+	@if [ -f "$(FRONTEND_PID)" ] && ps -p $$(cat "$(FRONTEND_PID)") > /dev/null 2>&1; then \
+		echo "$(GREEN)✅ Frontend:$(NC) Rodando (PID: $$(cat "$(FRONTEND_PID)"))"; \
 		echo "   $(BLUE)URL:$(NC) http://localhost:3000"; \
 	else \
 		echo "$(RED)❌ Frontend:$(NC) Parado"; \
-		rm -f $(FRONTEND_PID) 2>/dev/null || true; \
+		rm -f "$(FRONTEND_PID)" 2>/dev/null || true; \
 	fi
 	@echo ""
 

@@ -11,12 +11,12 @@ import { getErrorMessage, isAxiosError } from '@/lib/axios';
 import { queryKeys } from '@/lib/query-client';
 import { authService, InvalidCredentialsError } from '@/services/auth-service';
 import {
-  useAuthHydrated,
-  useAuthLoading,
-  useAuthStore,
-  useCurrentTenant,
-  useCurrentUser,
-  useIsAuthenticated,
+    useAuthHydrated,
+    useAuthLoading,
+    useAuthStore,
+    useCurrentTenant,
+    useCurrentUser,
+    useIsAuthenticated,
 } from '@/store/auth-store';
 import type { LoginCredentials, User } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -71,14 +71,27 @@ export function useAuth(): UseAuthReturn {
       authService.login(credentials),
 
     onSuccess: (data) => {
-      // Salva no Zustand
-      setAuth(data.token, data.user, data.tenant);
+      // DEBUG: Ver o que a API retornou
+      console.log('🔍 [Login Success] Dados recebidos da API:', {
+        hasAccessToken: !!data.access_token,
+        tokenType: typeof data.access_token,
+        tokenLength: data.access_token?.length,
+        tokenPreview: data.access_token?.substring(0, 30),
+        hasUser: !!data.user,
+        hasTenant: !!data.tenant,
+        fullData: data,
+      });
+
+      // Salva no Zustand (usando access_token do backend)
+      setAuth(data.access_token, data.user, data.tenant);
 
       // Invalida queries de auth para refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
 
-      // Redireciona para dashboard
-      router.push('/dashboard');
+      // Aguarda um tick para garantir persistência antes de redirecionar
+      setTimeout(() => {
+        router.push('/');
+      }, 100);
     },
 
     onError: (error) => {
@@ -121,9 +134,11 @@ export function useAuth(): UseAuthReturn {
   const { refetch: refreshUser } = useQuery({
     queryKey: queryKeys.auth.me(),
     queryFn: () => authService.getMe(),
-    enabled: isAuthenticated && isHydrated,
+    enabled: isAuthenticated && isHydrated && !!user,
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // ==========================================================================

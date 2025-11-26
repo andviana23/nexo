@@ -14,9 +14,18 @@ api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Só executa no client-side
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('nexo-token');
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+      // Busca token do Zustand persist storage
+      const authData = localStorage.getItem('nexo-auth');
+      if (authData) {
+        try {
+          const { state } = JSON.parse(authData);
+          const token = state?.token;
+          if (token && config.headers) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        } catch (error) {
+          console.error('Erro ao parsear token:', error);
+        }
       }
     }
     return config;
@@ -40,8 +49,7 @@ api.interceptors.response.use(
 
       // Limpa token e redireciona para login
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('nexo-token');
-        localStorage.removeItem('nexo-user');
+        localStorage.removeItem('nexo-auth');
 
         // Só redireciona se não estiver na página de login
         if (!window.location.pathname.includes('/login')) {

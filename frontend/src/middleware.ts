@@ -77,18 +77,41 @@ export function middleware(request: NextRequest) {
   const isAuthenticated = !!token;
   const isPublic = isPublicRoute(pathname);
 
-  // Rota raiz - redireciona baseado na autenticação
+  // Debug: Log detalhado para diagnosticar cookie
+  const cookies = request.cookies.getAll();
+  const logData = {
+    pathname,
+    hasToken: !!token,
+    tokenLength: token?.length || 0,
+    tokenPreview: token ? token.substring(0, 20) + '...' : '❌ NO TOKEN',
+    isAuthenticated,
+    isPublic,
+    cookieCount: cookies.length,
+    allCookies: cookies.map(c => ({
+      name: c.name,
+      valueLength: c.value.length,
+      valuePreview: c.value.substring(0, 20) + '...'
+    })),
+  };
+  
+  // Log no console do navegador
+  console.log('🔐 [Middleware]', logData);
+  
+  // Log no terminal do Next.js (stderr para garantir visibilidade)
+  console.error('🔐 [MW]', JSON.stringify(logData, null, 2));
+
+  // Rota raiz - se autenticado, continua; se não, vai para login
   if (pathname === '/') {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.next();
     }
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   // Usuário autenticado tentando acessar rota pública (login, etc.)
-  // Redireciona para dashboard
+  // Redireciona para a página inicial
   if (isAuthenticated && isPublic) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   // Usuário não autenticado tentando acessar rota protegida
@@ -97,7 +120,7 @@ export function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
 
     // Salva a URL original para redirecionar após login
-    if (pathname !== '/dashboard') {
+    if (pathname !== '/') {
       loginUrl.searchParams.set('returnUrl', pathname);
     }
 

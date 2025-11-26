@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/appointment"
 	authUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/auth"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/financial"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/metas"
@@ -83,6 +84,12 @@ func main() {
 	fornecedorRepo := postgres.NewFornecedorRepositoryPG(queries)
 	movimentacaoRepo := postgres.NewMovimentacaoEstoqueRepositoryPG(queries)
 
+	// Appointment repositories and readers
+	appointmentRepo := postgres.NewAppointmentRepository(queries, dbPool)
+	professionalReader := postgres.NewProfessionalReader(queries)
+	customerReader := postgres.NewCustomerReader(queries)
+	serviceReader := postgres.NewServiceReader(queries)
+
 	// Initialize use cases - Meta Mensal
 	setMetaMensalUC := metas.NewSetMetaMensalUseCase(metaMensalRepo, logger)
 	getMetaMensalUC := metas.NewGetMetaMensalUseCase(metaMensalRepo, logger)
@@ -150,6 +157,14 @@ func main() {
 	registrarSaidaUC := stock.NewRegistrarSaidaUseCase(produtoRepo, movimentacaoRepo)
 	ajustarEstoqueUC := stock.NewAjustarEstoqueUseCase(produtoRepo, movimentacaoRepo)
 	listarAlertasUC := stock.NewListarAlertasEstoqueBaixoUseCase(produtoRepo)
+
+	// Initialize use cases - Appointments (6 use cases)
+	createAppointmentUC := appointment.NewCreateAppointmentUseCase(appointmentRepo, serviceReader, professionalReader, customerReader, logger)
+	listAppointmentsUC := appointment.NewListAppointmentsUseCase(appointmentRepo, logger)
+	getAppointmentUC := appointment.NewGetAppointmentUseCase(appointmentRepo, logger)
+	updateAppointmentStatusUC := appointment.NewUpdateAppointmentStatusUseCase(appointmentRepo, logger)
+	rescheduleAppointmentUC := appointment.NewRescheduleAppointmentUseCase(appointmentRepo, logger)
+	cancelAppointmentUC := appointment.NewCancelAppointmentUseCase(appointmentRepo, logger)
 
 	// Initialize JWT Manager
 	jwtManager := auth.NewJWTManager()
@@ -266,6 +281,17 @@ func main() {
 		logger,
 	)
 
+	// Initialize handlers - Appointments (6 use cases)
+	appointmentHandler := handler.NewAppointmentHandler(
+		createAppointmentUC,
+		listAppointmentsUC,
+		getAppointmentUC,
+		updateAppointmentStatusUC,
+		rescheduleAppointmentUC,
+		cancelAppointmentUC,
+		logger,
+	)
+
 	// Create Echo instance
 	e := echo.New()
 
@@ -273,8 +299,8 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8000"},
-		AllowMethods:     []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3006", "http://localhost:8000"},
+		AllowMethods:     []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE, echo.OPTIONS},
 		AllowCredentials: true, // Permite cookies (refresh token)
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
@@ -328,6 +354,15 @@ func main() {
 	// Pricing routes - 9 endpoints (PROTEGIDAS com JWT)
 	pricingGroup := protected.Group("/pricing")
 	pricingHandler.RegisterRoutes(pricingGroup)
+
+	// Appointment routes - 6 endpoints (PROTEGIDAS com JWT)
+	appointmentsGroup := protected.Group("/appointments")
+	appointmentsGroup.POST("", appointmentHandler.CreateAppointment)
+	appointmentsGroup.GET("", appointmentHandler.ListAppointments)
+	appointmentsGroup.GET("/:id", appointmentHandler.GetAppointment)
+	appointmentsGroup.PATCH("/:id/status", appointmentHandler.UpdateAppointmentStatus)
+	appointmentsGroup.PATCH("/:id/reschedule", appointmentHandler.RescheduleAppointment)
+	appointmentsGroup.POST("/:id/cancel", appointmentHandler.CancelAppointment)
 
 	// Financial routes - 19 endpoints (PROTEGIDAS com JWT)
 	financialGroup := protected.Group("/financial")

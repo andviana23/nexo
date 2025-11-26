@@ -15,6 +15,9 @@ type Querier interface {
 	AtualizarQuantidadeProduto(ctx context.Context, arg AtualizarQuantidadeProdutoParams) (Produto, error)
 	AvgMargemBrutaByPeriod(ctx context.Context, arg AvgMargemBrutaByPeriodParams) (interface{}, error)
 	AvgMargemOperacionalByPeriod(ctx context.Context, arg AvgMargemOperacionalByPeriodParams) (interface{}, error)
+	CheckAppointmentConflict(ctx context.Context, arg CheckAppointmentConflictParams) (bool, error)
+	CountAppointments(ctx context.Context, arg CountAppointmentsParams) (int64, error)
+	CountAppointmentsByStatus(ctx context.Context, arg CountAppointmentsByStatusParams) (int64, error)
 	CountCompensacoesByStatus(ctx context.Context, arg CountCompensacoesByStatusParams) (int64, error)
 	CountCompensacoesByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountContasPagarByStatus(ctx context.Context, arg CountContasPagarByStatusParams) (int64, error)
@@ -31,6 +34,12 @@ type Querier interface {
 	CountSimulacoesByItem(ctx context.Context, arg CountSimulacoesByItemParams) (int64, error)
 	CountSimulacoesByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountUserPreferences(ctx context.Context) (int64, error)
+	// ============================================================================
+	// APPOINTMENTS QUERIES (sqlc)
+	// Módulo de Agendamento — NEXO v1.0
+	// ============================================================================
+	CreateAppointment(ctx context.Context, arg CreateAppointmentParams) (Appointment, error)
+	CreateAppointmentService(ctx context.Context, arg CreateAppointmentServiceParams) error
 	CreateCompensacaoBancaria(ctx context.Context, arg CreateCompensacaoBancariaParams) (CompensacoesBancaria, error)
 	CreateContaPagar(ctx context.Context, arg CreateContaPagarParams) (ContasAPagar, error)
 	CreateContaReceber(ctx context.Context, arg CreateContaReceberParams) (ContasAReceber, error)
@@ -63,6 +72,9 @@ type Querier interface {
 	CreateProdutoFornecedor(ctx context.Context, arg CreateProdutoFornecedorParams) (ProdutoFornecedor, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserPreferences(ctx context.Context, arg CreateUserPreferencesParams) (UserPreference, error)
+	CustomerExists(ctx context.Context, arg CustomerExistsParams) (bool, error)
+	DeleteAppointment(ctx context.Context, arg DeleteAppointmentParams) error
+	DeleteAppointmentServices(ctx context.Context, appointmentID pgtype.UUID) error
 	DeleteCompensacaoBancaria(ctx context.Context, arg DeleteCompensacaoBancariaParams) error
 	DeleteContaPagar(ctx context.Context, arg DeleteContaPagarParams) error
 	DeleteContaReceber(ctx context.Context, arg DeleteContaReceberParams) error
@@ -79,12 +91,16 @@ type Querier interface {
 	DeleteProdutoFornecedor(ctx context.Context, arg DeleteProdutoFornecedorParams) error
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteUserPreferences(ctx context.Context, userID pgtype.UUID) error
+	GetAppointmentByID(ctx context.Context, arg GetAppointmentByIDParams) (GetAppointmentByIDRow, error)
+	GetAppointmentServices(ctx context.Context, appointmentID pgtype.UUID) ([]GetAppointmentServicesRow, error)
 	GetCompensacaoBancariaByID(ctx context.Context, arg GetCompensacaoBancariaByIDParams) (CompensacoesBancaria, error)
 	GetContaPagarByID(ctx context.Context, arg GetContaPagarByIDParams) (ContasAPagar, error)
 	GetContaReceberByID(ctx context.Context, arg GetContaReceberByIDParams) (ContasAReceber, error)
 	GetCurvaABC(ctx context.Context, tenantID pgtype.UUID) ([]GetCurvaABCRow, error)
+	GetCustomerInfo(ctx context.Context, arg GetCustomerInfoParams) (GetCustomerInfoRow, error)
 	GetDREMensalByID(ctx context.Context, arg GetDREMensalByIDParams) (DreMensal, error)
 	GetDREMensalByMesAno(ctx context.Context, arg GetDREMensalByMesAnoParams) (DreMensal, error)
+	GetDailyAppointmentStats(ctx context.Context, arg GetDailyAppointmentStatsParams) (GetDailyAppointmentStatsRow, error)
 	GetFluxoCaixaDiarioByData(ctx context.Context, arg GetFluxoCaixaDiarioByDataParams) (FluxoCaixaDiario, error)
 	GetFluxoCaixaDiarioByID(ctx context.Context, arg GetFluxoCaixaDiarioByIDParams) (FluxoCaixaDiario, error)
 	GetFornecedorByCNPJ(ctx context.Context, arg GetFornecedorByCNPJParams) (Fornecedore, error)
@@ -108,7 +124,10 @@ type Querier interface {
 	// RELATÓRIOS E CONSULTAS ESPECIAIS
 	// ========================================
 	GetProdutosComEstoqueBaixo(ctx context.Context, tenantID pgtype.UUID) ([]GetProdutosComEstoqueBaixoRow, error)
+	GetProfessionalInfo(ctx context.Context, arg GetProfessionalInfoParams) (GetProfessionalInfoRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
+	GetServiceInfo(ctx context.Context, arg GetServiceInfoParams) (GetServiceInfoRow, error)
+	GetServicesByIDs(ctx context.Context, arg GetServicesByIDsParams) ([]GetServicesByIDsRow, error)
 	GetTotalPorTipo(ctx context.Context, arg GetTotalPorTipoParams) (GetTotalPorTipoRow, error)
 	GetUltimaSimulacaoByItem(ctx context.Context, arg GetUltimaSimulacaoByItemParams) (PrecificacaoSimulaco, error)
 	GetUltimoSaldo(ctx context.Context, arg GetUltimoSaldoParams) (pgtype.Numeric, error)
@@ -117,6 +136,10 @@ type Querier interface {
 	GetUserPreferencesByID(ctx context.Context, id pgtype.UUID) (UserPreference, error)
 	GetUserPreferencesByUserID(ctx context.Context, userID pgtype.UUID) (UserPreference, error)
 	GetValorTotalEstoque(ctx context.Context, tenantID pgtype.UUID) (GetValorTotalEstoqueRow, error)
+	ListActiveProfessionals(ctx context.Context, tenantID pgtype.UUID) ([]ListActiveProfessionalsRow, error)
+	ListAppointments(ctx context.Context, arg ListAppointmentsParams) ([]ListAppointmentsRow, error)
+	ListAppointmentsByCustomer(ctx context.Context, arg ListAppointmentsByCustomerParams) ([]ListAppointmentsByCustomerRow, error)
+	ListAppointmentsByProfessionalAndDateRange(ctx context.Context, arg ListAppointmentsByProfessionalAndDateRangeParams) ([]ListAppointmentsByProfessionalAndDateRangeRow, error)
 	ListCompensacoesBancariasByTenant(ctx context.Context, arg ListCompensacoesBancariasByTenantParams) ([]CompensacoesBancaria, error)
 	ListCompensacoesByDataCompensacao(ctx context.Context, arg ListCompensacoesByDataCompensacaoParams) ([]CompensacoesBancaria, error)
 	ListCompensacoesByReceita(ctx context.Context, arg ListCompensacoesByReceitaParams) ([]CompensacoesBancaria, error)
@@ -168,9 +191,14 @@ type Querier interface {
 	MarcarContaPagarComoPaga(ctx context.Context, arg MarcarContaPagarComoPagaParams) (ContasAPagar, error)
 	MarcarContaReceberComoAtrasada(ctx context.Context, arg MarcarContaReceberComoAtrasadaParams) error
 	MarcarContaReceberComoRecebida(ctx context.Context, arg MarcarContaReceberComoRecebidaParams) (ContasAReceber, error)
+	// ============================================================================
+	// QUERIES AUXILIARES: Profissionais, Clientes, Serviços (Read-Only)
+	// ============================================================================
+	ProfessionalExists(ctx context.Context, arg ProfessionalExistsParams) (bool, error)
 	ReativarFornecedor(ctx context.Context, arg ReativarFornecedorParams) error
 	RejeitarMetaMensal(ctx context.Context, arg RejeitarMetaMensalParams) (MetasMensai, error)
 	SaveRefreshToken(ctx context.Context, arg SaveRefreshTokenParams) error
+	ServiceExists(ctx context.Context, arg ServiceExistsParams) (bool, error)
 	SumContasPagarByPeriod(ctx context.Context, arg SumContasPagarByPeriodParams) (interface{}, error)
 	SumContasPagasByPeriod(ctx context.Context, arg SumContasPagasByPeriodParams) (interface{}, error)
 	SumContasReceberByPeriod(ctx context.Context, arg SumContasReceberByPeriodParams) (interface{}, error)
@@ -180,6 +208,8 @@ type Querier interface {
 	SumReceitasByPeriod(ctx context.Context, arg SumReceitasByPeriodParams) (interface{}, error)
 	SumSaidasByPeriod(ctx context.Context, arg SumSaidasByPeriodParams) (interface{}, error)
 	SumValorLiquidoByPeriod(ctx context.Context, arg SumValorLiquidoByPeriodParams) (interface{}, error)
+	UpdateAppointment(ctx context.Context, arg UpdateAppointmentParams) (Appointment, error)
+	UpdateAppointmentStatus(ctx context.Context, arg UpdateAppointmentStatusParams) (Appointment, error)
 	UpdateCompensacaoBancaria(ctx context.Context, arg UpdateCompensacaoBancariaParams) (CompensacoesBancaria, error)
 	UpdateContaPagar(ctx context.Context, arg UpdateContaPagarParams) (ContasAPagar, error)
 	UpdateContaReceber(ctx context.Context, arg UpdateContaReceberParams) (ContasAReceber, error)

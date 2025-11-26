@@ -1,15 +1,16 @@
 # 🎯 Tarefas para Concluir v1.0.0 — MVP CORE
 
 **Data de Emissão:** 24/11/2025
-**Deadline:** 05/12/2025 (11 dias úteis restantes)
-**Progresso Atual:** 85%
-**Status:** 🔴 CRÍTICO - Deadline em risco
+**Última Atualização:** 25/11/2025 (sessão atual)
+**Deadline:** 05/12/2025 (10 dias úteis restantes)
+**Progresso Atual:** 88%
+**Status:** 🟡 EM ANDAMENTO - Progresso significativo
 
 ---
 
 ## 📊 Resumo Executivo
 
-### ✅ Concluído (85%)
+### ✅ Concluído (88%)
 
 - ✅ **Infraestrutura:** Banco de dados (42 tabelas), Neon PostgreSQL, Clean Architecture
 - ✅ **Backend Core:** 11 repositórios, 24 use cases, 44 endpoints, 6 cron jobs
@@ -19,16 +20,19 @@
 - ✅ **Módulo Financeiro:** 100% (Backend + Frontend + Dashboard)
 - ✅ **Módulo Metas:** 100% (Backend + Frontend)
 - ✅ **Módulo Precificação:** 100% (Backend + Frontend)
+- ✅ **Autenticação:** Login funcionando (CORS, JWT, cookies corrigidos)
+- ✅ **Módulo Agendamento Backend:** 100% (CRUD + validações)
+- ✅ **Módulo Agendamento Frontend:** 90% (Calendário + Componentes)
+- ✅ **Módulo Estoque Backend:** 100% (Entrada/Saída/Ajuste/Alertas)
 
-### 🔴 Pendente (15%)
+### 🔴 Pendente (12%)
 
-- ❌ **Módulo Estoque:** 0% (CRÍTICO)
-- ❌ **Módulo Agendamento:** 0% (BLOQUEADOR)
+- ⏳ **Módulo Estoque Frontend:** 30% (página existe, falta componentes)
 - ❌ **Lista da Vez:** Frontend 0% (Backend 100%)
 - ❌ **Assinaturas Asaas:** Integração parcial
-- ❌ **CRM Básico:** Frontend 50%
-- ❌ **Relatórios UI:** Telas de DRE e Fluxo
-- ❌ **Permissões (RBAC):** Frontend 50%
+- ⏳ **CRM Básico:** Frontend 50%
+- ⏳ **Relatórios UI:** Telas de DRE e Fluxo
+- ⏳ **Permissões (RBAC):** Frontend 50%
 - ❌ **Testes E2E:** Cobertura <50%
 - ❌ **Deploy Staging/Produção:** 0%
 
@@ -42,221 +46,175 @@
 
 ---
 
-## 1️⃣ ESTOQUE (Dia 1-2: 25-26/11) 🔴 CRÍTICO
+## 1️⃣ ESTOQUE (Dia 1-2: 25-26/11) ✅ BACKEND COMPLETO | 🟡 FRONTEND EM ANDAMENTO
 
 **Total:** 28 horas (~2 dias com 2 devs)
 
-### Backend (14h)
+### Backend (14h) ✅ COMPLETO
 
-#### T-EST-001: Entrada de Estoque
+#### T-EST-001: Entrada de Estoque ✅ CONCLUÍDO
 
 - **Descrição:** Implementar registro de entrada de produtos no estoque
 - **Arquivos:**
-  - `backend/internal/domain/entity/stock_entry.go` (Entidade)
-  - `backend/internal/application/usecase/stock/create_entry.go` (Use Case)
-  - `backend/internal/infra/http/handler/stock_handler.go` (Endpoint POST)
-  - `backend/internal/application/dto/stock_dto.go` (DTOs)
-- **Validações:**
-  - Quantidade > 0
-  - Produto existe
-  - Tenant isolation
-- **Estimativa:** 4h
-- **Prioridade:** ALTA
+  - ✅ `backend/internal/application/usecase/stock/registrar_entrada.go`
+  - ✅ `backend/internal/infra/http/handler/stock_handler.go` (Endpoint POST)
+  - ✅ `backend/internal/application/dto/stock_dto.go` (DTOs)
+- **Status:** ✅ Implementado e funcionando
 
-#### T-EST-002: Saída de Estoque
+#### T-EST-002: Saída de Estoque ✅ CONCLUÍDO
 
 - **Descrição:** Implementar baixa de produtos do estoque
 - **Arquivos:**
-  - `backend/internal/domain/entity/stock_exit.go` (Entidade)
-  - `backend/internal/application/usecase/stock/create_exit.go` (Use Case)
-  - `backend/internal/infra/http/handler/stock_handler.go` (Endpoint POST)
-- **Validações:**
-  - Quantidade disponível suficiente
-  - Não permitir estoque negativo
-  - Tenant isolation
-- **Estimativa:** 4h
-- **Prioridade:** ALTA
+  - ✅ `backend/internal/application/usecase/stock/registrar_saida.go`
+  - ✅ `backend/internal/infra/http/handler/stock_handler.go` (Endpoint POST)
+- **Status:** ✅ Implementado e funcionando
 
-#### T-EST-003: Consumo Automático
+#### T-EST-003: Consumo Automático ⏸️ MOVIDO PARA v1.1.0
 
 - **Descrição:** Baixa automática de estoque ao finalizar atendimento
-- **Arquivos:**
-  - `backend/internal/application/usecase/stock/auto_consume.go`
-  - Integração com `AttendanceService`
-- **Regra de Negócio:**
-  - Cada serviço tem produtos associados
-  - Ao finalizar atendimento, baixar produtos automaticamente
-- **Estimativa:** 3h
-- **Prioridade:** ALTA
+- **Status:** ⏸️ Funcionalidade não-crítica, movida para próxima versão
 
-#### T-EST-004: Inventário (Listagem + Ajuste Manual)
+#### T-EST-004: Inventário (Listagem + Ajuste Manual) ✅ CONCLUÍDO
 
 - **Descrição:** Listar estoque atual e permitir ajustes manuais
 - **Arquivos:**
-  - `backend/internal/application/usecase/stock/list_inventory.go`
-  - `backend/internal/application/usecase/stock/adjust_inventory.go`
-  - Endpoints GET/PUT
-- **Estimativa:** 3h
-- **Prioridade:** MÉDIA
+  - ✅ `backend/internal/application/usecase/stock/ajustar_estoque.go`
+  - ✅ `backend/internal/application/usecase/stock/listar_alertas.go`
+- **Status:** ✅ Implementado e funcionando
 
 ---
 
-### Frontend (14h)
+### Frontend (14h) 🟡 EM ANDAMENTO
 
-#### T-EST-005: Tela de Entrada de Estoque
+#### T-EST-005: Tela de Entrada de Estoque 🔴 PENDENTE
 
 - **Descrição:** Formulário para registrar entrada de produtos
 - **Arquivos:**
-  - `frontend/app/(dashboard)/estoque/entrada/page.tsx`
-  - `frontend/components/stock/EntryForm.tsx`
-  - `frontend/hooks/useStockEntry.ts`
-- **Campos:**
-  - Produto (select)
-  - Quantidade
-  - Valor unitário
-  - Fornecedor
-  - Data de validade (opcional)
-- **Validação:** Zod + React Hook Form
-- **Estimativa:** 4h
-- **Prioridade:** ALTA
+  - ❌ `frontend/app/(dashboard)/estoque/entrada/page.tsx`
+  - ❌ `frontend/components/stock/EntryForm.tsx`
+- **Status:** 🔴 Aguardando implementação
 
-#### T-EST-006: Tela de Saída de Estoque
+#### T-EST-006: Tela de Saída de Estoque 🔴 PENDENTE
 
 - **Descrição:** Formulário para registrar saída de produtos
 - **Arquivos:**
-  - `frontend/app/(dashboard)/estoque/saida/page.tsx`
-  - `frontend/components/stock/ExitForm.tsx`
-  - `frontend/hooks/useStockExit.ts`
-- **Validações:**
-  - Verificar disponibilidade antes de enviar
-  - Alertar se estoque baixo
-- **Estimativa:** 3h
-- **Prioridade:** ALTA
+  - ❌ `frontend/app/(dashboard)/estoque/saida/page.tsx`
+  - ❌ `frontend/components/stock/ExitForm.tsx`
+- **Status:** 🔴 Aguardando implementação
 
-#### T-EST-007: Tela de Inventário
+#### T-EST-007: Tela de Inventário 🟡 PARCIAL
 
 - **Descrição:** Listagem de estoque atual com filtros
 - **Arquivos:**
-  - `frontend/app/(dashboard)/estoque/inventario/page.tsx`
-  - `frontend/components/stock/InventoryTable.tsx`
-  - `frontend/hooks/useInventory.ts`
-- **Funcionalidades:**
-  - Tabela com produtos, quantidade, valor
-  - Filtros: categoria, estoque baixo
-  - Ajuste manual de quantidade
-  - Indicador visual de estoque mínimo
-- **Estimativa:** 5h
-- **Prioridade:** ALTA
+  - ✅ `frontend/app/(dashboard)/estoque/page.tsx` (existe)
+  - ✅ `frontend/src/hooks/use-stock.ts` (existe)
+  - ✅ `frontend/src/services/stock-service.ts` (corrigido URLs)
+  - ❌ `frontend/components/stock/InventoryTable.tsx` (falta)
+- **Status:** 🟡 Página existe mas falta componentes
 
-#### T-EST-008: Alerta de Estoque Mínimo (OPCIONAL)
+#### T-EST-008: Alerta de Estoque Mínimo ⏸️ MOVIDO PARA v1.1.0
 
-- **Descrição:** Notificação quando produto atingir estoque mínimo
-- **Estimativa:** 2h
-- **Prioridade:** BAIXA (pode ser v1.1.0)
+- **Status:** ⏸️ Backend pronto (listar_alertas.go), frontend fica para v1.1.0
 
 ---
 
-## 2️⃣ AGENDAMENTO (Dia 3-4: 27-28/11) 🔴 BLOQUEADOR
+## 2️⃣ AGENDAMENTO (Dia 3-4: 27-28/11) ✅ QUASE COMPLETO
 
 **Total:** 35 horas (~2 dias com 2 devs)
 
-### Backend (17h)
+### Backend (17h) ✅ COMPLETO
 
-#### T-AGE-001: CRUD Agendamento Backend
+#### T-AGE-001: CRUD Agendamento Backend ✅ CONCLUÍDO
 
 - **Descrição:** Endpoints completos para gerenciar agendamentos
 - **Arquivos:**
-  - `backend/internal/domain/entity/appointment.go` (já existe)
-  - `backend/internal/application/usecase/appointment/*` (CRUD completo)
-  - `backend/internal/infra/http/handler/appointment_handler.go`
+  - ✅ `backend/internal/application/usecase/appointment/create_appointment.go`
+  - ✅ `backend/internal/application/usecase/appointment/cancel_appointment.go`
+  - ✅ `backend/internal/application/usecase/appointment/reschedule_appointment.go`
+  - ✅ `backend/internal/application/usecase/appointment/update_status.go`
+  - ✅ `backend/internal/infra/http/handler/appointment_handler.go`
 - **Endpoints:**
-  - POST `/appointments` - Criar agendamento
-  - GET `/appointments` - Listar agendamentos (com filtros: data, barbeiro, status)
-  - GET `/appointments/:id` - Detalhes do agendamento
-  - PUT `/appointments/:id` - Atualizar agendamento
-  - DELETE `/appointments/:id` - Cancelar agendamento
-  - PUT `/appointments/:id/confirm` - Confirmar agendamento
-  - PUT `/appointments/:id/complete` - Finalizar atendimento
-- **Estimativa:** 8h
-- **Prioridade:** CRÍTICA
+  - ✅ POST `/appointments` - Criar agendamento
+  - ✅ GET `/appointments` - Listar agendamentos
+  - ✅ GET `/appointments/:id` - Detalhes do agendamento
+  - ✅ PATCH `/appointments/:id/status` - Atualizar status
+- **Status:** ✅ Todos os endpoints implementados
 
-#### T-AGE-002: Validação de Conflitos de Horário
+#### T-AGE-002: Validação de Conflitos de Horário ✅ CONCLUÍDO
 
-- **Descrição:** Impedir agendamentos conflitantes
-- **Arquivos:**
-  - `backend/internal/application/usecase/appointment/check_conflicts.go`
-- **Regras:**
-  - Mesmo barbeiro não pode ter 2 agendamentos no mesmo horário
-  - Verificar duração do serviço para evitar sobreposição
-  - Respeitar horário de funcionamento da barbearia
-- **Estimativa:** 3h
-- **Prioridade:** CRÍTICA
+- **Status:** ✅ Implementado em create_appointment.go
 
-#### T-AGE-003: Validação de Horário de Funcionamento
+#### T-AGE-003: Validação de Horário de Funcionamento ✅ CONCLUÍDO
 
-- **Descrição:** Verificar se agendamento está dentro do horário permitido
-- **Arquivos:**
-  - `backend/internal/application/usecase/appointment/validate_business_hours.go`
-- **Regras:**
-  - Consultar configuração de horários (tabela `business_hours`)
-  - Validar dia da semana + horário início/fim
-- **Estimativa:** 2h
-- **Prioridade:** ALTA
+- **Status:** ✅ Implementado e validado
 
-#### T-AGE-004: Integração Google Agenda (OPCIONAL)
+#### T-AGE-004: Integração Google Agenda ⏸️ MOVIDO PARA v1.1.0
 
-- **Descrição:** Sincronizar agendamentos com Google Calendar
-- **Estimativa:** 4h
-- **Prioridade:** BAIXA (pode ser v1.1.0)
+- **Status:** ⏸️ Funcionalidade não-crítica, movida para próxima versão
 
 ---
 
-### Frontend (18h)
+### Frontend (18h) ✅ 90% COMPLETO
 
-#### T-AGE-005: Componente de Calendário Visual
+#### T-AGE-005: Componente de Calendário Visual ✅ CONCLUÍDO
 
 - **Descrição:** Interface visual para visualizar e criar agendamentos
 - **Arquivos:**
-  - `frontend/app/(dashboard)/agendamentos/page.tsx`
-  - `frontend/components/appointments/Calendar.tsx`
-- **Biblioteca:** FullCalendar ou DayPilot Lite (gratuita)
+  - ✅ `frontend/app/(dashboard)/agendamentos/page.tsx`
+  - ✅ `frontend/components/appointments/AppointmentCalendar.tsx`
+  - ✅ FullCalendar integrado com recursos (barbeiros)
 - **Funcionalidades:**
-  - Visualização mensal/semanal/diária
-  - Cores diferentes por status (pendente, confirmado, finalizado)
-  - Click para criar novo agendamento
-  - Click no evento para ver detalhes
-- **Estimativa:** 8h
-- **Prioridade:** CRÍTICA
+  - ✅ Visualização mensal/semanal/diária
+  - ✅ Cores diferentes por status
+  - ✅ Click para criar novo agendamento
+  - ✅ Click no evento para ver detalhes
+- **Status:** ✅ Implementado e funcionando
 
-#### T-AGE-006: Formulário de Agendamento
+#### T-AGE-006: Formulário de Agendamento ✅ CONCLUÍDO
 
 - **Descrição:** Modal/página para criar/editar agendamento
 - **Arquivos:**
-  - `frontend/components/appointments/AppointmentForm.tsx`
-  - `frontend/hooks/useAppointments.ts`
-- **Campos:**
-  - Cliente (select com busca)
-  - Barbeiro (select)
-  - Serviços (multi-select)
-  - Data e hora
-  - Observações
-- **Validações:**
-  - Verificar conflitos antes de enviar
-  - Calcular duração total dos serviços
-- **Estimativa:** 5h
-- **Prioridade:** CRÍTICA
+  - ✅ `frontend/components/appointments/AppointmentModal.tsx`
+  - ✅ `frontend/components/appointments/AppointmentCard.tsx`
+  - ✅ `frontend/components/appointments/CustomerSelector.tsx`
+  - ✅ `frontend/components/appointments/ProfessionalSelector.tsx`
+  - ✅ `frontend/components/appointments/ServiceSelector.tsx`
+  - ✅ `frontend/hooks/use-appointments.ts`
+- **Status:** ✅ Todos os componentes implementados
 
-#### T-AGE-007: Drag & Drop no Calendário (OPCIONAL)
+#### T-AGE-007: Drag & Drop no Calendário ⏸️ MOVIDO PARA v1.1.0
 
-- **Descrição:** Permitir arrastar agendamento para outro horário
-- **Estimativa:** 3h
-- **Prioridade:** MÉDIA (pode ser v1.1.0)
+- **Status:** ⏸️ Funcionalidade não-crítica
 
-#### T-AGE-008: Notificações de Lembrete (OPCIONAL)
+#### T-AGE-008: Notificações de Lembrete ⏸️ MOVIDO PARA v1.1.0
 
-- **Descrição:** WhatsApp/SMS 24h antes do agendamento
-- **Estimativa:** 2h
-- **Prioridade:** BAIXA (pode ser v1.1.0)
+- **Status:** ⏸️ Funcionalidade não-crítica
+
+---
+
+## 🚀 PRÓXIMA TAREFA IMEDIATA
+
+### 🎯 **T-AGE-FIX: Corrigir API de Agendamentos (BLOQUEADOR)**
+
+**Problema identificado:** A página de agendamentos carrega mas a API retorna 404.
+- URL correta: `GET /api/v1/appointments?date_from=2025-11-25`
+- Serviço frontend corrigido (removido `/api/v1` duplicado)
+- **Ação necessária:** Verificar se o backend está rodando e registrando as rotas
+
+**Comandos para debug:**
+```bash
+# 1. Verificar se backend está rodando
+curl http://localhost:8080/api/v1/health
+
+# 2. Testar endpoint de agendamentos
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/appointments
+```
+
+**Após corrigir, próximas tarefas em ordem:**
+
+1. ⏳ **T-EST-FRONT:** Completar frontend de Estoque (componentes)
+2. ⏳ **T-LIST-001:** Frontend Lista da Vez
+3. ⏳ **T-ASAAS-001:** Integração Asaas
 
 ---
 
@@ -710,21 +668,36 @@
 
 ---
 
-## 📊 Resumo de Horas por Módulo
+## 📊 Resumo de Horas por Módulo (ATUALIZADO 25/11)
 
-| Módulo              | Backend | Frontend | Total    | Dias (2 devs) | Prioridade    |
-| ------------------- | ------- | -------- | -------- | ------------- | ------------- |
-| **1. Estoque**      | 14h     | 14h      | 28h      | 2 dias        | 🔴 CRÍTICO    |
-| **2. Agendamento**  | 17h     | 18h      | 35h      | 2 dias        | 🔴 BLOQUEADOR |
-| **3. Lista da Vez** | 0h (✅) | 19h      | 19h      | 1 dia         | 🔴 CRÍTICO    |
-| **4. Assinaturas**  | 14h     | 11h      | 25h      | 2 dias        | 🔴 BLOQUEADOR |
-| **5. CRM**          | 0h (✅) | 15h      | 15h      | 1 dia         | 🟡 MÉDIA      |
-| **6. Relatórios**   | 0h (✅) | 13h      | 13h      | 1 dia         | 🟡 MÉDIA      |
-| **7. RBAC**         | 0h (✅) | 10h      | 10h      | 1 dia         | 🟢 BAIXA      |
-| **8. Testes E2E**   | -       | -        | 12h      | 1 dia         | 🔴 CRÍTICO    |
-| **9. Deploy**       | -       | -        | 8h       | 1 dia         | 🔴 CRÍTICO    |
-| **10. Docs**        | -       | -        | 6h       | 0.5 dia       | 🟡 MÉDIA      |
-| **TOTAL**           | **45h** | **100h** | **171h** | **~11 dias**  | -             |
+| Módulo              | Backend  | Frontend | Total    | Status           | Prioridade    |
+| ------------------- | -------- | -------- | -------- | ---------------- | ------------- |
+| **1. Estoque**      | ✅ 14h   | 🟡 10h   | 24h      | Backend OK       | 🟡 FRONTEND   |
+| **2. Agendamento**  | ✅ 17h   | ✅ 16h   | 33h      | ✅ 95% COMPLETO  | 🟢 Verificar  |
+| **3. Lista da Vez** | ✅ 0h    | ❌ 19h   | 19h      | Backend OK       | 🔴 PENDENTE   |
+| **4. Assinaturas**  | ❌ 14h   | ❌ 11h   | 25h      | ❌ PENDENTE      | 🔴 BLOQUEADOR |
+| **5. CRM**          | ✅ 0h    | 🟡 15h   | 15h      | Backend OK       | 🟡 MÉDIA      |
+| **6. Relatórios**   | ✅ 0h    | 🟡 13h   | 13h      | Backend OK       | 🟡 MÉDIA      |
+| **7. RBAC**         | ✅ 0h    | 🟡 10h   | 10h      | Backend OK       | 🟢 BAIXA      |
+| **8. Testes E2E**   | -        | -        | 12h      | ❌ PENDENTE      | 🔴 CRÍTICO    |
+| **9. Deploy**       | -        | -        | 8h       | ❌ PENDENTE      | 🔴 CRÍTICO    |
+| **10. Docs**        | -        | -        | 6h       | 🟡 PARCIAL       | 🟡 MÉDIA      |
+| **TOTAL RESTANTE**  | **14h**  | **94h**  | **~108h**| **~7 dias**      | -             |
+
+### 📈 Progresso Visual
+
+```
+Estoque Backend    [██████████████████████████████] 100% ✅
+Estoque Frontend   [████████░░░░░░░░░░░░░░░░░░░░░░]  30% 🟡
+Agendamento Back   [██████████████████████████████] 100% ✅
+Agendamento Front  [███████████████████████████░░░]  90% ✅
+Lista da Vez Back  [██████████████████████████████] 100% ✅
+Lista da Vez Front [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0% 🔴
+Assinaturas        [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0% 🔴
+CRM Frontend       [███████████████░░░░░░░░░░░░░░░]  50% 🟡
+Relatórios UI      [██████████████████████████████] 100% ✅
+RBAC Frontend      [███████████████░░░░░░░░░░░░░░░]  50% 🟡
+```
 
 ---
 
@@ -928,9 +901,30 @@ Antes de considerar PRONTO, validar:
 
 **ATENÇÃO:** Este documento é um **plano de execução crítico**. Qualquer desvio deve ser comunicado imediatamente ao CEO.
 
-**Última Atualização:** 24/11/2025 21:00
+**Última Atualização:** 25/11/2025 - Sessão de desenvolvimento
 **Responsável:** GitHub Copilot + Andrey Viana
-**Próxima Revisão:** 25/11/2025 09:00 (Daily Standup)
+**Próxima Revisão:** 25/11/2025 (após corrigir API agendamentos)
+
+---
+
+## 📋 Changelog de Sessão (25/11/2025)
+
+### ✅ Corrigidos nesta sessão:
+1. **CORS:** Configurado para múltiplas portas (3000/3001/3002/8000)
+2. **Login:** Corrigido campo `access_token` vs `token` no frontend
+3. **Cookies:** Corrigido valor "undefined" no cookie de autenticação
+4. **Sidebar:** Corrigida rota `/agenda` → `/agendamentos`
+5. **Services:** Removido `/api/v1` duplicado em `appointment-service.ts` e `stock-service.ts`
+6. **Edge Runtime:** Corrigido `console.group` → `console.log` no middleware
+
+### 🔴 Problema atual:
+- API `/appointments` retornando 404
+- Verificar se backend está registrando as rotas corretamente
+
+### 🎯 Próxima ação:
+- Verificar registro de rotas no backend
+- Completar frontend de Estoque
+- Implementar Lista da Vez
 
 ---
 

@@ -23,17 +23,17 @@
 - [x] Função `cn()` em `src/lib/utils.ts`
 - [x] Documentação Design System criada (`docs/03-frontend/`)
 
-### ❌ Pendente (Estrutura Base)
+### ✅ Concluído (Estrutura Base)
 
-- [ ] Estrutura de pastas (`hooks/`, `store/`, `services/`, `types/`)
-- [ ] `src/lib/axios.ts` (instância configurada)
-- [ ] `src/lib/query-client.ts` (QueryClientProvider)
-- [ ] `src/store/auth-store.ts` (Zustand)
-- [ ] `src/store/ui-store.ts` (sidebar, theme)
-- [ ] `src/app/layout.tsx` com Providers
-- [ ] Route Groups (`(auth)/`, `(dashboard)/`)
-- [ ] `middleware.ts` (proteção de rotas)
-- [ ] Layout Dashboard (Sidebar, Header)
+- [x] Estrutura de pastas (`hooks/`, `store/`, `services/`, `types/`)
+- [x] `src/lib/axios.ts` (instância configurada)
+- [x] `src/lib/query-client.ts` (QueryClientProvider)
+- [x] `src/store/auth-store.ts` (Zustand)
+- [x] `src/store/ui-store.ts` (sidebar, theme)
+- [x] `src/app/layout.tsx` com Providers
+- [x] Route Groups (`(auth)/`, `(dashboard)/`)
+- [x] `middleware.ts` (proteção de rotas)
+- [x] Layout Dashboard (Sidebar, Header)
 
 ---
 
@@ -62,8 +62,8 @@
 | F1-003 | Criar `src/app/(auth)/layout.tsx` (layout centralizado)     | 20min | ✅     |
 | F1-004 | Criar `src/app/(auth)/login/page.tsx` (formulário + Zod)    | 1h    | ✅     |
 | F1-005 | Criar `src/middleware.ts` (proteção de rotas)               | 30min | ✅     |
-| F1-006 | Atualizar `src/app/layout.tsx` com Providers                | 30min | ⬜     |
-| F1-007 | Criar `src/app/providers.tsx` (QueryClient, Theme, Toaster) | 30min | ⬜     |
+| F1-006 | Atualizar `src/app/layout.tsx` com Providers                | 30min | ✅     |
+| F1-007 | Criar `src/app/providers.tsx` (QueryClient, Theme, Toaster) | 30min | ✅     |
 
 ---
 
@@ -75,11 +75,11 @@
 
 | ID     | Tarefa                                                                   | Tempo | Status |
 | ------ | ------------------------------------------------------------------------ | ----- | ------ |
-| F2-001 | Criar `src/store/ui-store.ts` (sidebar open, theme)                      | 20min | ⬜     |
-| F2-002 | Criar `src/app/(dashboard)/layout.tsx`                                   | 30min | ⬜     |
-| F2-003 | Criar `src/components/layout/Sidebar.tsx` (navegação, collapse, mobile)  | 2h    | ⬜     |
-| F2-004 | Criar `src/components/layout/Header.tsx` (user menu, breadcrumb, mobile) | 1h    | ⬜     |
-| F2-005 | Criar `src/components/layout/UserNav.tsx` (dropdown user)                | 30min | ⬜     |
+| F2-001 | Criar `src/store/ui-store.ts` (sidebar open, theme)                      | 20min | ✅     |
+| F2-002 | Criar `src/app/(dashboard)/layout.tsx`                                   | 30min | ✅     |
+| F2-003 | Criar `src/components/layout/Sidebar.tsx` (navegação, collapse, mobile)  | 2h    | ✅     |
+| F2-004 | Criar `src/components/layout/Header.tsx` (user menu, breadcrumb, mobile) | 1h    | ✅     |
+| F2-005 | Criar `src/components/layout/UserNav.tsx` (dropdown user)                | 30min | ✅     |
 
 ---
 
@@ -91,17 +91,17 @@
 
 | ID     | Tarefa                                                          | Tempo | Status |
 | ------ | --------------------------------------------------------------- | ----- | ------ |
-| F3-001 | Criar `src/types/stock.ts` (StockEntry, StockExit, Inventory)   | 30min | ⬜     |
-| F3-002 | Criar `src/services/stock-service.ts`                           | 45min | ⬜     |
-| F3-003 | Criar `src/hooks/use-stock.ts`                                  | 45min | ⬜     |
-| F3-004 | Criar `src/components/stock/EntryForm.tsx`                      | 1h30  | ⬜     |
-| F3-005 | Criar `src/app/(dashboard)/estoque/entrada/page.tsx`            | 1h    | ⬜     |
-| F3-006 | Criar `src/components/stock/ExitForm.tsx`                       | 1h    | ⬜     |
-| F3-007 | Criar `src/app/(dashboard)/estoque/saida/page.tsx`              | 45min | ⬜     |
-| F3-008 | Criar `src/components/shared/DataTable.tsx` (REUTILIZÁVEL)      | 2h    | ⬜     |
-| F3-009 | Criar `src/components/stock/InventoryTable.tsx`                 | 1h30  | ⬜     |
-| F3-010 | Criar `src/app/(dashboard)/estoque/page.tsx` (inventário)       | 1h30  | ⬜     |
-| F3-011 | Criar `src/app/(dashboard)/estoque/layout.tsx` (tabs navegação) | 30min | ⬜     |
+| F3-001 | Criar `src/types/stock.ts` (StockEntry, StockExit, Inventory)   | 30min | ✅     |
+| F3-002 | Criar `src/services/stock-service.ts`                           | 45min | ✅     |
+| F3-003 | Criar `src/hooks/use-stock.ts`                                  | 45min | ✅     |
+| F3-004 | Criar `src/components/stock/EntryForm.tsx`                      | 1h30  | ✅     |
+| F3-005 | Criar `src/app/(dashboard)/estoque/entrada/page.tsx`            | 1h    | ✅     |
+| F3-006 | Criar `src/components/stock/ExitForm.tsx`                       | 1h    | ✅     |
+| F3-007 | Criar `src/app/(dashboard)/estoque/saida/page.tsx`              | 45min | ✅     |
+| F3-008 | Criar `src/components/shared/DataTable.tsx` (REUTILIZÁVEL)      | 2h    | ✅     |
+| F3-009 | Criar `src/components/stock/InventoryTable.tsx`                 | 1h30  | ✅     |
+| F3-010 | Criar `src/app/(dashboard)/estoque/page.tsx` (inventário)       | 1h30  | ✅     |
+| F3-011 | Criar `src/app/(dashboard)/estoque/layout.tsx` (tabs navegação) | 30min | ✅     |
 
 ---
 
@@ -303,13 +303,16 @@ F0 (Estrutura) ─── F1 (Auth) ─── F2 (Layout) ───┬── F3 (
 - [x] Axios configurado com interceptors
 - [x] React Query configurado (QueryClient + queryKeys)
 - [x] Auth Store funcionando (Zustand)
+- [x] UI Store criado (sidebar, theme, breadcrumbs)
 - [x] Middleware protegendo rotas
+- [x] Providers configurados (QueryClient, Theme, Toaster)
+- [x] Layout root atualizado com Providers
 
 ### Módulos Core
 
-- [ ] **Login:** Formulário funcionando + redirect
-- [ ] **Layout:** Sidebar + Header responsivos
-- [ ] **Estoque:** Entrada, Saída, Inventário
+- [x] **Login:** Formulário funcionando + redirect
+- [x] **Layout:** Sidebar + Header responsivos
+- [x] **Estoque:** Entrada, Saída, Inventário
 - [ ] **Agendamento:** Calendário + CRUD
 - [ ] **Lista da Vez:** Fila completa
 - [ ] **Assinaturas:** Checkout + Gerenciamento
@@ -354,17 +357,20 @@ F0 (Estrutura) ─── F1 (Auth) ─── F2 (Layout) ───┬── F3 (
 
 ## 📝 Log de Progresso
 
-| Data  | Fase | Tarefas Concluídas               | Observações             |
-| ----- | ---- | -------------------------------- | ----------------------- |
-| 25/11 | -    | Arquivo de tarefas criado        | Iniciando implementação |
-| 25/11 | F0   | F0-001 a F0-005 (Estrutura Base) | ✅ FASE F0 COMPLETA     |
-| 25/11 | F1   | F1-001 a F1-005 (Auth parcial)   | Faltam F1-006 e F1-007  |
+| Data  | Fase | Tarefas Concluídas                          | Observações                                                           |
+| ----- | ---- | ------------------------------------------- | --------------------------------------------------------------------- |
+| 25/11 | -    | Arquivo de tarefas criado                   | Iniciando implementação                                               |
+| 25/11 | F0   | F0-001 a F0-005 (Estrutura Base)            | ✅ FASE F0 COMPLETA                                                   |
+| 25/11 | F1   | F1-001 a F1-007 (Auth completa)             | ✅ FASE F1 COMPLETA                                                   |
+| 25/11 | F2   | F2-001 a F2-005 (Layout Dashboard completo) | ✅ FASE F2 COMPLETA - Sidebar, Header, UserNav                        |
+| 25/11 | F3   | F3-001 a F3-011 (Estoque completo)          | ✅ FASE F3 COMPLETA - Types, Service, Hooks, Pages (inventário total) |
 
 ---
 
-**Última Atualização:** 25/11/2025
+**Última Atualização:** 25/11/2025 23:45
 **Responsável:** Andrey Viana + GitHub Copilot
 **Próxima Revisão:** 26/11/2025 09:00
+**Progresso:** 4/11 fases concluídas (36%)
 
 ---
 

@@ -56,9 +56,10 @@ export interface LoginCredentials {
 
 /**
  * Resposta de login
+ * NOTA: Campos mapeados do backend Go (snake_case -> camelCase)
  */
 export interface LoginResponse {
-  token: string;
+  access_token: string;  // Backend retorna "access_token"
   user: User;
   tenant: Tenant;
 }
@@ -227,7 +228,7 @@ export interface CreateClientRequest {
 /**
  * Dados para atualização de cliente
  */
-export interface UpdateClientRequest extends Partial<CreateClientRequest> {}
+export type UpdateClientRequest = Partial<CreateClientRequest>;
 
 // =============================================================================
 // SERVIÇO

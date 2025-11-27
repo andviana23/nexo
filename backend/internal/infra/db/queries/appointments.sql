@@ -182,12 +182,12 @@ SELECT EXISTS (
 ) as exists;
 
 -- name: GetProfessionalInfo :one
-SELECT id, nome, status, cor
+SELECT id, nome, status, NULL::text as cor
 FROM profissionais
 WHERE id = $1 AND tenant_id = $2;
 
 -- name: ListActiveProfessionals :many
-SELECT id, nome, status, cor
+SELECT id, nome, status, NULL::text as cor
 FROM profissionais
 WHERE tenant_id = $1 AND status = 'ATIVO'
 ORDER BY nome ASC;

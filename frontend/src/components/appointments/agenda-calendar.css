@@ -1,0 +1,156 @@
+/**
+ * NEXO - Agenda Calendar Styles
+ * Estilos customizados para o FullCalendar - Design System Theme
+ */
+
+.agenda-calendar-wrapper {
+  /* FullCalendar Variables - Theming with Shadcn/UI tokens */
+  --fc-border-color: hsl(var(--border));
+  --fc-page-bg-color: hsl(var(--card));
+  --fc-neutral-bg-color: hsl(var(--muted));
+  --fc-list-event-hover-bg-color: hsl(var(--accent));
+  --fc-today-bg-color: hsl(var(--accent) / 0.3);
+  --fc-now-indicator-color: hsl(var(--destructive));
+  --fc-event-bg-color: hsl(var(--primary));
+  --fc-event-border-color: hsl(var(--primary));
+  --fc-event-text-color: hsl(var(--primary-foreground));
+  
+  /* Layout */
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Container Principal */
+.agenda-calendar-wrapper .fc {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem; /* text-sm */
+}
+
+/* Header dos Dias/Recursos */
+.agenda-calendar-wrapper .fc-col-header-cell {
+  background-color: hsl(var(--muted)); /* Cinza leve para destaque */
+  padding: 8px 0;
+  border-bottom: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+}
+
+.agenda-calendar-wrapper .fc-col-header-cell-cushion {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  text-decoration: none; 
+}
+
+/* Coluna de Horas (Axis) */
+.agenda-calendar-wrapper .fc-timegrid-axis {
+  background-color: hsl(var(--muted)); /* Cinza leve para destaque */
+  border-right: 1px solid hsl(var(--border));
+}
+
+.agenda-calendar-wrapper .fc-timegrid-slot-label {
+  background-color: hsl(var(--muted)); /* Cinza leve para destaque */
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* Slots de Tempo - Linhas de Grade */
+.agenda-calendar-wrapper .fc-timegrid-slot {
+  height: 3rem; 
+  border-bottom: 1px solid hsl(var(--border)); /* Linha de grade visível */
+}
+
+.agenda-calendar-wrapper .fc-timegrid-slot-minor {
+  border-bottom-style: dashed; /* Diferenciar slots menores */
+}
+
+.agenda-calendar-wrapper .fc-timegrid-slot-label-cushion {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem; /* text-xs */
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Colunas Verticais - Linhas de Grade */
+.agenda-calendar-wrapper .fc-timegrid-col {
+  border-right: 1px solid hsl(var(--border)); /* Linha vertical visível */
+}
+
+/* Eventos */
+.agenda-calendar-wrapper .fc-event {
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  transition: all 0.2s;
+  border: none;
+}
+
+.agenda-calendar-wrapper .fc-event:hover {
+  filter: brightness(0.95);
+  transform: scale(1.01);
+  z-index: 5;
+}
+
+/* Custom Event Content */
+.nexo-event-content {
+  padding: 4px 6px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  border-left: 3px solid rgba(255,255,255,0.3);
+}
+
+.nexo-event-time {
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.nexo-event-title {
+  font-weight: 600;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nexo-event-info {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scrollbar Customizada */
+.agenda-calendar-wrapper .fc-scroller::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.agenda-calendar-wrapper .fc-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.agenda-calendar-wrapper .fc-scroller::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+.agenda-calendar-wrapper .fc-scroller::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Status Colors */
+.fc-event[data-status='CREATED'] { background-color: hsl(217 91% 60%); }
+.fc-event[data-status='CONFIRMED'] { background-color: hsl(var(--primary)); }
+.fc-event[data-status='IN_SERVICE'] { background-color: hsl(142 76% 36%); }
+.fc-event[data-status='DONE'] { background-color: hsl(var(--muted-foreground)); }
+.fc-event[data-status='NO_SHOW'] { background-color: hsl(var(--destructive)); }
+.fc-event[data-status='CANCELED'] { background-color: hsl(var(--muted) / 0.8); color: hsl(var(--muted-foreground)); }
+.fc-event[data-status='BLOCKED'] { 
+  background-color: hsl(var(--destructive) / 0.1); 
+  border: 1px dashed hsl(var(--destructive));
+  color: hsl(var(--destructive));
+}

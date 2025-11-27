@@ -6,6 +6,19 @@
  * Devem refletir os DTOs do backend Go.
  */
 
+// Re-export dos módulos de tipos
+export * from './appointment';
+// Customer module: usar tipos específicos para evitar conflito com appointment.Customer
+export {
+    DEFAULT_TAGS, ESTADOS_BR, GENDER_LABELS,
+    TAG_COLORS, cleanCEP, cleanCPF, cleanPhone, formatCEP, formatCPF, formatPhone, type CheckExistsParams, type CheckExistsResponse, type CreateCustomerRequest, type CustomerAddressExport,
+    type CustomerAppointmentExport,
+    type CustomerExportResponse, type Customer as CustomerFull, type CustomerGender, type CustomerModalState, type CustomerResponse, type CustomerStatsResponse, type CustomerSummary,
+    type CustomerWithHistory, type ListCustomersFilters, type ListCustomersResponse, type SearchCustomersParams, type UpdateCustomerRequest
+} from './customer';
+export * from './professional';
+export * from './stock';
+
 // =============================================================================
 // TIPOS UTILITÁRIOS
 // =============================================================================
@@ -78,7 +91,7 @@ export interface RefreshTokenResponse {
 /**
  * Roles disponíveis no sistema
  */
-export type UserRole = 'admin' | 'manager' | 'professional' | 'receptionist';
+export type UserRole = 'owner' | 'admin' | 'manager' | 'accountant' | 'employee' | 'barbeiro' | 'professional' | 'receptionist';
 
 /**
  * Status do usuário

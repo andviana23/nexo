@@ -8,17 +8,17 @@
 import { api } from '@/lib/axios';
 import { APPOINTMENT_STATUS_COLORS } from '@/lib/fullcalendar-config';
 import type {
-    AppointmentResponse,
-    AvailabilityResponse,
-    CalendarEvent,
-    CalendarResource,
-    CheckAvailabilityParams,
-    CreateAppointmentRequest,
-    ListAppointmentsFilters,
-    ListAppointmentsResponse,
-    Professional,
-    UpdateAppointmentRequest,
-    UpdateAppointmentStatusRequest,
+  AppointmentResponse,
+  AvailabilityResponse,
+  CalendarEvent,
+  CalendarResource,
+  CheckAvailabilityParams,
+  CreateAppointmentRequest,
+  ListAppointmentsFilters,
+  ListAppointmentsResponse,
+  Professional,
+  UpdateAppointmentRequest,
+  UpdateAppointmentStatusRequest,
 } from '@/types/appointment';
 
 // =============================================================================
@@ -47,11 +47,19 @@ export const appointmentService = {
    * Lista agendamentos com filtros
    */
   async list(filters: ListAppointmentsFilters = {}): Promise<ListAppointmentsResponse> {
-    const response = await api.get<ListAppointmentsResponse>(
-      APPOINTMENT_ENDPOINTS.list,
-      { params: filters }
-    );
-    return response.data;
+    console.log('[appointment-service] Chamando list com filtros:', filters);
+    try {
+      const response = await api.get<ListAppointmentsResponse>(
+        APPOINTMENT_ENDPOINTS.list,
+        { params: filters }
+      );
+      console.log('[appointment-service] Resposta list:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[appointment-service] Erro ao listar agendamentos:', error);
+      // Retornar resposta vazia em caso de erro para não travar o calendário
+      return { data: [], page: 1, page_size: 20, total: 0 };
+    }
   },
 
   /**
@@ -122,54 +130,39 @@ export const appointmentService = {
 
   /**
    * Lista profissionais (barbeiros) ativos
-   * TODO: Implementar rota /professionals no backend
-   * Por enquanto retorna dados mockados para o MVP
    */
   async listProfessionals(): Promise<Professional[]> {
-    // TODO: Descomentar quando backend tiver a rota /professionals
-    // const response = await api.get<{ data: Professional[] }>(
-    //   APPOINTMENT_ENDPOINTS.professionals
-    // );
-    // return response.data.data;
-
-    // Dados mockados para MVP - remover quando backend estiver pronto
-    console.warn('[appointment-service] Usando dados mockados para profissionais. Implementar rota /professionals no backend.');
-    
-    return [
-      {
-        id: '1',
-        tenant_id: 'mock-tenant',
-        name: 'Carlos Silva',
-        email: 'carlos@barbearia.com',
-        phone: '11999999999',
-        avatar_url: undefined,
-        is_active: true,
+    try {
+      const response = await api.get<{ data: Array<{
+        id: string;
+        tenant_id: string;
+        nome: string;
+        email: string;
+        telefone: string;
+        foto?: string;
+        status: string;
+        tipo: string;
+      }>; total: number }>(
+        APPOINTMENT_ENDPOINTS.professionals,
+        { params: { status: 'ATIVO' } }
+      );
+      
+      // Mapear resposta do backend para o tipo Professional usado no frontend
+      return response.data.data.map(p => ({
+        id: p.id,
+        tenant_id: p.tenant_id,
+        name: p.nome,
+        email: p.email,
+        phone: p.telefone,
+        avatar_url: p.foto,
+        is_active: p.status === 'ATIVO',
         google_calendar_connected: false,
         created_at: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        tenant_id: 'mock-tenant',
-        name: 'João Santos',
-        email: 'joao@barbearia.com',
-        phone: '11988888888',
-        avatar_url: undefined,
-        is_active: true,
-        google_calendar_connected: false,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: '3',
-        tenant_id: 'mock-tenant',
-        name: 'Pedro Oliveira',
-        email: 'pedro@barbearia.com',
-        phone: '11977777777',
-        avatar_url: undefined,
-        is_active: true,
-        google_calendar_connected: false,
-        created_at: new Date().toISOString(),
-      },
-    ];
+      }));
+    } catch (error) {
+      console.error('[appointment-service] Erro ao buscar profissionais:', error);
+      return [];
+    }
   },
 };
 

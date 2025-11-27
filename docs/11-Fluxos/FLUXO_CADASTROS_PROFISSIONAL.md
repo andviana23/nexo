@@ -136,7 +136,7 @@ Sistema suporta **4 tipos principais**:
 | GERENTE | `manager` | ⚠️ Opcional* | ⚠️ Opcional* | ⚠️ Opcional* |
 | RECEPCIONISTA | `recepcionista` | ❌ Não | ❌ Não | ❌ Não |
 | OUTRO | `employee` | ❌ Não | ❌ Não | ❌ Não |
-
+FLUXO_CADASTROS_PROFISSIONAL.md
 *Gerente pode marcar checkbox "Também atuo como Barbeiro" → herda configurações de barbeiro.
 
 ### RN-PROF-006: Horário de Trabalho (JSON)

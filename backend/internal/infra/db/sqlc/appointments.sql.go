@@ -419,7 +419,7 @@ func (q *Queries) GetDailyAppointmentStats(ctx context.Context, arg GetDailyAppo
 }
 
 const getProfessionalInfo = `-- name: GetProfessionalInfo :one
-SELECT id, nome, status, cor
+SELECT id, nome, status, NULL::text as cor
 FROM profissionais
 WHERE id = $1 AND tenant_id = $2
 `
@@ -527,7 +527,7 @@ func (q *Queries) GetServicesByIDs(ctx context.Context, arg GetServicesByIDsPara
 }
 
 const listActiveProfessionals = `-- name: ListActiveProfessionals :many
-SELECT id, nome, status, cor
+SELECT id, nome, status, NULL::text as cor
 FROM profissionais
 WHERE tenant_id = $1 AND status = 'ATIVO'
 ORDER BY nome ASC

@@ -7,6 +7,9 @@ import (
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/appointment"
 	authUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/auth"
+	barberturnUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/barberturn"
+	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria"
+	customerUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/customer"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/financial"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/metas"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/pricing"
@@ -17,12 +20,23 @@ import (
 	mw "github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/scheduler"
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 )
+
+// CustomValidator é um wrapper para o validator do go-playground
+type CustomValidator struct {
+	validate *validator.Validate
+}
+
+// Validate implementa a interface echo.Validator
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validate.Struct(i)
+}
 
 func main() {
 	// Load .env file (ignore error in production where env vars are set directly)
@@ -89,6 +103,18 @@ func main() {
 	professionalReader := postgres.NewProfessionalReader(queries)
 	customerReader := postgres.NewCustomerReader(queries)
 	serviceReader := postgres.NewServiceReader(queries)
+
+	// Customer repository
+	customerRepo := postgres.NewCustomerRepository(queries)
+
+	// Professional repository
+	professionalRepo := postgres.NewProfessionalRepository(queries)
+
+	// Barber Turn (Lista da Vez) repository
+	barberTurnRepo := postgres.NewBarberTurnRepository(queries)
+
+	// Categoria Servico repository
+	categoriaServicoRepo := postgres.NewCategoriaServicoRepository(queries)
 
 	// Initialize use cases - Meta Mensal
 	setMetaMensalUC := metas.NewSetMetaMensalUseCase(metaMensalRepo, logger)
@@ -165,6 +191,37 @@ func main() {
 	updateAppointmentStatusUC := appointment.NewUpdateAppointmentStatusUseCase(appointmentRepo, logger)
 	rescheduleAppointmentUC := appointment.NewRescheduleAppointmentUseCase(appointmentRepo, logger)
 	cancelAppointmentUC := appointment.NewCancelAppointmentUseCase(appointmentRepo, logger)
+
+	// Initialize use cases - Customer (12 use cases)
+	createCustomerUC := customerUC.NewCreateCustomerUseCase(customerRepo, logger)
+	updateCustomerUC := customerUC.NewUpdateCustomerUseCase(customerRepo, logger)
+	listCustomersUC := customerUC.NewListCustomersUseCase(customerRepo, logger)
+	getCustomerUC := customerUC.NewGetCustomerUseCase(customerRepo, logger)
+	getCustomerWithHistoryUC := customerUC.NewGetCustomerWithHistoryUseCase(customerRepo, logger)
+	inactivateCustomerUC := customerUC.NewInactivateCustomerUseCase(customerRepo, logger)
+	searchCustomersUC := customerUC.NewSearchCustomersUseCase(customerRepo, logger)
+	exportCustomerDataUC := customerUC.NewExportCustomerDataUseCase(customerRepo, logger)
+	getCustomerStatsUC := customerUC.NewGetCustomerStatsUseCase(customerRepo, logger)
+	checkPhoneDuplicateUC := customerUC.NewCheckPhoneDuplicateUseCase(customerRepo, logger)
+	checkCPFDuplicateUC := customerUC.NewCheckCPFDuplicateUseCase(customerRepo, logger)
+
+	// Initialize use cases - Barber Turn / Lista da Vez (9 use cases)
+	listBarberTurnUC := barberturnUC.NewListBarberTurnUseCase(barberTurnRepo, logger)
+	addBarberTurnUC := barberturnUC.NewAddBarberToTurnListUseCase(barberTurnRepo, logger)
+	recordTurnUC := barberturnUC.NewRecordTurnUseCase(barberTurnRepo, logger)
+	toggleBarberStatusUC := barberturnUC.NewToggleBarberStatusUseCase(barberTurnRepo, logger)
+	removeBarberTurnUC := barberturnUC.NewRemoveBarberFromTurnListUseCase(barberTurnRepo, logger)
+	resetTurnListUC := barberturnUC.NewResetTurnListUseCase(barberTurnRepo, logger)
+	getTurnHistoryUC := barberturnUC.NewGetTurnHistoryUseCase(barberTurnRepo, logger)
+	getHistorySummaryUC := barberturnUC.NewGetHistorySummaryUseCase(barberTurnRepo, logger)
+	getAvailableBarbersUC := barberturnUC.NewGetAvailableBarbersUseCase(barberTurnRepo, logger)
+
+	// Initialize use cases - Categoria Servico (5 use cases)
+	createCategoriaUC := categoria.NewCreateCategoriaServicoUseCase(categoriaServicoRepo, logger)
+	getCategoriaUC := categoria.NewGetCategoriaServicoUseCase(categoriaServicoRepo, logger)
+	listCategoriasUC := categoria.NewListCategoriasServicosUseCase(categoriaServicoRepo, logger)
+	updateCategoriaUC := categoria.NewUpdateCategoriaServicoUseCase(categoriaServicoRepo, logger)
+	deleteCategoriaUC := categoria.NewDeleteCategoriaServicoUseCase(categoriaServicoRepo, logger)
 
 	// Initialize JWT Manager
 	jwtManager := auth.NewJWTManager()
@@ -292,8 +349,54 @@ func main() {
 		logger,
 	)
 
+	// Initialize handlers - Customers (11 use cases)
+	customerHandler := handler.NewCustomerHandler(
+		createCustomerUC,
+		updateCustomerUC,
+		listCustomersUC,
+		getCustomerUC,
+		getCustomerWithHistoryUC,
+		inactivateCustomerUC,
+		searchCustomersUC,
+		exportCustomerDataUC,
+		getCustomerStatsUC,
+		checkPhoneDuplicateUC,
+		checkCPFDuplicateUC,
+		logger,
+	)
+
+	// Initialize handlers - Barber Turn / Lista da Vez (9 use cases)
+	barberTurnHandler := handler.NewBarberTurnHandler(
+		listBarberTurnUC,
+		addBarberTurnUC,
+		recordTurnUC,
+		toggleBarberStatusUC,
+		removeBarberTurnUC,
+		resetTurnListUC,
+		getTurnHistoryUC,
+		getHistorySummaryUC,
+		getAvailableBarbersUC,
+		logger,
+	)
+
+	// Initialize handlers - Professionals (8 endpoints)
+	professionalHandler := handler.NewProfessionalHandler(professionalRepo, logger)
+
+	// Initialize handlers - Categoria Servico (5 endpoints)
+	categoriaServicoHandler := handler.NewCategoriaServicoHandler(
+		createCategoriaUC,
+		getCategoriaUC,
+		listCategoriasUC,
+		updateCategoriaUC,
+		deleteCategoriaUC,
+		logger,
+	)
+
 	// Create Echo instance
 	e := echo.New()
+
+	// Configure Validator
+	e.Validator = &CustomValidator{validate: validator.New()}
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -364,6 +467,31 @@ func main() {
 	appointmentsGroup.PATCH("/:id/reschedule", appointmentHandler.RescheduleAppointment)
 	appointmentsGroup.POST("/:id/cancel", appointmentHandler.CancelAppointment)
 
+	// Customer routes - 11 endpoints (PROTEGIDAS com JWT)
+	customersGroup := protected.Group("/customers")
+	customersGroup.POST("", customerHandler.CreateCustomer)
+	customersGroup.GET("", customerHandler.ListCustomers)
+	customersGroup.GET("/search", customerHandler.SearchCustomers)
+	customersGroup.GET("/stats", customerHandler.GetCustomerStats)
+	customersGroup.GET("/check-phone", customerHandler.CheckPhoneExists)
+	customersGroup.GET("/check-cpf", customerHandler.CheckCPFExists)
+	customersGroup.GET("/:id", customerHandler.GetCustomer)
+	customersGroup.GET("/:id/history", customerHandler.GetCustomerWithHistory)
+	customersGroup.GET("/:id/export", customerHandler.ExportCustomerData)
+	customersGroup.PUT("/:id", customerHandler.UpdateCustomer)
+	customersGroup.DELETE("/:id", customerHandler.InactivateCustomer)
+
+	// Professional routes - 8 endpoints (PROTEGIDAS com JWT)
+	professionalsGroup := protected.Group("/professionals")
+	professionalsGroup.GET("", professionalHandler.ListProfessionals)
+	professionalsGroup.POST("", professionalHandler.CreateProfessional)
+	professionalsGroup.GET("/check-email", professionalHandler.CheckEmailExists)
+	professionalsGroup.GET("/check-cpf", professionalHandler.CheckCpfExists)
+	professionalsGroup.GET("/:id", professionalHandler.GetProfessional)
+	professionalsGroup.PUT("/:id", professionalHandler.UpdateProfessional)
+	professionalsGroup.PUT("/:id/status", professionalHandler.UpdateProfessionalStatus)
+	professionalsGroup.DELETE("/:id", professionalHandler.DeleteProfessional)
+
 	// Financial routes - 19 endpoints (PROTEGIDAS com JWT)
 	financialGroup := protected.Group("/financial")
 
@@ -396,12 +524,32 @@ func main() {
 	financialGroup.GET("/dre/:month", financialHandler.GetDRE)
 	financialGroup.GET("/dre", financialHandler.ListDRE)
 
+	// Barber Turn (Lista da Vez) routes - 9 endpoints (PROTEGIDAS com JWT)
+	turnGroup := protected.Group("/barber-turn")
+	turnGroup.GET("/list", barberTurnHandler.ListBarbersTurn)                              // GET /api/v1/barber-turn/list
+	turnGroup.POST("/add", barberTurnHandler.AddBarberToTurnList)                          // POST /api/v1/barber-turn/add
+	turnGroup.POST("/record", barberTurnHandler.RecordTurn)                                // POST /api/v1/barber-turn/record
+	turnGroup.PUT("/:professional_id/toggle-status", barberTurnHandler.ToggleBarberStatus) // PUT /api/v1/barber-turn/:professional_id/toggle-status
+	turnGroup.DELETE("/:professional_id", barberTurnHandler.RemoveBarberFromTurnList)      // DELETE /api/v1/barber-turn/:professional_id
+	turnGroup.POST("/reset", barberTurnHandler.ResetTurnList)                              // POST /api/v1/barber-turn/reset
+	turnGroup.GET("/history", barberTurnHandler.GetTurnHistory)                            // GET /api/v1/barber-turn/history
+	turnGroup.GET("/history/summary", barberTurnHandler.GetHistorySummary)                 // GET /api/v1/barber-turn/history/summary
+	turnGroup.GET("/available", barberTurnHandler.GetAvailableBarbers)                     // GET /api/v1/barber-turn/available
+
 	// Stock routes - 4 endpoints
 	stockGroup := api.Group("/stock")
 	stockGroup.POST("/entries", stockHandler.RegistrarEntrada) // Registrar entrada
 	stockGroup.POST("/exit", stockHandler.RegistrarSaida)      // Registrar saída
 	stockGroup.POST("/adjust", stockHandler.AjustarEstoque)    // Ajustar estoque
 	stockGroup.GET("/alerts", stockHandler.ListarAlertas)      // Listar alertas
+
+	// Categoria Servico routes - 5 endpoints (PROTEGIDAS com JWT)
+	categoriasGroup := protected.Group("/categorias-servicos")
+	categoriasGroup.POST("", categoriaServicoHandler.Create)       // POST /api/v1/categorias-servicos
+	categoriasGroup.GET("", categoriaServicoHandler.List)          // GET /api/v1/categorias-servicos
+	categoriasGroup.GET("/:id", categoriaServicoHandler.GetByID)   // GET /api/v1/categorias-servicos/:id
+	categoriasGroup.PUT("/:id", categoriaServicoHandler.Update)    // PUT /api/v1/categorias-servicos/:id
+	categoriasGroup.DELETE("/:id", categoriaServicoHandler.Delete) // DELETE /api/v1/categorias-servicos/:id
 
 	// Placeholder endpoint
 	api.GET("/ping", func(c echo.Context) error {

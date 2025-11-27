@@ -7,22 +7,22 @@
  */
 
 import {
-    appointmentService,
-    appointmentsToCalendarEvents,
-    CustomerNotFoundError,
-    ProfessionalInactiveError,
-    professionalsToCalendarResources,
-    TimeSlotConflictError,
+  appointmentService,
+  appointmentsToCalendarEvents,
+  CustomerNotFoundError,
+  ProfessionalInactiveError,
+  professionalsToCalendarResources,
+  TimeSlotConflictError,
 } from '@/services/appointment-service';
 import type {
-    AppointmentResponse,
-    AppointmentStatus,
-    CheckAvailabilityParams,
-    CreateAppointmentRequest,
-    ListAppointmentsFilters,
-    ListAppointmentsResponse,
-    UpdateAppointmentRequest,
-    UpdateAppointmentStatusRequest
+  AppointmentResponse,
+  AppointmentStatus,
+  CheckAvailabilityParams,
+  CreateAppointmentRequest,
+  ListAppointmentsFilters,
+  ListAppointmentsResponse,
+  UpdateAppointmentRequest,
+  UpdateAppointmentStatusRequest
 } from '@/types/appointment';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -63,10 +63,13 @@ export function useAppointments(filters: ListAppointmentsFilters = {}) {
  * Hook para buscar agendamentos e converter para eventos do FullCalendar
  */
 export function useCalendarEvents(filters: ListAppointmentsFilters = {}) {
+  console.log('[useCalendarEvents] Hook chamado com filtros:', filters);
   return useQuery({
     queryKey: [...appointmentKeys.list(filters), 'calendar'],
     queryFn: async () => {
+      console.log('[useCalendarEvents] queryFn executando...');
       const response = await appointmentService.list(filters);
+      console.log('[useCalendarEvents] response:', response);
       return appointmentsToCalendarEvents(response.data);
     },
     staleTime: 30_000,
@@ -112,10 +115,13 @@ export function useProfessionals() {
  * Hook para buscar profissionais como recursos do FullCalendar
  */
 export function useCalendarResources() {
+  console.log('[useCalendarResources] Hook chamado');
   return useQuery({
     queryKey: [...appointmentKeys.professionals(), 'calendar'],
     queryFn: async () => {
+      console.log('[useCalendarResources] queryFn executando...');
       const professionals = await appointmentService.listProfessionals();
+      console.log('[useCalendarResources] professionals:', professionals);
       return professionalsToCalendarResources(professionals);
     },
     staleTime: 5 * 60_000,
@@ -145,7 +151,7 @@ export function useCreateAppointment() {
           return {
             ...old,
             data: [newAppointment, ...old.data],
-            meta: { ...old.meta, total: old.meta.total + 1 },
+            total: old.total + 1,
           };
         }
       );

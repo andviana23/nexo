@@ -22,7 +22,7 @@ import listPlugin from '@fullcalendar/list';
 import type FullCalendarType from '@fullcalendar/react';
 import FullCalendar from '@fullcalendar/react';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -61,7 +61,7 @@ interface AppointmentCalendarProps {
 // =============================================================================
 
 export function AppointmentCalendar({
-  initialDate = new Date(),
+  initialDate,
   professionalIds = [],
   onEventClick,
   onDateSelect,
@@ -69,23 +69,30 @@ export function AppointmentCalendar({
   className,
 }: AppointmentCalendarProps) {
   const calendarRef = useRef<FullCalendarType>(null);
+  
+  // Estabilizar a data inicial para evitar re-renders infinitos
+  const [stableDate] = useState(() => initialDate || new Date());
 
-  // Datas para filtro (semana atual)
+  // Datas para filtro (semana atual) - Usar apenas data sem hora para evitar mudanças
   const dateRange = useMemo(() => {
-    const start = new Date(initialDate);
+    const start = new Date(stableDate);
+    start.setHours(0, 0, 0, 0); // Zerar hora
     start.setDate(start.getDate() - start.getDay() + 1); // Segunda
     const end = new Date(start);
     end.setDate(end.getDate() + 6); // Domingo
+    end.setHours(23, 59, 59, 999); // Final do dia
     return {
-      date_from: start.toISOString(),
-      date_to: end.toISOString(),
+      date_from: start.toISOString().split('T')[0], // Apenas YYYY-MM-DD
+      date_to: end.toISOString().split('T')[0],     // Apenas YYYY-MM-DD
     };
-  }, [initialDate]);
+  }, [stableDate]);
 
   // Queries
   const { 
     data: events = [], 
     isLoading: isLoadingEvents,
+    error: eventsError,
+    isError: isEventsError,
   } = useCalendarEvents({
     ...dateRange,
     professional_id: professionalIds.length === 1 ? professionalIds[0] : undefined,
@@ -94,7 +101,21 @@ export function AppointmentCalendar({
   const { 
     data: resources = [], 
     isLoading: isLoadingResources,
+    error: resourcesError,
+    isError: isResourcesError,
   } = useCalendarResources();
+
+  // DEBUG: Log detalhado
+  console.log('[AppointmentCalendar] Estado:', {
+    isLoadingEvents,
+    isLoadingResources,
+    isEventsError,
+    isResourcesError,
+    eventsError: eventsError?.message,
+    resourcesError: resourcesError?.message,
+    eventsCount: events.length,
+    resourcesCount: resources.length,
+  });
 
   // Mutation para drag & drop
   const updateAppointment = useUpdateAppointment();
@@ -225,7 +246,7 @@ export function AppointmentCalendar({
         
         // View inicial
         initialView="resourceTimeGridDay"
-        initialDate={initialDate}
+        initialDate={stableDate}
         
         // Recursos (Barbeiros)
         resources={filteredResources}

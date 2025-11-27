@@ -33,6 +33,27 @@ type AppointmentService struct {
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 }
 
+type BarberTurnHistory struct {
+	ID             pgtype.UUID        `json:"id"`
+	TenantID       pgtype.UUID        `json:"tenant_id"`
+	ProfessionalID pgtype.UUID        `json:"professional_id"`
+	MonthYear      string             `json:"month_year"`
+	TotalTurns     int32              `json:"total_turns"`
+	FinalPoints    int32              `json:"final_points"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type BarbersTurnList struct {
+	ID             pgtype.UUID        `json:"id"`
+	TenantID       pgtype.UUID        `json:"tenant_id"`
+	ProfessionalID pgtype.UUID        `json:"professional_id"`
+	CurrentPoints  int32              `json:"current_points"`
+	LastTurnAt     pgtype.Timestamptz `json:"last_turn_at"`
+	IsActive       bool               `json:"is_active"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Categoria struct {
 	ID        pgtype.UUID        `json:"id"`
 	TenantID  pgtype.UUID        `json:"tenant_id"`
@@ -42,6 +63,23 @@ type Categoria struct {
 	Ativa     *bool              `json:"ativa"`
 	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
 	TipoCusto *string            `json:"tipo_custo"`
+}
+
+// Categorias de serviços (Corte, Barba, Tratamentos, etc) - separadas das categorias financeiras
+type CategoriasServico struct {
+	ID pgtype.UUID `json:"id"`
+	// Isolamento multi-tenant - OBRIGATÓRIO em todas as queries
+	TenantID pgtype.UUID `json:"tenant_id"`
+	// Nome da categoria (ex: Cortes de Cabelo, Barba, Tratamentos Capilares)
+	Nome      string  `json:"nome"`
+	Descricao *string `json:"descricao"`
+	// Cor hexadecimal para exibição na UI (#RRGGBB)
+	Cor *string `json:"cor"`
+	// Nome do ícone Material Icons (content_cut, straighten, spa, etc)
+	Icone        *string            `json:"icone"`
+	Ativa        *bool              `json:"ativa"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 }
 
 type Cliente struct {

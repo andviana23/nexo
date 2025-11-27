@@ -14,6 +14,8 @@ watching internal/application/mapper
 watching internal/application/usecase
 watching internal/application/usecase/appointment
 watching internal/application/usecase/auth
+watching internal/application/usecase/barberturn
+watching internal/application/usecase/customer
 watching internal/application/usecase/financial
 watching internal/application/usecase/metas
 watching internal/application/usecase/pricing
@@ -42,15 +44,15 @@ watching migrations
 !exclude tmp
 building...
 running...
-{"level":"info","ts":1764125902.300431,"caller":"api/main.go:61","msg":"Conectado ao banco de dados PostgreSQL"}
-{"level":"info","ts":1764125902.3005745,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
-{"level":"info","ts":1764125902.3005958,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
-{"level":"info","ts":1764125902.3006027,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
-{"level":"info","ts":1764125902.300609,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
-{"level":"info","ts":1764125902.3006182,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
-{"level":"info","ts":1764125902.3006306,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
-{"level":"info","ts":1764125902.300673,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
-{"level":"info","ts":1764125902.300894,"caller":"api/main.go:414","msg":"🚀 Servidor iniciado","port":"8080"}
+{"level":"info","ts":1764206303.8544755,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206303.8546145,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206303.8546445,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206303.8546534,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206303.8546598,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206303.8546705,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206303.8546755,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206303.854685,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206303.855044,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
 
    ____    __
   / __/___/ /  ___
@@ -60,92 +62,1356 @@ High performance, minimalist Go web framework
 https://echo.labstack.com
 ____________________________________O/_______
                                     O\
-{"level":"fatal","ts":1764125902.30109{"time":"2025-11-26T00:01:32.38892592-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/auth/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":13750,"latency_human":"13.75µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:01:33.394531955-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/auth/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11554,"latency_human":"11.554µs","bytes_in":0,"bytes_out":0}
-{"level":"warn","ts":1764126300.018743,"caller":"scheduler/scheduler.go:131","msg":"Job sem função associada","job":"GenerateFluxoDiario"}
-{"time":"2025-11-26T00:09:41.483319946-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/auth/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":27403,"latency_human":"27.403µs","bytes_in":0,"bytes_out":0}
-{"level":"info","ts":1764126584.4924004,"caller":"auth/login_usecase.go:110","msg":"Login bem-sucedido","user_id":"ac6d080b-92d5-49dd-bdb2-e499167d8d39","email":"andrey@tratodebarbados.com","tenant_id":"e2e00000-0000-0000-0000-000000000001","role":"owner"}
-{"time":"2025-11-26T00:09:44.492789675-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"POST","uri":"/api/v1/auth/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":3007321833,"latency_human":"3.007321833s","bytes_in":63,"bytes_out":537}
-{"time":"2025-11-26T00:09:44.505655228-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":10414,"latency_human":"10.414µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:44.901580788-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":394293868,"latency_human":"394.293868ms","bytes_in":0,"bytes_out":179}
-{"time":"2025-11-26T00:09:50.243292405-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:50.201Z&date_to=2025-11-30T03:09:50.201Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":9087,"latency_human":"9.087µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:50.243403846-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:50.202Z&date_to=2025-11-30T03:09:50.202Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":32073,"latency_human":"32.073µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:50.25560122-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:50.247Z&date_to=2025-11-30T03:09:50.247Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":28844,"latency_human":"28.844µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:51.250393794-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:50.202Z&date_to=2025-11-30T03:09:50.202Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":994913315,"latency_human":"994.913315ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:52.581988643-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:50.247Z&date_to=2025-11-30T03:09:50.247Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":2317707453,"latency_human":"2.317707453s","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:52.582006906-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:50.201Z&date_to=2025-11-30T03:09:50.201Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":2326328624,"latency_human":"2.326328624s","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:52.58808719-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:52.585Z&date_to=2025-11-30T03:09:52.585Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":6993,"latency_human":"6.993µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:52.992565682-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:52.585Z&date_to=2025-11-30T03:09:52.585Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":403060236,"latency_human":"403.060236ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:53.002409698-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:52.998Z&date_to=2025-11-30T03:09:52.998Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":9777,"latency_human":"9.777µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:53.605551949-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:52.998Z&date_to=2025-11-30T03:09:52.998Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":601376288,"latency_human":"601.376288ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:53.614731011-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:53.610Z&date_to=2025-11-30T03:09:53.610Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":14360,"latency_human":"14.36µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:54.016010768-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:53.610Z&date_to=2025-11-30T03:09:53.610Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":399082965,"latency_human":"399.082965ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:54.023887447-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:54.020Z&date_to=2025-11-30T03:09:54.020Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11441,"latency_human":"11.441µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:54.430382241-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:54.020Z&date_to=2025-11-30T03:09:54.020Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":404139876,"latency_human":"404.139876ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:54.439115773-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:54.435Z&date_to=2025-11-30T03:09:54.435Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":31097,"latency_human":"31.097µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:54.876753082-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:54.435Z&date_to=2025-11-30T03:09:54.435Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":435207466,"latency_human":"435.207466ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:54.885367888-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:54.881Z&date_to=2025-11-30T03:09:54.881Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11183,"latency_human":"11.183µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:55.244089809-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:54.881Z&date_to=2025-11-30T03:09:54.881Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":356030639,"latency_human":"356.030639ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:55.252835535-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:55.248Z&date_to=2025-11-30T03:09:55.248Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":10958,"latency_human":"10.958µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:55.653673156-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:55.248Z&date_to=2025-11-30T03:09:55.248Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":398718467,"latency_human":"398.718467ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:55.659523829-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:55.656Z&date_to=2025-11-30T03:09:55.656Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":8642,"latency_human":"8.642µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:56.063479809-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:55.656Z&date_to=2025-11-30T03:09:55.656Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":401808475,"latency_human":"401.808475ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:56.072912085-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:56.068Z&date_to=2025-11-30T03:09:56.068Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":12080,"latency_human":"12.08µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:56.474133601-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:56.068Z&date_to=2025-11-30T03:09:56.068Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":398642548,"latency_human":"398.642548ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:56.483102416-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:56.478Z&date_to=2025-11-30T03:09:56.478Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":12705,"latency_human":"12.705µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:56.868376814-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:56.478Z&date_to=2025-11-30T03:09:56.478Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":382902955,"latency_human":"382.902955ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:56.874870507-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:56.870Z&date_to=2025-11-30T03:09:56.870Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":6482,"latency_human":"6.482µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:57.189541651-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:56.870Z&date_to=2025-11-30T03:09:56.870Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":311379003,"latency_human":"311.379003ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:57.343066766-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:57.333Z&date_to=2025-11-30T03:09:57.333Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":8308,"latency_human":"8.308µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:57.804758412-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:57.333Z&date_to=2025-11-30T03:09:57.333Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":443518301,"latency_human":"443.518301ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:57.821983051-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:57.810Z&date_to=2025-11-30T03:09:57.810Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":7477,"latency_human":"7.477µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:58.213712899-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:57.810Z&date_to=2025-11-30T03:09:57.810Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":389896692,"latency_human":"389.896692ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:58.228678531-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:58.218Z&date_to=2025-11-30T03:09:58.218Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":7717,"latency_human":"7.717µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:58.623683295-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:58.218Z&date_to=2025-11-30T03:09:58.218Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":392309798,"latency_human":"392.309798ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:58.638525129-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:58.628Z&date_to=2025-11-30T03:09:58.628Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11767,"latency_human":"11.767µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:59.033277835-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:58.628Z&date_to=2025-11-30T03:09:58.628Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":392175971,"latency_human":"392.175971ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:59.047012842-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:59.038Z&date_to=2025-11-30T03:09:59.038Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":13900,"latency_human":"13.9µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:59.442677481-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:59.038Z&date_to=2025-11-30T03:09:59.038Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":393813668,"latency_human":"393.813668ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:59.45075403-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:59.445Z&date_to=2025-11-30T03:09:59.445Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":7279,"latency_human":"7.279µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:09:59.851960387-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:59.445Z&date_to=2025-11-30T03:09:59.445Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":399659774,"latency_human":"399.659774ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:09:59.868436321-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:59.858Z&date_to=2025-11-30T03:09:59.858Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11640,"latency_human":"11.64µs","bytes_in":0,"bytes_out":0}
-{"level":"warn","ts":1764126600.0187595,"caller":"scheduler/scheduler.go:131","msg":"Job sem função associada","job":"MarcarCompensacoes"}
-{"time":"2025-11-26T00:10:00.262026823-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:09:59.858Z&date_to=2025-11-30T03:09:59.858Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":390989140,"latency_human":"390.98914ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:00.276494798-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:00.267Z&date_to=2025-11-30T03:10:00.267Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":6868,"latency_human":"6.868µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:00.671181901-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:00.267Z&date_to=2025-11-30T03:10:00.267Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":392889880,"latency_human":"392.88988ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:00.681369533-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:00.674Z&date_to=2025-11-30T03:10:00.674Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":41007,"latency_human":"41.007µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:01.080906884-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:00.674Z&date_to=2025-11-30T03:10:00.674Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":397875555,"latency_human":"397.875555ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:01.095311149-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:01.086Z&date_to=2025-11-30T03:10:01.086Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11306,"latency_human":"11.306µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:01.384227189-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:01.086Z&date_to=2025-11-30T03:10:01.086Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":286990381,"latency_human":"286.990381ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:01.400672723-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:01.389Z&date_to=2025-11-30T03:10:01.389Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":9672,"latency_human":"9.672µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:01.797836631-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:01.389Z&date_to=2025-11-30T03:10:01.389Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":395086091,"latency_human":"395.086091ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:01.814034388-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:01.803Z&date_to=2025-11-30T03:10:01.803Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":36044,"latency_human":"36.044µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:02.207327407-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:01.803Z&date_to=2025-11-30T03:10:01.803Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":390303492,"latency_human":"390.303492ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:02.220785879-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:02.212Z&date_to=2025-11-30T03:10:02.212Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":6313,"latency_human":"6.313µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:02.617029576-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:02.212Z&date_to=2025-11-30T03:10:02.212Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":393992911,"latency_human":"393.992911ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:02.62666654-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:02.620Z&date_to=2025-11-30T03:10:02.620Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":13195,"latency_human":"13.195µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:03.026423465-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:02.620Z&date_to=2025-11-30T03:10:02.620Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":396971506,"latency_human":"396.971506ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:03.038171088-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:03.032Z&date_to=2025-11-30T03:10:03.032Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":6617,"latency_human":"6.617µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:03.436056384-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:03.032Z&date_to=2025-11-30T03:10:03.032Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":396518255,"latency_human":"396.518255ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:03.449032483-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:03.441Z&date_to=2025-11-30T03:10:03.441Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":8343,"latency_human":"8.343µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:03.845840929-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:03.441Z&date_to=2025-11-30T03:10:03.441Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":394909207,"latency_human":"394.909207ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:03.864524786-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:03.851Z&date_to=2025-11-30T03:10:03.851Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":12233,"latency_human":"12.233µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:04.2552886-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:03.851Z&date_to=2025-11-30T03:10:03.851Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":387930006,"latency_human":"387.930006ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:04.263365298-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:04.260Z&date_to=2025-11-30T03:10:04.260Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":10368,"latency_human":"10.368µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:04.664849861-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:04.260Z&date_to=2025-11-30T03:10:04.260Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":399452660,"latency_human":"399.45266ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:04.672216696-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:04.669Z&date_to=2025-11-30T03:10:04.669Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":5647,"latency_human":"5.647µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:05.074445353-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:04.669Z&date_to=2025-11-30T03:10:04.669Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":399611945,"latency_human":"399.611945ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:05.083758736-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:05.079Z&date_to=2025-11-30T03:10:05.079Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11060,"latency_human":"11.06µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:05.49815807-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:05.079Z&date_to=2025-11-30T03:10:05.079Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":411835100,"latency_human":"411.8351ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:05.502574737-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:05.500Z&date_to=2025-11-30T03:10:05.500Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":6510,"latency_human":"6.51µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:05.893901476-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:05.500Z&date_to=2025-11-30T03:10:05.500Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":389798662,"latency_human":"389.798662ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:05.90141898-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:05.898Z&date_to=2025-11-30T03:10:05.898Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":10922,"latency_human":"10.922µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:06.568071263-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:05.898Z&date_to=2025-11-30T03:10:05.898Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":664119270,"latency_human":"664.11927ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:06.57799562-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:06.572Z&date_to=2025-11-30T03:10:06.572Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":45948,"latency_human":"45.948µs","bytes_in":0,"bytes_out":0}
-{"time":"2025-11-26T00:10:07.027717331-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:06.572Z&date_to=2025-11-30T03:10:06.572Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":447412553,"latency_human":"447.412553ms","bytes_in":0,"bytes_out":46}
-{"time":"2025-11-26T00:10:07.035491867-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:07.031Z&date_to=2025-11-30T03:10:07.031Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":9989,"latency_human":"9.989µs","bytes_in":0,"bytes_out":0}
-{"level":"error","ts":1764126607.3136795,"caller":"handler/appointment_handler.go:204","msg":"Erro ao listar agendamentos","error":"erro ao listar agendamentos: erro ao contar agendamentos: context canceled","stacktrace":"github.com/andviana23/barber-analytics-backend/internal/infra/http/handler.(*AppointmentHandler).ListAppointments\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/internal/infra/http/handler/appointment_handler.go:204\nmain.main.JWTMiddleware.func4.1\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/internal/infra/http/middleware/auth_middleware.go:56\ngithub.com/labstack/echo/v4.(*Echo).add.func1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:581\ngithub.com/labstack/echo/v4/middleware.CORSWithConfig.func1.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/cors.go:280\nmain.main.Recover.RecoverWithConfig.func5.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/recover.go:130\ngithub.com/labstack/echo/v4/middleware.LoggerWithConfig.func2.1\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/middleware/logger.go:125\ngithub.com/labstack/echo/v4.(*Echo).ServeHTTP\n\t/home/andrey/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:668\nnet/http.serverHandler.ServeHTTP\n\t/usr/local/go/src/net/http/server.go:3301\nnet/http.(*conn).serve\n\t/usr/local/go/src/net/http/server.go:2102"}
-{"time":"2025-11-26T00:10:07.313976532-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/appointments?date_from=2025-11-24T03:10:07.031Z&date_to=2025-11-30T03:10:07.031Z","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":500,"error":"","latency":275978985,"latency_human":"275.978985ms","bytes_in":0,"bytes_out":110}
-{"time":"2025-11-26T00:28:10.237534975-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":36051,"latency_human":"36.051µs","bytes_in":0,"bytes_out":0}
-{"level":"warn","ts":1764127690.2397091,"caller":"middleware/auth_middleware.go:39","msg":"Token inválido","error":"token inválido: token has invalid claims: token is expired"}
-{"time":"2025-11-26T00:28:10.239776182-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":401,"error":"code=401, message=Token inválido ou expirado","latency":160862,"latency_human":"160.862µs","bytes_in":0,"bytes_out":42}
+⇨ http server started on [::]:8080
+{"time":"2025-11-26T22:18:29.457009431-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":7576,"latency_human":"7.576µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:18:30.03408133-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":528735711,"latency_human":"528.735711ms","bytes_in":0,"bytes_out":179}
+{"time":"2025-11-26T22:18:30.209896191-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":173139196,"latency_human":"173.139196ms","bytes_in":0,"bytes_out":179}
+{"time":"2025-11-26T22:18:34.635134437-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":12035,"latency_human":"12.035µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:18:34.635970415-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":9762,"latency_human":"9.762µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:18:34.636653623-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/history?month_year=2025-11","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":35834,"latency_human":"35.834µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:18:34.640770504-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/history/summary","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":49160,"latency_human":"49.16µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:18:35.856454003-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1212725793,"latency_human":"1.212725793s","bytes_in":0,"bytes_out":25}
+{"time":"2025-11-26T22:18:35.856461943-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/history/summary","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1212822977,"latency_human":"1.212822977s","bytes_in":0,"bytes_out":109}
+{"time":"2025-11-26T22:18:36.038665167-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1395239934,"latency_human":"1.395239934s","bytes_in":0,"bytes_out":277}
+{"time":"2025-11-26T22:18:36.275575418-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/history?month_year=2025-11","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1631858166,"latency_human":"1.631858166s","bytes_in":0,"bytes_out":25}
+{"time":"2025-11-26T22:19:36.046958122-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":22286,"latency_human":"22.286µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:19:37.512380094-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1462183971,"latency_human":"1.462183971s","bytes_in":0,"bytes_out":277}
+{"level":"warn","ts":1764206377.724219,"caller":"middleware/auth_middleware.go:30","msg":"Formato de token inválido"}
+{"time":"2025-11-26T22:19:37.724334304-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/available","user_agent":"curl/8.5.0","status":401,"error":"code=401, message=Formato de token inválido","latency":139294,"latency_human":"139.294µs","bytes_in":0,"bytes_out":41}
+{"time":"2025-11-26T22:19:53.24511931-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11206,"latency_human":"11.206µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:19:53.690606097-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":442512367,"latency_human":"442.512367ms","bytes_in":0,"bytes_out":25}
+{"time":"2025-11-26T22:20:17.038335229-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":7273,"latency_human":"7.273µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:20:17.728445507-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":688516585,"latency_human":"688.516585ms","bytes_in":0,"bytes_out":277}
+{"time":"2025-11-26T22:21:17.738063509-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":21653,"latency_human":"21.653µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:21:19.092923698-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1352132451,"latency_human":"1.352132451s","bytes_in":0,"bytes_out":277}
+{"time":"2025-11-26T22:22:19.099368056-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":12644,"latency_human":"12.644µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:22:19.687272072-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":585090284,"latency_human":"585.090284ms","bytes_in":0,"bytes_out":277}
+{"time":"2025-11-26T22:22:34.37352288-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":9332,"latency_human":"9.332µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:22:34.870966224-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":495023535,"latency_human":"495.023535ms","bytes_in":0,"bytes_out":25}
+{"time":"2025-11-26T22:23:03.365189045-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":8666,"latency_human":"8.666µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:23:03.365739729-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":6937,"latency_human":"6.937µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:23:03.370334495-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":9103,"latency_human":"9.103µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:23:03.371138559-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/history?month_year=2025-11","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":8641,"latency_human":"8.641µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:23:03.371682424-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/history/summary","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":10291,"latency_human":"10.291µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:23:03.950536017-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/available","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":572748624,"latency_human":"572.748624ms","bytes_in":0,"bytes_out":25}
+{"time":"2025-11-26T22:23:03.952137376-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/history?month_year=2025-11","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":572604065,"latency_human":"572.604065ms","bytes_in":0,"bytes_out":25}
+{"time":"2025-11-26T22:23:04.14181251-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/auth/me","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":773556413,"latency_human":"773.556413ms","bytes_in":0,"bytes_out":179}
+{"time":"2025-11-26T22:23:04.47680488-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1099086793,"latency_human":"1.099086793s","bytes_in":0,"bytes_out":277}
+{"time":"2025-11-26T22:23:04.802719632-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/history/summary","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1422585641,"latency_human":"1.422585641s","bytes_in":0,"bytes_out":109}
+{"time":"2025-11-26T22:24:04.484812444-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11179,"latency_human":"11.179µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:24:05.697690961-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1211601667,"latency_human":"1.211601667s","bytes_in":0,"bytes_out":277}
+{"time":"2025-11-26T22:25:05.707697429-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"OPTIONS","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":204,"error":"","latency":11921,"latency_human":"11.921µs","bytes_in":0,"bytes_out":0}
+{"time":"2025-11-26T22:25:06.878273858-03:00","id":"","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/v1/barber-turn/list","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36","status":200,"error":"","latency":1167336113,"latency_human":"1.167336113s","bytes_in":0,"bytes_out":277}
+Killed
+Process Exit with Code: 137
+internal/application/usecase/barberturn/barber_turn_usecases.go has changed
+building...
+running...
+{"level":"info","ts":1764206853.5506568,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206853.5508902,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206853.5509315,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206853.5509443,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206853.5509539,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206853.5509684,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206853.5509758,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206853.5509863,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206853.552094,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206853.5522964,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/barberturn/barber_turn_usecases.go has changed
+building...
+running...
+{"level":"info","ts":1764206856.4415488,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206856.4418924,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206856.4419427,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206856.4419692,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206856.4419878,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206856.4420142,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206856.4420285,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206856.44205,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206856.4428322,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206856.443294,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/barber_turn_repository.go:6:2: "log" imported and not used
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764206969.7960541,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206969.7964094,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206969.79646,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206969.796479,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206969.7964957,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206969.7965178,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206969.7965305,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206969.7965462,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206969.79722,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206969.7979784,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764206980.6501658,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206980.65051,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206980.6505609,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206980.6505833,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206980.6506007,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206980.6506257,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206980.6506383,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206980.6506543,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206980.6522777,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206980.6536374,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/barber_turn_repository.go:86:2: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:87:2: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:91:3: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:95:2: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:100:3: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:104:2: undefined: log
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764206982.4003766,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206982.4007766,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206982.4008515,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206982.4009109,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206982.4009306,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206982.401072,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206982.4010997,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206982.4011207,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206982.4017396,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206982.4020948,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764206988.7400799,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206988.7403417,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206988.7403798,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206988.7403944,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206988.7404053,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206988.7404263,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206988.74045,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206988.740464,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206988.7409818,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206988.7412965,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/barber_turn_repository.go:6:2: "fmt" imported and not used
+internal/infra/repository/postgres/barber_turn_repository.go:87:2: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:88:2: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:92:3: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:96:2: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:101:3: undefined: log
+internal/infra/repository/postgres/barber_turn_repository.go:105:2: undefined: log
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764206991.38773,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206991.387981,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206991.3880136,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206991.388028,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206991.3880389,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206991.388057,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206991.388064,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206991.3880734,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206991.3898394,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206991.3903322,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764206993.4653153,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764206993.465676,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764206993.465723,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764206993.4657605,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764206993.4657805,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764206993.465803,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764206993.465815,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764206993.46583,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764206993.466622,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764206993.4671547,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/barber_turn_repository.go:6:2: "log" imported and not used
+internal/infra/repository/postgres/barber_turn_repository.go:87:2: undefined: fmt
+internal/infra/repository/postgres/barber_turn_repository.go:88:2: undefined: fmt
+internal/infra/repository/postgres/barber_turn_repository.go:92:3: undefined: fmt
+internal/infra/repository/postgres/barber_turn_repository.go:96:2: undefined: fmt
+internal/infra/repository/postgres/barber_turn_repository.go:101:3: undefined: fmt
+internal/infra/repository/postgres/barber_turn_repository.go:105:2: undefined: fmt
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764207004.0359664,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764207004.0361388,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764207004.036175,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764207004.0361865,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764207004.0361955,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764207004.0362086,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764207004.036216,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764207004.0362248,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764207004.0366566,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764207004.0369985,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764207008.7099767,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764207008.711894,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764207008.7119956,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764207008.7120206,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764207008.712037,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764207008.712063,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764207008.7120757,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764207008.7120984,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764207008.712783,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764207008.7132573,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/db/sqlc/precificacao_config.sql.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/barber_turn_repository.go:84:3: unknown field Column2 in struct literal of type db.ListBarbersTurnListParams
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764207227.1652446,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764207227.1654527,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764207227.1654904,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764207227.1655056,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764207227.1655147,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764207227.1655304,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764207227.165542,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764207227.1655536,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764207227.166191,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764207227.1664884,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764207247.3045194,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764207247.3047736,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764207247.3048244,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764207247.3048444,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764207247.30488,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764207247.304911,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764207247.3049252,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764207247.304944,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764207247.3056087,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764207247.3060014,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/barber_turn_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764207253.3033557,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764207253.3035395,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764207253.3035746,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764207253.30358,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764207253.3035846,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764207253.3035948,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764207253.3035975,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764207253.303603,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764207253.3040674,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ http server started on [::]:8080
+Killed
+Process Exit with Code: 137
+internal/domain/entity/categoria_servico.go has changed
+building...
+internal/domain/entity/categoria_servico.go:1:1: expected 'package', found 'EOF'
+failed to build, error: exit status 1
+running...
+internal/domain/entity/categoria_servico.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/domain/entity
+internal/domain/entity/produto.go:21:2: CategoriaServico redeclared in this block
+	internal/domain/entity/categoria_servico.go:21:6: other declaration of CategoriaServico
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764208910.9021046,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764208910.9024072,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764208910.902457,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764208910.9024804,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764208910.9025042,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764208910.9025319,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764208910.9025445,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764208910.9025636,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764208910.9034698,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764208910.903907,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/domain/entity/categoria_servico.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/domain/entity
+internal/domain/entity/produto.go:21:2: CategoriaServico redeclared in this block
+	internal/domain/entity/categoria_servico.go:21:6: other declaration of CategoriaServico
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764208987.2257817,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764208987.226168,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764208987.2262328,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764208987.2262645,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764208987.2262883,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764208987.2263281,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764208987.2263467,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764208987.2263722,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764208987.22741,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764208987.2280502,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/db/sqlc/contas_a_pagar.sql.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/domain/entity
+internal/domain/entity/produto.go:21:2: CategoriaServico redeclared in this block
+	internal/domain/entity/categoria_servico.go:21:6: other declaration of CategoriaServico
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209045.5398178,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209045.5401769,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209045.5402398,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209045.5402632,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209045.5402837,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209045.5403123,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209045.5403283,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209045.5403485,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209045.5410306,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209045.5414205,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/domain/port/categoria_servico_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/domain/entity
+internal/domain/entity/produto.go:21:2: CategoriaServico redeclared in this block
+	internal/domain/entity/categoria_servico.go:21:6: other declaration of CategoriaServico
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209086.1030996,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209086.1035087,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209086.1035578,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209086.1035826,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209086.1036012,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209086.1036286,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209086.103645,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209086.1036863,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209086.106075,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209086.1065466,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/domain/port/categoria_servico_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/domain/entity
+internal/domain/entity/produto.go:21:2: CategoriaServico redeclared in this block
+	internal/domain/entity/categoria_servico.go:21:6: other declaration of CategoriaServico
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209089.116928,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209089.1170566,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209089.1170797,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209089.1170883,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209089.1170952,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209089.1171055,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209089.1171112,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209089.117119,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209089.117691,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209089.11829,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+internal/infra/repository/postgres/categoria_servico_repository.go:1:1: expected 'package', found 'EOF'
+failed to build, error: exit status 1
+running...
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/domain/entity
+internal/domain/entity/produto.go:21:2: CategoriaServico redeclared in this block
+	internal/domain/entity/categoria_servico.go:21:6: other declaration of CategoriaServico
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209120.389345,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209120.3896334,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209120.389663,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209120.3897083,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209120.389717,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209120.3897355,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209120.3897421,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209120.3897545,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209120.390364,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209120.3907008,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/domain/entity/produto.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209152.2692447,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209152.2695992,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209152.2696588,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209152.2696853,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209152.2697062,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209152.2697372,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209152.2697554,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209152.2697806,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209152.2707832,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209152.271276,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209227.1146111,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209227.1149223,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209227.1149702,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209227.1149917,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209227.1150064,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209227.115173,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209227.1152217,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209227.1152437,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209227.1158707,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209227.1162457,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/dto/categoria_servico_dto.go has changed
+building...
+internal/application/dto/categoria_servico_dto.go:1:1: expected 'package', found 'EOF'
+failed to build, error: exit status 1
+running...
+internal/application/dto/categoria_servico_dto.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209442.2961147,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209442.2964554,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209442.2965083,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209442.29653,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209442.296546,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209442.2965689,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209442.2965822,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209442.2966003,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209442.2972653,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209442.2976415,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/dto/categoria_servico_dto.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209455.365051,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209455.3652773,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209455.3653018,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209455.365316,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209455.365326,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209455.3653402,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209455.3653479,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209455.3653584,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209455.366035,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209455.366515,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/mapper/categoria_servico_mapper.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209461.618245,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209461.6186242,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209461.6186726,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209461.618695,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209461.6187127,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209461.6187387,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209461.6187515,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209461.6187873,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209461.619592,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209461.6201067,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+watching internal/application/usecase/categoria
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209500.585263,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209500.5854697,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209500.585498,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209500.5855114,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209500.5855217,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209500.5855362,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209500.5855443,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209500.585557,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209500.5861742,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209500.5865185,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209502.3519197,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209502.352346,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209502.3524048,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209502.3524528,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209502.352473,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209502.3525045,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209502.3525186,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209502.3525374,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209502.3533986,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209502.353831,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/domain/errors.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209522.2164676,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209522.216797,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209522.216844,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209522.216888,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209522.2169092,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209522.2169342,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209522.2169476,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209522.2169657,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209522.2176871,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209522.2181792,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209527.3528228,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209527.3531423,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209527.3532057,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209527.3532276,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209527.353244,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209527.3532703,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209527.3532846,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209527.3533008,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209527.3546891,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209527.3560395,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/get_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209534.0647707,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209534.0651224,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209534.065206,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209534.0652316,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209534.0652504,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209534.0652802,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209534.0652933,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209534.065377,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209534.0661142,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209534.0668228,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/list_categorias_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+internal/application/usecase/categoria/list_categorias_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209547.8330379,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209547.8334997,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209547.8335872,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209547.833626,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209547.8336608,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209547.8337173,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209547.8337393,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209547.8337734,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209547.8350513,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209547.8357613,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/get_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209555.1601946,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209555.1605523,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209555.1606047,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209555.1606328,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209555.1606538,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209555.1607034,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209555.1607206,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209555.1607416,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209555.1615303,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209555.1625347,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/update_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+internal/application/usecase/categoria/update_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209561.300285,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209561.3007145,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209561.3007836,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209561.3008125,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209561.3008354,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209561.3008995,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209561.30092,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209561.3009477,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209561.303626,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209561.3040845,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/delete_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+internal/application/usecase/categoria/delete_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209573.7136433,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209573.713794,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209573.71382,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209573.7138288,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209573.713836,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209573.713847,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209573.713863,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209573.7138727,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209573.7143767,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209573.7146366,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/update_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209611.1169355,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209611.1171553,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209611.1171918,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209611.1172051,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209611.1172152,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209611.117231,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209611.117238,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209611.1172466,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209611.1177258,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209611.1181905,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/http/handler/categoria_servico_handler.go has changed
+building...
+internal/infra/http/handler/categoria_servico_handler.go:1:1: expected 'package', found 'EOF'
+failed to build, error: exit status 1
+running...
+internal/infra/http/handler/categoria_servico_handler.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria
+internal/application/usecase/categoria/create_categoria_usecase.go:3:1: syntax error: non-declaration statement outside function body
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209628.5245798,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209628.5247872,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209628.5248177,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209628.524831,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209628.5248418,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209628.5248764,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209628.5248845,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209628.5248952,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209628.5255475,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209628.5258305,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/http/handler/categoria_servico_handler.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria
+internal/application/usecase/categoria/create_categoria_usecase.go:3:1: syntax error: non-declaration statement outside function body
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209670.230074,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209670.2304761,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209670.2305694,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209670.230597,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209670.2306166,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209670.2306461,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209670.230659,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209670.2306914,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209670.2331653,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209670.2336755,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+cmd/api/main.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria
+internal/application/usecase/categoria/create_categoria_usecase.go:3:1: syntax error: non-declaration statement outside function body
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209752.2082653,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209752.2084913,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209752.2085268,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209752.2085402,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209752.20855,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209752.208564,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209752.2085757,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209752.2085896,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209752.20922,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209752.2095387,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+cmd/api/main.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria
+internal/application/usecase/categoria/create_categoria_usecase.go:3:1: syntax error: non-declaration statement outside function body
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209768.1391418,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209768.1394973,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209768.1395614,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209768.1395824,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209768.1395996,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209768.1396253,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209768.1396375,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209768.1396544,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209768.1404674,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209768.1409593,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria
+internal/application/usecase/categoria/create_categoria_usecase.go:134:3: syntax error: unexpected keyword return after top level declaration
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209777.3620105,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209777.3622823,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209777.36233,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209777.3623483,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209777.3623793,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209777.3624012,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209777.362411,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209777.362424,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209777.3643353,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209777.3647835,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209799.841668,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209799.8418493,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209799.8418784,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209799.841885,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209799.841891,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209799.8418987,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209799.8419027,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209799.8419104,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209799.8428178,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209799.843077,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+internal/application/usecase/categoria/create_categoria_usecase.go:1:1: expected 'package', found 'EOF'
+failed to build, error: exit status 1
+running...
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria
+internal/application/usecase/categoria/create_categoria_usecase.go:60:3: too many arguments in call to entity.NewCategoriaServico
+	have (uuid.UUID, string, *string, *string, *string)
+	want (uuid.UUID, string)
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209813.7721212,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209813.7724283,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209813.7724876,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209813.7725155,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209813.7725358,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209813.7725677,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209813.7725856,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209813.7726078,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209813.7735286,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209813.7741,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209830.1692674,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209830.1694484,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209830.1694846,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209830.1695006,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209830.1695132,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209830.1695302,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209830.1695402,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209830.1695528,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209830.1700118,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209830.170306,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/application/usecase/categoria/create_categoria_usecase.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/customer_repository.go:454:6: stringToUUID redeclared in this block
+	internal/infra/repository/postgres/categoria_servico_repository.go:216:6: other declaration of stringToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764209850.2618427,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764209850.2620962,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764209850.2623963,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764209850.2624094,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764209850.2624207,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764209850.2624307,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764209850.262435,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764209850.262453,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764209850.2631984,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764209850.2634282,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/categoria_servico_repository.go:10:2: "github.com/google/uuid" imported and not used
+internal/infra/repository/postgres/categoria_servico_repository.go:197:17: undefined: uuidToUUID
+internal/infra/repository/postgres/categoria_servico_repository.go:198:17: undefined: uuidToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764210103.8655326,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764210103.8658862,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764210103.8659523,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764210103.8659778,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764210103.8659968,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764210103.8660452,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764210103.8660624,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764210103.8660793,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764210103.8669035,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764210103.8677828,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/categoria_servico_repository.go:196:17: undefined: uuidToUUID
+internal/infra/repository/postgres/categoria_servico_repository.go:197:17: undefined: uuidToUUID
+failed to build, error: exit status 1
+running...
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+# github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres
+internal/infra/repository/postgres/categoria_servico_repository.go:196:17: undefined: uuidToUUID
+internal/infra/repository/postgres/categoria_servico_repository.go:197:17: undefined: uuidToUUID
+failed to build, error: exit status 1
+running...
+{"level":"info","ts":1764210113.8009527,"caller":"api/main.go:74","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764210113.8012686,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764210113.8013315,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764210113.801356,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764210113.8013787,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764210113.801406,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764210113.8014202,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764210113.801443,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764210113.8026626,"caller":"api/main.go:533","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764210113.804148,"caller":"api/main.go:535","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:535\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764210130.020552,"caller":"api/main.go:75","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764210130.0207946,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764210130.0208702,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764210130.02089,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764210130.0209048,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764210130.0209305,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764210130.0209413,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764210130.0209634,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764210130.022958,"caller":"api/main.go:562","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764210130.0233753,"caller":"api/main.go:564","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:564\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1
+internal/infra/repository/postgres/categoria_servico_repository.go has changed
+building...
+running...
+{"level":"info","ts":1764210132.0308414,"caller":"api/main.go:75","msg":"Conectado ao banco de dados PostgreSQL"}
+{"level":"info","ts":1764210132.031195,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateDREMonthly","schedule":"0 0 3 1 * *","entry_id":1,"multi_tenant":false}
+{"level":"info","ts":1764210132.0312495,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"GenerateFluxoDiario","schedule":"0 5 0 * * *","entry_id":2,"multi_tenant":false}
+{"level":"info","ts":1764210132.0312731,"caller":"scheduler/scheduler.go:91","msg":"Job registrado","job":"MarcarCompensacoes","schedule":"0 10 0 * * *","entry_id":3,"multi_tenant":false}
+{"level":"info","ts":1764210132.0312936,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"NotifyPayables"}
+{"level":"info","ts":1764210132.0313196,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CheckEstoqueMinimo"}
+{"level":"info","ts":1764210132.0313332,"caller":"scheduler/scheduler.go:77","msg":"Job desabilitado (env)","job":"CalculateComissoes"}
+{"level":"info","ts":1764210132.031356,"caller":"scheduler/scheduler.go:143","msg":"Scheduler iniciado"}
+{"level":"info","ts":1764210132.0321026,"caller":"api/main.go:562","msg":"🚀 Servidor iniciado","port":"8080"}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"level":"fatal","ts":1764210132.0324972,"caller":"api/main.go:564","msg":"Erro ao iniciar servidor","error":"listen tcp :8080: bind: address already in use","stacktrace":"main.main\n\t/home/andrey/Área de trabalho/Projetos/nexo/backend/cmd/api/main.go:564\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:283"}
+Process Exit with Code: 1

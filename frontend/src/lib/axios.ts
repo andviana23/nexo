@@ -16,15 +16,19 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined') {
       // Busca token do Zustand persist storage
       const authData = localStorage.getItem('nexo-auth');
+      console.log('[axios] authData do localStorage:', authData ? 'existe' : 'não existe');
+      
       if (authData) {
         try {
           const { state } = JSON.parse(authData);
           const token = state?.token;
+          console.log('[axios] Token encontrado:', token ? `${token.substring(0, 20)}...` : 'null');
+          
           if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
           }
         } catch (error) {
-          console.error('Erro ao parsear token:', error);
+          console.error('[axios] Erro ao parsear token:', error);
         }
       }
     }

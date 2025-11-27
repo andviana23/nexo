@@ -173,12 +173,9 @@ export interface AppointmentResponse {
 /** Resposta paginada de listagem */
 export interface ListAppointmentsResponse {
   data: AppointmentResponse[];
-  meta: {
-    page: number;
-    page_size: number;
-    total: number;
-    total_pages: number;
-  };
+  page: number;
+  page_size: number;
+  total: number;
 }
 
 /** Slot de disponibilidade */

@@ -6,33 +6,38 @@
  * - Collapse/Expand
  * - Responsivo (mobile drawer)
  * - Suporte a RBAC (filtro por permissões)
+ * - Menus colapsáveis (submenu)
  * - Ícones lucide-react
  */
 
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/store/auth-store';
 import { useSidebar } from '@/store/ui-store';
 import {
-    BarChart3,
-    Calendar,
-    ChevronLeft,
-    ClipboardList,
-    CreditCard,
-    DollarSign,
-    LayoutDashboard,
-    Menu,
-    Package,
-    Scissors,
-    Settings,
-    Users,
+  BarChart3,
+  Calendar,
+  ChevronDown,
+  ChevronLeft,
+  ClipboardList,
+  CreditCard,
+  DollarSign,
+  FolderOpen,
+  LayoutDashboard,
+  Menu,
+  Package,
+  Scissors,
+  Settings,
+  UserCog,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // =============================================================================
 // TIPOS
@@ -46,11 +51,25 @@ interface NavItem {
   badge?: string; // Badge opcional (ex: "Beta", "Novo")
 }
 
+interface NavGroup {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+  roles?: string[];
+}
+
+type NavigationItem = NavItem | NavGroup;
+
+// Type guard para verificar se é um grupo
+function isNavGroup(item: NavigationItem): item is NavGroup {
+  return 'items' in item;
+}
+
 // =============================================================================
 // NAVEGAÇÃO
 // =============================================================================
 
-const navItems: NavItem[] = [
+const navigationItems: NavigationItem[] = [
   {
     title: 'Dashboard',
     href: '/',
@@ -66,15 +85,28 @@ const navItems: NavItem[] = [
     href: '/lista-da-vez',
     icon: ClipboardList,
   },
+  // Menu colapsável: Cadastros
   {
-    title: 'Clientes',
-    href: '/clientes',
-    icon: Users,
-  },
-  {
-    title: 'Serviços',
-    href: '/servicos',
-    icon: Scissors,
+    title: 'Cadastros',
+    icon: FolderOpen,
+    items: [
+      {
+        title: 'Clientes',
+        href: '/clientes',
+        icon: Users,
+      },
+      {
+        title: 'Profissionais',
+        href: '/profissionais',
+        icon: UserCog,
+        roles: ['owner', 'admin', 'manager'],
+      },
+      {
+        title: 'Serviços',
+        href: '/servicos',
+        icon: Scissors,
+      },
+    ],
   },
   {
     title: 'Estoque',
@@ -90,13 +122,13 @@ const navItems: NavItem[] = [
     title: 'Relatórios',
     href: '/relatorios',
     icon: BarChart3,
-    roles: ['owner', 'admin'], // Apenas owner e admin
+    roles: ['owner', 'admin'], // Owner e admin
   },
   {
     title: 'Assinatura',
     href: '/assinatura',
     icon: CreditCard,
-    roles: ['owner'], // Apenas owner
+    roles: ['owner', 'admin'], // Owner e admin
   },
   {
     title: 'Configurações',
@@ -122,8 +154,27 @@ function SidebarContent({
   isCollapsed: boolean;
   setCollapsed: (value: boolean) => void;
   pathname: string;
-  filteredItems: NavItem[];
+  filteredItems: NavigationItem[];
 }) {
+  // Estado para controlar menus abertos
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    // Abre automaticamente o grupo que contém a rota atual
+    const activeGroup = filteredItems.find(
+      (item) =>
+        isNavGroup(item) &&
+        item.items.some((subItem) => pathname.startsWith(subItem.href))
+    );
+    return activeGroup ? [activeGroup.title] : [];
+  });
+
+  const toggleGroup = (title: string) => {
+    setOpenGroups((prev) =>
+      prev.includes(title)
+        ? prev.filter((t) => t !== title)
+        : [...prev, title]
+    );
+  };
+
   return (
     <div
       className={cn(
@@ -148,6 +199,117 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto p-2">
         {filteredItems.map((item) => {
+          // Renderiza grupo colapsável
+          if (isNavGroup(item)) {
+            const Icon = item.icon;
+            const isGroupOpen = openGroups.includes(item.title);
+            const hasActiveChild = item.items.some(
+              (subItem) => pathname === subItem.href
+            );
+
+            // Se sidebar está colapsada, mostrar apenas ícone com tooltip
+            if (isCollapsed) {
+              return (
+                <div key={item.title} className="relative group">
+                  <button
+                    onClick={() => toggleGroup(item.title)}
+                    className={cn(
+                      'flex w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      hasActiveChild
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    )}
+                    title={item.title}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                  </button>
+                  {/* Tooltip com subitems */}
+                  <div className="absolute left-full top-0 ml-2 hidden w-48 rounded-lg border bg-popover p-2 shadow-lg group-hover:block z-50">
+                    <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">
+                      {item.title}
+                    </div>
+                    {item.items.map((subItem) => {
+                      const SubIcon = subItem.icon;
+                      const isSubActive = pathname === subItem.href;
+                      return (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          className={cn(
+                            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                            isSubActive
+                              ? 'bg-primary text-primary-foreground'
+                              : 'hover:bg-accent'
+                          )}
+                        >
+                          <SubIcon className="h-4 w-4" />
+                          {subItem.title}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
+            // Sidebar expandida: menu colapsável completo
+            return (
+              <Collapsible
+                key={item.title}
+                open={isGroupOpen}
+                onOpenChange={() => toggleGroup(item.title)}
+              >
+                <CollapsibleTrigger asChild>
+                  <button
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      hasActiveChild
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="flex-1 text-left">{item.title}</span>
+                    <ChevronDown
+                      className={cn(
+                        'h-4 w-4 transition-transform',
+                        isGroupOpen && 'rotate-180'
+                      )}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                  {item.items.map((subItem) => {
+                    const SubIcon = subItem.icon;
+                    const isSubActive = pathname === subItem.href;
+
+                    return (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                          isSubActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                        )}
+                      >
+                        <SubIcon className="h-4 w-4 shrink-0" />
+                        <span>{subItem.title}</span>
+                        {subItem.badge && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                            {subItem.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          }
+
+          // Renderiza item simples
           const isActive = pathname === item.href;
           const Icon = item.icon;
 
@@ -206,6 +368,15 @@ export function Sidebar() {
   const pathname = usePathname();
   const user = useCurrentUser();
 
+  // DEBUG: Log do usuário
+  useEffect(() => {
+    console.log('[Sidebar] User state:', {
+      email: user?.email,
+      role: user?.role,
+      name: user?.name,
+    });
+  }, [user]);
+
   // Detecta mobile
   useEffect(() => {
     const handleResize = () => {
@@ -219,12 +390,31 @@ export function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, [setCollapsed]);
 
-  // Filtra itens por role
-  const filteredItems = navItems.filter((item) => {
-    if (!item.roles) return true;
-    if (!user?.role) return false;
-    return item.roles.includes(user.role);
-  });
+  // Filtra itens por role (incluindo subitens de grupos)
+  const filteredItems = navigationItems
+    .map((item) => {
+      // Se é um grupo, filtra os subitens
+      if (isNavGroup(item)) {
+        // Verifica se o grupo em si tem restrição de role
+        if (item.roles && (!user?.role || !item.roles.includes(user.role))) {
+          return null;
+        }
+        // Filtra subitens do grupo
+        const filteredSubItems = item.items.filter((subItem) => {
+          if (!subItem.roles) return true;
+          if (!user?.role) return false;
+          return subItem.roles.includes(user.role);
+        });
+        // Se não sobrou nenhum subitem, não mostra o grupo
+        if (filteredSubItems.length === 0) return null;
+        return { ...item, items: filteredSubItems };
+      }
+      // Item simples
+      if (!item.roles) return item;
+      if (!user?.role) return null;
+      return item.roles.includes(user.role) ? item : null;
+    })
+    .filter((item): item is NavigationItem => item !== null);
 
   // Mobile: Sheet (Drawer)
   // Desktop: Sempre visível
@@ -245,6 +435,9 @@ export function Sidebar() {
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
             <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
+            <SheetDescription className="sr-only">
+              Navegue pelas opções do sistema NEXO
+            </SheetDescription>
             <SidebarContent
               isCollapsed={false}
               setCollapsed={setCollapsed}

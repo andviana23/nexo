@@ -120,3 +120,69 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ==========================================================================
+   FULLCALENDAR CUSTOMIZATION
+   ========================================================================== */
+
+/* 1. Grid Lines - Clean and Professional */
+.fc-theme-standard td, 
+.fc-theme-standard th {
+    border-color: #e5e7eb !important; /* Light gray lines */
+}
+
+/* Horizontal lines (Time slots) */
+.fc-timegrid-slot {
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* Vertical lines (Resources) */
+.fc-timegrid-col {
+    border-right: 1px solid #e5e7eb !important;
+}
+
+/* Ensure scrollgrid has borders */
+.fc-scrollgrid {
+    border: 1px solid #e5e7eb !important;
+}
+
+/* 2. Time Column (Left Side) - Distinct Zone */
+.fc-timegrid-axis-frame,
+.fc-timegrid-slot-label {
+    background-color: #f7f7f7 !important; /* Very light gray background */
+}
+
+.fc-timegrid-slot-label-cushion,
+.fc-timegrid-axis-cushion {
+    color: #6b7280 !important; /* Gray text */
+    font-weight: 500 !important;
+}
+
+/* 3. Professionals Header (Top) - High Contrast */
+.fc-col-header-cell {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 8px 0 !important;
+}
+
+.fc-col-header-cell-cushion {
+    color: #111827 !important; /* Dark text */
+    font-weight: 600 !important;
+    text-decoration: none !important;
+}
+
+/* Remove today highlight background to keep it clean */
+.fc-timegrid-col.fc-day-today {
+    background-color: transparent !important;
+}
+
+/* Minor slots styling (if visible) */
+.fc-timegrid-slot-minor {
+    border-bottom-style: solid !important;
+    border-bottom-color: #e5e7eb !important;
+}
+
+/* Remove default blue highlight on today's header if present */
+.fc-col-header-cell.fc-day-today {
+    background-color: #ffffff !important;
+}

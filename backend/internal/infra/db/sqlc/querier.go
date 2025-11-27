@@ -11,19 +11,48 @@ import (
 )
 
 type Querier interface {
+	// ============================================================================
+	// BARBER TURN QUERIES (sqlc)
+	// Módulo Lista da Vez — NEXO v1.0
+	// Conforme FLUXO_LISTA_DA_VEZ.md
+	// ============================================================================
+	// ============================================================================
+	// CREATE / ADD
+	// ============================================================================
+	// Adiciona um barbeiro à lista da vez
+	AddBarberToTurnList(ctx context.Context, arg AddBarberToTurnListParams) (BarbersTurnList, error)
 	AprovarMetaMensal(ctx context.Context, arg AprovarMetaMensalParams) (MetasMensai, error)
 	AtualizarQuantidadeProduto(ctx context.Context, arg AtualizarQuantidadeProdutoParams) (Produto, error)
 	AvgMargemBrutaByPeriod(ctx context.Context, arg AvgMargemBrutaByPeriodParams) (interface{}, error)
 	AvgMargemOperacionalByPeriod(ctx context.Context, arg AvgMargemOperacionalByPeriodParams) (interface{}, error)
 	CheckAppointmentConflict(ctx context.Context, arg CheckAppointmentConflictParams) (bool, error)
+	CheckCPFExists(ctx context.Context, arg CheckCPFExistsParams) (bool, error)
+	CheckCategoriaServicoNomeExists(ctx context.Context, arg CheckCategoriaServicoNomeExistsParams) (bool, error)
+	CheckCpfExistsProfessional(ctx context.Context, arg CheckCpfExistsProfessionalParams) (bool, error)
+	CheckEmailExists(ctx context.Context, arg CheckEmailExistsParams) (bool, error)
+	CheckEmailExistsProfessional(ctx context.Context, arg CheckEmailExistsProfessionalParams) (bool, error)
+	// ============================================================================
+	// VALIDAÇÕES
+	// ============================================================================
+	CheckPhoneExists(ctx context.Context, arg CheckPhoneExistsParams) (bool, error)
+	// ============================================================================
+	// VALIDAÇÕES
+	// ============================================================================
+	// Verifica se profissional já está na lista
+	CheckProfessionalInTurnList(ctx context.Context, arg CheckProfessionalInTurnListParams) (bool, error)
+	// Verifica se profissional é do tipo BARBEIRO
+	CheckProfessionalIsBarber(ctx context.Context, arg CheckProfessionalIsBarberParams) (bool, error)
 	CountAppointments(ctx context.Context, arg CountAppointmentsParams) (int64, error)
 	CountAppointmentsByStatus(ctx context.Context, arg CountAppointmentsByStatusParams) (int64, error)
+	CountBarbersTurnList(ctx context.Context, tenantID pgtype.UUID) (CountBarbersTurnListRow, error)
+	CountCategoriasServicosByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountCompensacoesByStatus(ctx context.Context, arg CountCompensacoesByStatusParams) (int64, error)
 	CountCompensacoesByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountContasPagarByStatus(ctx context.Context, arg CountContasPagarByStatusParams) (int64, error)
 	CountContasPagarByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountContasReceberByStatus(ctx context.Context, arg CountContasReceberByStatusParams) (int64, error)
 	CountContasReceberByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
+	CountCustomers(ctx context.Context, arg CountCustomersParams) (int64, error)
 	CountDREMensalByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountFluxoCaixaDiarioByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountMetasBarbeiroByBarbeiro(ctx context.Context, arg CountMetasBarbeiroByBarbeiroParams) (int64, error)
@@ -31,6 +60,11 @@ type Querier interface {
 	CountMetasMensaisByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountMetasTicketMedioByBarbeiro(ctx context.Context, arg CountMetasTicketMedioByBarbeiroParams) (int64, error)
 	CountMetasTicketMedioByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
+	CountProfessionals(ctx context.Context, arg CountProfessionalsParams) (int64, error)
+	// ============================================================================
+	// QUERIES AUXILIARES
+	// ============================================================================
+	CountServicosInCategoria(ctx context.Context, arg CountServicosInCategoriaParams) (int64, error)
 	CountSimulacoesByItem(ctx context.Context, arg CountSimulacoesByItemParams) (int64, error)
 	CountSimulacoesByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
 	CountUserPreferences(ctx context.Context) (int64, error)
@@ -40,9 +74,27 @@ type Querier interface {
 	// ============================================================================
 	CreateAppointment(ctx context.Context, arg CreateAppointmentParams) (Appointment, error)
 	CreateAppointmentService(ctx context.Context, arg CreateAppointmentServiceParams) error
+	// ============================================================================
+	// CATEGORIAS DE SERVIÇOS QUERIES (sqlc)
+	// Módulo de Cadastro de Serviços — NEXO v1.0
+	// Tabela: categorias_servicos (separada de categorias financeiras)
+	// ============================================================================
+	// ============================================================================
+	// CREATE
+	// ============================================================================
+	CreateCategoriaServico(ctx context.Context, arg CreateCategoriaServicoParams) (CategoriasServico, error)
 	CreateCompensacaoBancaria(ctx context.Context, arg CreateCompensacaoBancariaParams) (CompensacoesBancaria, error)
 	CreateContaPagar(ctx context.Context, arg CreateContaPagarParams) (ContasAPagar, error)
 	CreateContaReceber(ctx context.Context, arg CreateContaReceberParams) (ContasAReceber, error)
+	// ============================================================================
+	// CUSTOMERS QUERIES (sqlc)
+	// Módulo de Cadastro de Clientes — NEXO v1.0
+	// Conforme FLUXO_CADASTROS_CLIENTE.md
+	// ============================================================================
+	// ============================================================================
+	// CREATE
+	// ============================================================================
+	CreateCustomer(ctx context.Context, arg CreateCustomerParams) (Cliente, error)
 	CreateDREMensal(ctx context.Context, arg CreateDREMensalParams) (DreMensal, error)
 	CreateFluxoCaixaDiario(ctx context.Context, arg CreateFluxoCaixaDiarioParams) (FluxoCaixaDiario, error)
 	// ========================================
@@ -70,11 +122,16 @@ type Querier interface {
 	// PRODUTO-FORNECEDOR (relacionamento)
 	// ========================================
 	CreateProdutoFornecedor(ctx context.Context, arg CreateProdutoFornecedorParams) (ProdutoFornecedor, error)
+	CreateProfessional(ctx context.Context, arg CreateProfessionalParams) (CreateProfessionalRow, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	CreateUserPreferences(ctx context.Context, arg CreateUserPreferencesParams) (UserPreference, error)
 	CustomerExists(ctx context.Context, arg CustomerExistsParams) (bool, error)
 	DeleteAppointment(ctx context.Context, arg DeleteAppointmentParams) error
 	DeleteAppointmentServices(ctx context.Context, appointmentID pgtype.UUID) error
+	// ============================================================================
+	// DELETE
+	// ============================================================================
+	DeleteCategoriaServico(ctx context.Context, arg DeleteCategoriaServicoParams) error
 	DeleteCompensacaoBancaria(ctx context.Context, arg DeleteCompensacaoBancariaParams) error
 	DeleteContaPagar(ctx context.Context, arg DeleteContaPagarParams) error
 	DeleteContaReceber(ctx context.Context, arg DeleteContaReceberParams) error
@@ -89,18 +146,49 @@ type Querier interface {
 	DeletePrecificacaoSimulacao(ctx context.Context, arg DeletePrecificacaoSimulacaoParams) error
 	DeleteProduto(ctx context.Context, arg DeleteProdutoParams) error
 	DeleteProdutoFornecedor(ctx context.Context, arg DeleteProdutoFornecedorParams) error
+	DeleteProfessional(ctx context.Context, arg DeleteProfessionalParams) error
 	DeleteRefreshToken(ctx context.Context, token string) error
 	DeleteUserPreferences(ctx context.Context, userID pgtype.UUID) error
 	GetAppointmentByID(ctx context.Context, arg GetAppointmentByIDParams) (GetAppointmentByIDRow, error)
 	GetAppointmentServices(ctx context.Context, appointmentID pgtype.UUID) ([]GetAppointmentServicesRow, error)
+	// Lista barbeiros ativos que ainda não estão na lista da vez
+	GetAvailableBarbersForTurnList(ctx context.Context, tenantID pgtype.UUID) ([]GetAvailableBarbersForTurnListRow, error)
+	// ============================================================================
+	// READ / LIST
+	// ============================================================================
+	GetBarberTurnByID(ctx context.Context, arg GetBarberTurnByIDParams) (GetBarberTurnByIDRow, error)
+	GetBarberTurnByProfessionalID(ctx context.Context, arg GetBarberTurnByProfessionalIDParams) (GetBarberTurnByProfessionalIDRow, error)
+	// ============================================================================
+	// READ
+	// ============================================================================
+	GetCategoriaServicoByID(ctx context.Context, arg GetCategoriaServicoByIDParams) (CategoriasServico, error)
+	GetCategoriasServicosComServicos(ctx context.Context, tenantID pgtype.UUID) ([]GetCategoriasServicosComServicosRow, error)
 	GetCompensacaoBancariaByID(ctx context.Context, arg GetCompensacaoBancariaByIDParams) (CompensacoesBancaria, error)
 	GetContaPagarByID(ctx context.Context, arg GetContaPagarByIDParams) (ContasAPagar, error)
 	GetContaReceberByID(ctx context.Context, arg GetContaReceberByIDParams) (ContasAReceber, error)
 	GetCurvaABC(ctx context.Context, tenantID pgtype.UUID) ([]GetCurvaABCRow, error)
+	GetCustomerByCPF(ctx context.Context, arg GetCustomerByCPFParams) (Cliente, error)
+	// ============================================================================
+	// READ
+	// ============================================================================
+	GetCustomerByID(ctx context.Context, arg GetCustomerByIDParams) (Cliente, error)
+	GetCustomerByPhone(ctx context.Context, arg GetCustomerByPhoneParams) (Cliente, error)
+	// ============================================================================
+	// EXPORTAÇÃO LGPD
+	// ============================================================================
+	GetCustomerDataForExport(ctx context.Context, arg GetCustomerDataForExportParams) (GetCustomerDataForExportRow, error)
 	GetCustomerInfo(ctx context.Context, arg GetCustomerInfoParams) (GetCustomerInfoRow, error)
+	// ============================================================================
+	// ESTATÍSTICAS E RELATÓRIOS
+	// ============================================================================
+	GetCustomerStats(ctx context.Context, tenantID pgtype.UUID) (GetCustomerStatsRow, error)
+	GetCustomerWithHistory(ctx context.Context, arg GetCustomerWithHistoryParams) (GetCustomerWithHistoryRow, error)
 	GetDREMensalByID(ctx context.Context, arg GetDREMensalByIDParams) (DreMensal, error)
 	GetDREMensalByMesAno(ctx context.Context, arg GetDREMensalByMesAnoParams) (DreMensal, error)
 	GetDailyAppointmentStats(ctx context.Context, arg GetDailyAppointmentStatsParams) (GetDailyAppointmentStatsRow, error)
+	// Relatório diário: pontos ganhos em uma data específica
+	// Nota: Esta query usa CTE para calcular incrementos comparando com o dia anterior
+	GetDailyReportByDate(ctx context.Context, arg GetDailyReportByDateParams) ([]GetDailyReportByDateRow, error)
 	GetFluxoCaixaDiarioByData(ctx context.Context, arg GetFluxoCaixaDiarioByDataParams) (FluxoCaixaDiario, error)
 	GetFluxoCaixaDiarioByID(ctx context.Context, arg GetFluxoCaixaDiarioByIDParams) (FluxoCaixaDiario, error)
 	GetFornecedorByCNPJ(ctx context.Context, arg GetFornecedorByCNPJParams) (Fornecedore, error)
@@ -114,6 +202,8 @@ type Querier interface {
 	GetMetaTicketMedioGeralByMesAno(ctx context.Context, arg GetMetaTicketMedioGeralByMesAnoParams) (MetasTicketMedio, error)
 	GetMovimentacaoByID(ctx context.Context, arg GetMovimentacaoByIDParams) (MovimentacoesEstoque, error)
 	GetMovimentacoesPorPeriodoComDetalhes(ctx context.Context, arg GetMovimentacoesPorPeriodoComDetalhesParams) ([]GetMovimentacoesPorPeriodoComDetalhesRow, error)
+	// Retorna o próximo barbeiro da vez (topo da fila ativa)
+	GetNextBarber(ctx context.Context, tenantID pgtype.UUID) (GetNextBarberRow, error)
 	GetPrecificacaoConfigByID(ctx context.Context, arg GetPrecificacaoConfigByIDParams) (PrecificacaoConfig, error)
 	GetPrecificacaoConfigByTenant(ctx context.Context, tenantID pgtype.UUID) (PrecificacaoConfig, error)
 	GetPrecificacaoSimulacaoByID(ctx context.Context, arg GetPrecificacaoSimulacaoByIDParams) (PrecificacaoSimulaco, error)
@@ -124,11 +214,21 @@ type Querier interface {
 	// RELATÓRIOS E CONSULTAS ESPECIAIS
 	// ========================================
 	GetProdutosComEstoqueBaixo(ctx context.Context, tenantID pgtype.UUID) ([]GetProdutosComEstoqueBaixoRow, error)
+	GetProfessionalByID(ctx context.Context, arg GetProfessionalByIDParams) (GetProfessionalByIDRow, error)
 	GetProfessionalInfo(ctx context.Context, arg GetProfessionalInfoParams) (GetProfessionalInfoRow, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)
 	GetServiceInfo(ctx context.Context, arg GetServiceInfoParams) (GetServiceInfoRow, error)
 	GetServicesByIDs(ctx context.Context, arg GetServicesByIDsParams) ([]GetServicesByIDsRow, error)
+	// ============================================================================
+	// ESTATÍSTICAS DIÁRIAS
+	// ============================================================================
+	// Estatísticas do dia atual
+	GetTodayStats(ctx context.Context, tenantID pgtype.UUID) (GetTodayStatsRow, error)
 	GetTotalPorTipo(ctx context.Context, arg GetTotalPorTipoParams) (GetTotalPorTipoRow, error)
+	// Busca histórico de um mês específico
+	GetTurnHistoryByMonth(ctx context.Context, arg GetTurnHistoryByMonthParams) ([]GetTurnHistoryByMonthRow, error)
+	// Resumo dos últimos 12 meses
+	GetTurnHistorySummary(ctx context.Context, tenantID pgtype.UUID) ([]GetTurnHistorySummaryRow, error)
 	GetUltimaSimulacaoByItem(ctx context.Context, arg GetUltimaSimulacaoByItemParams) (PrecificacaoSimulaco, error)
 	GetUltimoSaldo(ctx context.Context, arg GetUltimoSaldoParams) (pgtype.Numeric, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
@@ -136,10 +236,25 @@ type Querier interface {
 	GetUserPreferencesByID(ctx context.Context, id pgtype.UUID) (UserPreference, error)
 	GetUserPreferencesByUserID(ctx context.Context, userID pgtype.UUID) (UserPreference, error)
 	GetValorTotalEstoque(ctx context.Context, tenantID pgtype.UUID) (GetValorTotalEstoqueRow, error)
+	// ============================================================================
+	// DELETE (Soft Delete)
+	// ============================================================================
+	InactivateCustomer(ctx context.Context, arg InactivateCustomerParams) error
+	// Lista apenas barbeiros ativos na fila (is_active = true)
+	ListActiveBarbersTurnList(ctx context.Context, tenantID pgtype.UUID) ([]ListActiveBarbersTurnListRow, error)
+	ListActiveCustomers(ctx context.Context, tenantID pgtype.UUID) ([]ListActiveCustomersRow, error)
 	ListActiveProfessionals(ctx context.Context, tenantID pgtype.UUID) ([]ListActiveProfessionalsRow, error)
 	ListAppointments(ctx context.Context, arg ListAppointmentsParams) ([]ListAppointmentsRow, error)
 	ListAppointmentsByCustomer(ctx context.Context, arg ListAppointmentsByCustomerParams) ([]ListAppointmentsByCustomerRow, error)
 	ListAppointmentsByProfessionalAndDateRange(ctx context.Context, arg ListAppointmentsByProfessionalAndDateRangeParams) ([]ListAppointmentsByProfessionalAndDateRangeRow, error)
+	ListBarbers(ctx context.Context, tenantID pgtype.UUID) ([]ListBarbersRow, error)
+	// Lista todos os barbeiros na fila ordenados por pontuação
+	// Menor pontuação = topo da fila
+	// Critério de desempate: last_turn_at mais antigo ou nulo (nunca atendeu) → topo
+	// Segundo desempate: ordem de criação (created_at ASC)
+	ListBarbersTurnList(ctx context.Context, arg ListBarbersTurnListParams) ([]ListBarbersTurnListRow, error)
+	ListCategoriasServicos(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasServico, error)
+	ListCategoriasServicosAtivas(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasServico, error)
 	ListCompensacoesBancariasByTenant(ctx context.Context, arg ListCompensacoesBancariasByTenantParams) ([]CompensacoesBancaria, error)
 	ListCompensacoesByDataCompensacao(ctx context.Context, arg ListCompensacoesByDataCompensacaoParams) ([]CompensacoesBancaria, error)
 	ListCompensacoesByReceita(ctx context.Context, arg ListCompensacoesByReceitaParams) ([]CompensacoesBancaria, error)
@@ -155,6 +270,8 @@ type Querier interface {
 	ListContasReceberByStatus(ctx context.Context, arg ListContasReceberByStatusParams) ([]ContasAReceber, error)
 	ListContasReceberByTenant(ctx context.Context, arg ListContasReceberByTenantParams) ([]ContasAReceber, error)
 	ListContasReceberVencidas(ctx context.Context, arg ListContasReceberVencidasParams) ([]ContasAReceber, error)
+	ListCustomers(ctx context.Context, arg ListCustomersParams) ([]Cliente, error)
+	ListCustomersWithoutAppointments(ctx context.Context, arg ListCustomersWithoutAppointmentsParams) ([]Cliente, error)
 	ListDREMensalByPeriod(ctx context.Context, arg ListDREMensalByPeriodParams) ([]DreMensal, error)
 	ListDREMensalByTenant(ctx context.Context, arg ListDREMensalByTenantParams) ([]DreMensal, error)
 	ListFluxoCaixaDiarioByPeriod(ctx context.Context, arg ListFluxoCaixaDiarioByPeriodParams) ([]FluxoCaixaDiario, error)
@@ -180,10 +297,19 @@ type Querier interface {
 	ListProdutosAtivos(ctx context.Context, tenantID pgtype.UUID) ([]Produto, error)
 	ListProdutosByCategoria(ctx context.Context, arg ListProdutosByCategoriaParams) ([]Produto, error)
 	ListProdutosByFornecedor(ctx context.Context, arg ListProdutosByFornecedorParams) ([]ListProdutosByFornecedorRow, error)
+	// =============================================================================
+	// QUERIES PARA PROFISSIONAIS
+	// =============================================================================
+	ListProfessionals(ctx context.Context, arg ListProfessionalsParams) ([]ListProfessionalsRow, error)
 	ListSimulacoesByItem(ctx context.Context, arg ListSimulacoesByItemParams) ([]PrecificacaoSimulaco, error)
 	ListSimulacoesByTenant(ctx context.Context, arg ListSimulacoesByTenantParams) ([]PrecificacaoSimulaco, error)
 	ListSimulacoesByTipoItem(ctx context.Context, arg ListSimulacoesByTipoItemParams) ([]PrecificacaoSimulaco, error)
 	ListSimulacoesByUsuario(ctx context.Context, arg ListSimulacoesByUsuarioParams) ([]PrecificacaoSimulaco, error)
+	// ============================================================================
+	// HISTÓRICO
+	// ============================================================================
+	// Lista histórico mensal de atendimentos
+	ListTurnHistory(ctx context.Context, arg ListTurnHistoryParams) ([]ListTurnHistoryRow, error)
 	ListUsersWithAnalyticsEnabled(ctx context.Context) ([]pgtype.UUID, error)
 	ListUsersWithMarketingEnabled(ctx context.Context) ([]pgtype.UUID, error)
 	MarcarComoCompensado(ctx context.Context, arg MarcarComoCompensadoParams) (CompensacoesBancaria, error)
@@ -195,10 +321,33 @@ type Querier interface {
 	// QUERIES AUXILIARES: Profissionais, Clientes, Serviços (Read-Only)
 	// ============================================================================
 	ProfessionalExists(ctx context.Context, arg ProfessionalExistsParams) (bool, error)
+	ReactivateCustomer(ctx context.Context, arg ReactivateCustomerParams) error
 	ReativarFornecedor(ctx context.Context, arg ReativarFornecedorParams) error
+	// ============================================================================
+	// UPDATE
+	// ============================================================================
+	// Registra um atendimento: incrementa pontos (+1) e atualiza timestamp
+	RecordTurn(ctx context.Context, arg RecordTurnParams) (BarbersTurnList, error)
 	RejeitarMetaMensal(ctx context.Context, arg RejeitarMetaMensalParams) (MetasMensai, error)
+	// ============================================================================
+	// DELETE
+	// ============================================================================
+	// Remove barbeiro da lista da vez
+	RemoveBarberFromTurnList(ctx context.Context, arg RemoveBarberFromTurnListParams) error
+	// ============================================================================
+	// RESET MENSAL
+	// ============================================================================
+	// Zera todos os pontos e last_turn_at para reset mensal
+	ResetAllTurnPoints(ctx context.Context, tenantID pgtype.UUID) error
 	SaveRefreshToken(ctx context.Context, arg SaveRefreshTokenParams) error
+	// Salva snapshot no histórico antes do reset
+	SaveTurnHistoryBeforeReset(ctx context.Context, arg SaveTurnHistoryBeforeResetParams) error
+	SearchCustomers(ctx context.Context, arg SearchCustomersParams) ([]SearchCustomersRow, error)
 	ServiceExists(ctx context.Context, arg ServiceExistsParams) (bool, error)
+	// Ativa um barbeiro na fila
+	SetBarberTurnActive(ctx context.Context, arg SetBarberTurnActiveParams) (BarbersTurnList, error)
+	// Pausa um barbeiro na fila
+	SetBarberTurnInactive(ctx context.Context, arg SetBarberTurnInactiveParams) (BarbersTurnList, error)
 	SumContasPagarByPeriod(ctx context.Context, arg SumContasPagarByPeriodParams) (interface{}, error)
 	SumContasPagasByPeriod(ctx context.Context, arg SumContasPagasByPeriodParams) (interface{}, error)
 	SumContasReceberByPeriod(ctx context.Context, arg SumContasReceberByPeriodParams) (interface{}, error)
@@ -208,11 +357,23 @@ type Querier interface {
 	SumReceitasByPeriod(ctx context.Context, arg SumReceitasByPeriodParams) (interface{}, error)
 	SumSaidasByPeriod(ctx context.Context, arg SumSaidasByPeriodParams) (interface{}, error)
 	SumValorLiquidoByPeriod(ctx context.Context, arg SumValorLiquidoByPeriodParams) (interface{}, error)
+	// Alterna status ativo/inativo de um barbeiro na fila
+	ToggleBarberTurnStatus(ctx context.Context, arg ToggleBarberTurnStatusParams) (BarbersTurnList, error)
+	ToggleCategoriaServicoStatus(ctx context.Context, arg ToggleCategoriaServicoStatusParams) (CategoriasServico, error)
 	UpdateAppointment(ctx context.Context, arg UpdateAppointmentParams) (Appointment, error)
 	UpdateAppointmentStatus(ctx context.Context, arg UpdateAppointmentStatusParams) (Appointment, error)
+	// ============================================================================
+	// UPDATE
+	// ============================================================================
+	UpdateCategoriaServico(ctx context.Context, arg UpdateCategoriaServicoParams) (CategoriasServico, error)
 	UpdateCompensacaoBancaria(ctx context.Context, arg UpdateCompensacaoBancariaParams) (CompensacoesBancaria, error)
 	UpdateContaPagar(ctx context.Context, arg UpdateContaPagarParams) (ContasAPagar, error)
 	UpdateContaReceber(ctx context.Context, arg UpdateContaReceberParams) (ContasAReceber, error)
+	// ============================================================================
+	// UPDATE
+	// ============================================================================
+	UpdateCustomer(ctx context.Context, arg UpdateCustomerParams) (Cliente, error)
+	UpdateCustomerTags(ctx context.Context, arg UpdateCustomerTagsParams) (Cliente, error)
 	UpdateDREMensal(ctx context.Context, arg UpdateDREMensalParams) (DreMensal, error)
 	UpdateFluxoCaixaDiario(ctx context.Context, arg UpdateFluxoCaixaDiarioParams) (FluxoCaixaDiario, error)
 	UpdateFornecedor(ctx context.Context, arg UpdateFornecedorParams) (Fornecedore, error)
@@ -223,6 +384,8 @@ type Querier interface {
 	UpdatePrecificacaoConfig(ctx context.Context, arg UpdatePrecificacaoConfigParams) (PrecificacaoConfig, error)
 	UpdateProduto(ctx context.Context, arg UpdateProdutoParams) (Produto, error)
 	UpdateProdutoFornecedor(ctx context.Context, arg UpdateProdutoFornecedorParams) (ProdutoFornecedor, error)
+	UpdateProfessional(ctx context.Context, arg UpdateProfessionalParams) (UpdateProfessionalRow, error)
+	UpdateProfessionalStatus(ctx context.Context, arg UpdateProfessionalStatusParams) (UpdateProfessionalStatusRow, error)
 	UpdateUserPreferences(ctx context.Context, arg UpdateUserPreferencesParams) (UserPreference, error)
 }
 

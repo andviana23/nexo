@@ -12,13 +12,13 @@ import (
 type CategoriaProduto string
 
 const (
-	CategoriaInsumo      CategoriaProduto = "INSUMO"
-	CategoriaRevenda     CategoriaProduto = "REVENDA"
-	CategoriaUsoInterno  CategoriaProduto = "USO_INTERNO"
-	CategoriaPermanente  CategoriaProduto = "PERMANENTE"
-	CategoriaPromocional CategoriaProduto = "PROMOCIONAL"
-	CategoriaKit         CategoriaProduto = "KIT"
-	CategoriaServico     CategoriaProduto = "SERVICO"
+	CategoriaInsumo         CategoriaProduto = "INSUMO"
+	CategoriaRevenda        CategoriaProduto = "REVENDA"
+	CategoriaUsoInterno     CategoriaProduto = "USO_INTERNO"
+	CategoriaPermanente     CategoriaProduto = "PERMANENTE"
+	CategoriaPromocional    CategoriaProduto = "PROMOCIONAL"
+	CategoriaKit            CategoriaProduto = "KIT"
+	CategoriaProdutoServico CategoriaProduto = "SERVICO"
 )
 
 // UnidadeMedida representa as unidades de medida

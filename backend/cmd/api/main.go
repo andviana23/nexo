@@ -411,6 +411,14 @@ func main() {
 		caixaDiarioRepo, // T-ASAAS-001: Adicionar caixa para lançar pagamentos
 		logger,
 	)
+	// T-ASAAS-002: Reconciliação automática Asaas <-> NEXO
+	reconcileAsaasUC := subscriptionUC.NewReconcileAsaasUseCase(
+		subscriptionPaymentRepo,
+		contaReceberRepo,
+		webhookLogRepo,
+		nil, // ReconciliationLogRepository - opcional, pode ser implementado depois
+		logger,
+	)
 
 	// Initialize use cases - MeioPagamento (6 use cases)
 	createMeioPagamentoUC := meiopagamento.NewCreateMeioPagamentoUseCase(meioPagamentoRepo)
@@ -734,6 +742,7 @@ func main() {
 		cancelSubscriptionUC,
 		renewSubscriptionUC,
 		subscriptionMetricsUC,
+		reconcileAsaasUC, // T-ASAAS-002
 		logger,
 	)
 
@@ -1057,6 +1066,7 @@ func main() {
 	subscriptionsGroup.GET("/:id", subscriptionHandler.Get, mw.RequireAdminAccess(logger))
 	subscriptionsGroup.POST("", subscriptionHandler.Create, mw.RequireAdminAccess(logger))
 	subscriptionsGroup.POST("/:id/renew", subscriptionHandler.Renew, mw.RequireAdminAccess(logger))
+	subscriptionsGroup.POST("/reconcile", subscriptionHandler.Reconcile, mw.RequireOwnerOrManager(logger)) // T-ASAAS-002
 	subscriptionsGroup.DELETE("/:id", subscriptionHandler.Cancel, mw.RequireOwnerOrManager(logger))
 
 	// MeioPagamento routes - 6 endpoints (PROTEGIDAS com JWT)

@@ -21,7 +21,7 @@
 │  CAIXA:        ████████████████████████████████████░░░░  90%               │
 │  ESTOQUE:      ████████████████████████████████░░░░░░░░  80%  ⬆️ +20%     │
 │  COMISSÕES:    ████████████████████████████░░░░░░░░░░░░  70%  ⬆️ +10%     │
-│  ASSINATURAS:  ████████████████████████████░░░░░░░░░░░░  70%               │
+│  ASSINATURAS:  ████████████████████████████████░░░░░░░░  80%  ⬆️ +10%     │
 │  INTEGRAÇÕES:  ██████████████████████████████████████░░  95%               │
 │  SEGURANÇA:    ██████████████████████████████████████░░  95%  ⬆️ +5%      │
 │                                                                             │
@@ -122,7 +122,7 @@ flowchart TB
 | Webhook PAYMENT_CONFIRMED | ✅ | ✅ | ✅ | ✅ | Cria ContaReceber |
 | Webhook PAYMENT_RECEIVED | ✅ | ✅ | ✅ | ✅ | ✅ Lança no caixa (T-ASAAS-001) |
 | Webhook PAYMENT_OVERDUE | ✅ | ✅ | ✅ | ✅ | - |
-| Reconciliação | 🔴 | - | 🟡 | - | Apenas loga |
+| Reconciliação | ✅ | ✅ | ✅ | ✅ | ✅ T-ASAAS-002: auto_fix cria ContaReceber |
 | Bloqueio Inadimplente | 🔴 | - | - | - | - |
 
 ---
@@ -522,10 +522,13 @@ gantt
   - [x] Atualizar totais do caixa
   - IMPLEMENTADO EM: process_webhook_usecase_v2.go handlePaymentReceived()
 
-- [ ] **T-ASAAS-002** - Reconciliação automática
-  - [ ] Buscar payments sem conta_receber
-  - [ ] Criar ContaReceber faltante
-  - [ ] Marcar divergências
+- [x] **T-ASAAS-002** - Reconciliação automática ✅ CONCLUÍDO
+  - [x] Buscar payments sem conta_receber
+  - [x] Criar ContaReceber faltante (auto_fix=true)
+  - [x] Marcar divergências
+  - [x] Endpoint POST /api/v1/subscriptions/reconcile
+  - [x] Parâmetros: start_date, end_date, full_sync, auto_fix
+  - ARQUIVOS: reconcile_asaas_usecase.go, subscription_handler.go, subscription_dto.go
 
 ### 5.4 Fase 4 - Qualidade (Semanas 7-8)
 

@@ -22,7 +22,7 @@ func NewFluxoCaixaDiarioRepository(queries *db.Queries) *FluxoCaixaDiarioReposit
 
 // Create insere um novo fluxo diário.
 func (r *FluxoCaixaDiarioRepository) Create(ctx context.Context, fluxo *entity.FluxoCaixaDiario) error {
-	tenantID := uuidStringToPgtype(fluxo.TenantID)
+	tenantID := entityUUIDToPgtype(fluxo.TenantID)
 
 	result, err := r.queries.CreateFluxoCaixaDiario(ctx, db.CreateFluxoCaixaDiarioParams{
 		TenantID:            tenantID,
@@ -40,7 +40,7 @@ func (r *FluxoCaixaDiarioRepository) Create(ctx context.Context, fluxo *entity.F
 	}
 
 	fluxo.ID = pgUUIDToString(result.ID)
-	fluxo.TenantID = pgUUIDToString(result.TenantID)
+	fluxo.TenantID = pgtypeToEntityUUID(result.TenantID)
 	fluxo.Data = dateToTime(result.Data)
 	fluxo.ProcessadoEm = timestamptzToTime(result.ProcessadoEm)
 	fluxo.CriadoEm = timestamptzToTime(result.CriadoEm)
@@ -81,7 +81,7 @@ func (r *FluxoCaixaDiarioRepository) FindByData(ctx context.Context, tenantID st
 
 // Update atualiza um fluxo diário.
 func (r *FluxoCaixaDiarioRepository) Update(ctx context.Context, fluxo *entity.FluxoCaixaDiario) error {
-	tenantPg := uuidStringToPgtype(fluxo.TenantID)
+	tenantPg := entityUUIDToPgtype(fluxo.TenantID)
 	idPg := uuidStringToPgtype(fluxo.ID)
 
 	result, err := r.queries.UpdateFluxoCaixaDiario(ctx, db.UpdateFluxoCaixaDiarioParams{
@@ -217,7 +217,7 @@ func (r *FluxoCaixaDiarioRepository) SumSaidas(ctx context.Context, tenantID str
 func (r *FluxoCaixaDiarioRepository) modelToFluxo(m *db.FluxoCaixaDiario) (*entity.FluxoCaixaDiario, error) {
 	return &entity.FluxoCaixaDiario{
 		ID:                  pgUUIDToString(m.ID),
-		TenantID:            pgUUIDToString(m.TenantID),
+		TenantID:            pgtypeToEntityUUID(m.TenantID),
 		Data:                dateToTime(m.Data),
 		SaldoInicial:        numericToMoney(m.SaldoInicial),
 		SaldoFinal:          numericToMoney(m.SaldoFinal),

@@ -64,9 +64,11 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req dto.LoginRequest) (*dto
 	}
 
 	// 4. Gerar access token (15 minutos)
+	// unitID ainda não está implementado no banco; será preenchido após vínculo user↔unit
 	accessToken, err := uc.jwtManager.GenerateAccessToken(
 		user.ID.String(),
 		user.TenantID.String(),
+		"", // unit_id opcional até existir tabela/vínculo
 		user.Email,
 		user.Role,
 	)
@@ -123,6 +125,8 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req dto.LoginRequest) (*dto
 			Nome:     user.Nome,
 			Email:    user.Email,
 			Role:     user.Role,
+			// current_unit_id vazio até o vínculo ser criado na etapa de banco de dados
+			CurrentUnitID: "",
 		},
 	}
 

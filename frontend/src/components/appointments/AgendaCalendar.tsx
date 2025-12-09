@@ -58,6 +58,8 @@ interface AgendaCalendarProps {
   onEventClick?: (state: AppointmentModalState) => void;
   /** Callback quando um slot vazio é selecionado */
   onDateSelect?: (state: AppointmentModalState) => void;
+  /** Callback para menu de contexto (botão direito) */
+  onEventContextMenu?: (state: AppointmentModalState, event: React.MouseEvent) => void;
   /** Se o usuário pode editar */
   editable?: boolean;
   /** Modo de bloqueio de horário ativo */
@@ -81,9 +83,11 @@ export function AgendaCalendar({
   professionalIds = [],
   onEventClick,
   onDateSelect,
+  onEventContextMenu,
   editable = true,
-  isBlockMode = false,
+  isBlockMode: _isBlockMode = false,
 }: AgendaCalendarProps) {
+  void _isBlockMode;
   const calendarRef = useRef<FullCalendarType>(null);
 
   // Datas para filtro - estabilizadas
@@ -94,8 +98,8 @@ export function AgendaCalendar({
     const end = new Date(start);
     end.setDate(end.getDate() + 6); // Domingo
     return {
-      date_from: start.toISOString().split('T')[0],
-      date_to: end.toISOString().split('T')[0],
+      start_date: start.toISOString().split('T')[0],
+      end_date: end.toISOString().split('T')[0],
     };
   }, [currentDate]);
 
@@ -181,7 +185,7 @@ export function AgendaCalendar({
         {
           id: appointment.id,
           data: {
-            start_time: event.start?.toISOString(),
+            new_start_time: event.start?.toISOString() || '',
             professional_id: event.getResources()[0]?.id,
           },
         },
@@ -226,7 +230,7 @@ export function AgendaCalendar({
   // ==========================================================================
 
   return (
-    <div className="agenda-calendar-wrapper h-full flex flex-col bg-white">
+    <div className="agenda-calendar-wrapper h-full flex flex-col bg-white" data-testid="agenda-calendar">
       <FullCalendar
         ref={calendarRef}
         // Plugins
@@ -284,6 +288,28 @@ export function AgendaCalendar({
         select={handleDateSelect}
         eventDrop={handleEventDrop}
         eventResize={handleEventResize}
+        // Adicionar listener de botão direito (contexto) e data-status
+        eventDidMount={(info) => {
+          // Adicionar data-status para CSS customizado
+          const calendarEvent = info.event.extendedProps as CalendarEvent['extendedProps'];
+          const status = calendarEvent?.appointment?.status || 'CREATED';
+          info.el.setAttribute('data-status', status);
+          
+          // Adicionar evento de contexto (botão direito) no elemento DOM
+          info.el.addEventListener('contextmenu', (e: MouseEvent) => {
+            e.preventDefault();
+            if (onEventContextMenu && calendarEvent.appointment) {
+              onEventContextMenu(
+                {
+                  isOpen: true,
+                  mode: 'view',
+                  appointment: calendarEvent.appointment,
+                },
+                e as unknown as React.MouseEvent
+              );
+            }
+          });
+        }}
         // Texto
         allDayText=""
         allDaySlot={false}
@@ -294,7 +320,7 @@ export function AgendaCalendar({
             eventInfo.event.extendedProps as CalendarEvent['extendedProps']
           ).appointment;
           const status = appointment?.status || 'CREATED';
-          const serviceName = appointment?.services?.[0]?.name;
+          const serviceName = appointment?.services?.[0]?.service_name;
 
           return (
             <div className="nexo-event-content" data-status={status}>

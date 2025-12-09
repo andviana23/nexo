@@ -12,6 +12,7 @@ import type {
     StockMovementFilters,
 } from '@/types/stock';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import { toast } from 'sonner';
 
 // =============================================================================
@@ -112,6 +113,26 @@ export function useDeleteStockItem() {
   });
 }
 
+/**
+ * Hook para criar produto (alias para createStockItem)
+ */
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: stockService.createProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stockKeys.items() });
+      queryClient.invalidateQueries({ queryKey: stockKeys.summary() });
+      toast.success('Produto cadastrado com sucesso!');
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      const message = error.response?.data?.message || 'Erro ao cadastrar produto';
+      toast.error(message);
+    },
+  });
+}
+
 // =============================================================================
 // STOCK MOVEMENTS
 // =============================================================================
@@ -153,6 +174,27 @@ export function useCreateStockEntry() {
     },
     onError: () => {
       toast.error('Erro ao registrar entrada');
+    },
+  });
+}
+
+/**
+ * Hook para criar entrada de estoque com múltiplos produtos
+ */
+export function useCreateStockEntryMultiple() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: stockService.createStockEntryMultiple,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stockKeys.items() });
+      queryClient.invalidateQueries({ queryKey: stockKeys.movements() });
+      queryClient.invalidateQueries({ queryKey: stockKeys.summary() });
+      toast.success('Entrada registrada com sucesso!');
+    },
+    onError: (error: AxiosError<{ message?: string }>) => {
+      const message = error.response?.data?.message || 'Erro ao registrar entrada';
+      toast.error(message);
     },
   });
 }

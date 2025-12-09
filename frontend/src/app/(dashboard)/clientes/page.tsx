@@ -57,6 +57,7 @@ import {
     CakeIcon,
     EditIcon,
     EyeIcon,
+    HistoryIcon,
     MailIcon,
     PhoneIcon,
     PlusIcon,
@@ -64,6 +65,7 @@ import {
     TrashIcon,
     UsersIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { CustomerModal } from './components';
 
@@ -455,6 +457,21 @@ function CustomersTable({
               {/* Ações */}
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        asChild
+                      >
+                        <Link href={`/clientes/${customer.id}`}>
+                          <HistoryIcon className="size-4" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Ver histórico</TooltipContent>
+                  </Tooltip>
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button

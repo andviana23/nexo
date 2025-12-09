@@ -12,7 +12,7 @@ import (
 // MetaTicketMedio representa a meta de ticket médio
 type MetaTicketMedio struct {
 	ID         string
-	TenantID   string
+	TenantID   uuid.UUID
 	MesAno     valueobject.MesAno
 	Tipo       valueobject.TipoMetaTicket // GERAL ou BARBEIRO
 	BarbeiroID *string                    // Apenas se tipo = BARBEIRO
@@ -29,13 +29,13 @@ type MetaTicketMedio struct {
 
 // NewMetaTicketMedio cria uma nova meta de ticket médio
 func NewMetaTicketMedio(
-	tenantID string,
+	tenantID uuid.UUID,
 	mesAno valueobject.MesAno,
 	tipo valueobject.TipoMetaTicket,
 	metaValor valueobject.Money,
 	barbeiroID *string,
 ) (*MetaTicketMedio, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if !tipo.IsValid() {
@@ -91,7 +91,7 @@ func (m *MetaTicketMedio) CalcularProgresso(ticketRealizado valueobject.Money) {
 
 // Validate valida as regras de negócio
 func (m *MetaTicketMedio) Validate() error {
-	if m.TenantID == "" {
+	if m.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if m.MesAno.String() == "" {

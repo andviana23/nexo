@@ -44,7 +44,7 @@ func (r *AppointmentRepository) Create(ctx context.Context, appointment *entity.
 	// 1. Criar o agendamento
 	params := db.CreateAppointmentParams{
 		ID:                    uuidStringToPgtype(appointment.ID),
-		TenantID:              uuidStringToPgtype(appointment.TenantID),
+		TenantID:              entityUUIDToPgtype(appointment.TenantID),
 		ProfessionalID:        uuidStringToPgtype(appointment.ProfessionalID),
 		CustomerID:            uuidStringToPgtype(appointment.CustomerID),
 		StartTime:             timestampToTimestamptz(appointment.StartTime),
@@ -54,6 +54,7 @@ func (r *AppointmentRepository) Create(ctx context.Context, appointment *entity.
 		Notes:                 strPtrToPgText(appointment.Notes),
 		CanceledReason:        strPtrToPgText(appointment.CanceledReason),
 		GoogleCalendarEventID: strPtrToPgText(appointment.GoogleCalendarEventID),
+		CommandID:             uuidStrPtrToPgtype(appointment.CommandID),
 	}
 
 	result, err := qtx.CreateAppointment(ctx, params)
@@ -113,7 +114,7 @@ func (r *AppointmentRepository) FindByID(ctx context.Context, tenantID, id strin
 func (r *AppointmentRepository) Update(ctx context.Context, appointment *entity.Appointment) error {
 	params := db.UpdateAppointmentParams{
 		ID:                    uuidStringToPgtype(appointment.ID),
-		TenantID:              uuidStringToPgtype(appointment.TenantID),
+		TenantID:              entityUUIDToPgtype(appointment.TenantID),
 		ProfessionalID:        uuidStringToPgtype(appointment.ProfessionalID),
 		StartTime:             timestampToTimestamptz(appointment.StartTime),
 		EndTime:               timestampToTimestamptz(appointment.EndTime),
@@ -122,6 +123,10 @@ func (r *AppointmentRepository) Update(ctx context.Context, appointment *entity.
 		Notes:                 strPtrToPgText(appointment.Notes),
 		CanceledReason:        strPtrToPgText(appointment.CanceledReason),
 		GoogleCalendarEventID: strPtrToPgText(appointment.GoogleCalendarEventID),
+		CheckedInAt:           timePtrToPgTimestamptz(appointment.CheckedInAt),
+		StartedAt:             timePtrToPgTimestamptz(appointment.StartedAt),
+		FinishedAt:            timePtrToPgTimestamptz(appointment.FinishedAt),
+		CommandID:             uuidStrPtrToPgtype(appointment.CommandID),
 	}
 
 	result, err := r.queries.UpdateAppointment(ctx, params)
@@ -161,8 +166,13 @@ func (r *AppointmentRepository) List(ctx context.Context, tenantID string, filte
 	if filter.CustomerID != "" {
 		params.Column3 = uuidStringToPgtype(filter.CustomerID)
 	}
-	if filter.Status != "" {
-		params.Column4 = filter.Status.String()
+	// Converter array de status para []string
+	if len(filter.Statuses) > 0 {
+		statusStrings := make([]string, len(filter.Statuses))
+		for i, s := range filter.Statuses {
+			statusStrings[i] = s.String()
+		}
+		params.Column4 = statusStrings
 	}
 	if !filter.StartDate.IsZero() {
 		params.Column5 = timestampToTimestamptz(filter.StartDate)
@@ -193,8 +203,39 @@ func (r *AppointmentRepository) List(ctx context.Context, tenantID string, filte
 
 	// Converter para entidades
 	appointments := make([]*entity.Appointment, 0, len(rows))
+	appointmentIDs := make([]pgtype.UUID, 0, len(rows))
 	for _, row := range rows {
 		appointments = append(appointments, r.listRowToDomain(&row))
+		appointmentIDs = append(appointmentIDs, row.ID)
+	}
+
+	// Carregar serviços para todos os agendamentos de uma vez (evita N+1)
+	if len(appointmentIDs) > 0 {
+		services, err := r.queries.GetServicesForAppointments(ctx, appointmentIDs)
+		if err != nil {
+			return nil, 0, fmt.Errorf("erro ao buscar serviços dos agendamentos: %w", err)
+		}
+
+		// Mapear serviços por appointment_id
+		servicesByAppointment := make(map[string][]entity.AppointmentService)
+		for _, svc := range services {
+			apptID := pgUUIDToString(svc.AppointmentID)
+			servicesByAppointment[apptID] = append(servicesByAppointment[apptID], entity.AppointmentService{
+				AppointmentID:     apptID,
+				ServiceID:         pgUUIDToString(svc.ServiceID),
+				PriceAtBooking:    valueobject.NewMoneyFromDecimal(svc.PriceAtBooking),
+				DurationAtBooking: int(svc.DurationAtBooking),
+				CreatedAt:         timestamptzToTime(svc.CreatedAt),
+				ServiceName:       svc.ServiceName,
+			})
+		}
+
+		// Atribuir serviços aos agendamentos
+		for _, appt := range appointments {
+			if svcs, ok := servicesByAppointment[appt.ID]; ok {
+				appt.Services = svcs
+			}
+		}
 	}
 
 	return appointments, total, nil
@@ -220,8 +261,37 @@ func (r *AppointmentRepository) ListByProfessionalAndDateRange(
 	}
 
 	appointments := make([]*entity.Appointment, 0, len(rows))
+	appointmentIDs := make([]pgtype.UUID, 0, len(rows))
 	for _, row := range rows {
 		appointments = append(appointments, r.professionalRangeRowToDomain(&row))
+		appointmentIDs = append(appointmentIDs, row.ID)
+	}
+
+	// Carregar serviços para todos os agendamentos de uma vez (evita N+1)
+	if len(appointmentIDs) > 0 {
+		services, err := r.queries.GetServicesForAppointments(ctx, appointmentIDs)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao buscar serviços dos agendamentos: %w", err)
+		}
+
+		servicesByAppointment := make(map[string][]entity.AppointmentService)
+		for _, svc := range services {
+			apptID := pgUUIDToString(svc.AppointmentID)
+			servicesByAppointment[apptID] = append(servicesByAppointment[apptID], entity.AppointmentService{
+				AppointmentID:     apptID,
+				ServiceID:         pgUUIDToString(svc.ServiceID),
+				PriceAtBooking:    valueobject.NewMoneyFromDecimal(svc.PriceAtBooking),
+				DurationAtBooking: int(svc.DurationAtBooking),
+				CreatedAt:         timestamptzToTime(svc.CreatedAt),
+				ServiceName:       svc.ServiceName,
+			})
+		}
+
+		for _, appt := range appointments {
+			if svcs, ok := servicesByAppointment[appt.ID]; ok {
+				appt.Services = svcs
+			}
+		}
 	}
 
 	return appointments, nil
@@ -240,8 +310,37 @@ func (r *AppointmentRepository) ListByCustomer(ctx context.Context, tenantID, cu
 	}
 
 	appointments := make([]*entity.Appointment, 0, len(rows))
+	appointmentIDs := make([]pgtype.UUID, 0, len(rows))
 	for _, row := range rows {
 		appointments = append(appointments, r.customerRowToDomain(&row))
+		appointmentIDs = append(appointmentIDs, row.ID)
+	}
+
+	// Carregar serviços para todos os agendamentos de uma vez (evita N+1)
+	if len(appointmentIDs) > 0 {
+		services, err := r.queries.GetServicesForAppointments(ctx, appointmentIDs)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao buscar serviços dos agendamentos: %w", err)
+		}
+
+		servicesByAppointment := make(map[string][]entity.AppointmentService)
+		for _, svc := range services {
+			apptID := pgUUIDToString(svc.AppointmentID)
+			servicesByAppointment[apptID] = append(servicesByAppointment[apptID], entity.AppointmentService{
+				AppointmentID:     apptID,
+				ServiceID:         pgUUIDToString(svc.ServiceID),
+				PriceAtBooking:    valueobject.NewMoneyFromDecimal(svc.PriceAtBooking),
+				DurationAtBooking: int(svc.DurationAtBooking),
+				CreatedAt:         timestamptzToTime(svc.CreatedAt),
+				ServiceName:       svc.ServiceName,
+			})
+		}
+
+		for _, appt := range appointments {
+			if svcs, ok := servicesByAppointment[appt.ID]; ok {
+				appt.Services = svcs
+			}
+		}
 	}
 
 	return appointments, nil
@@ -271,6 +370,59 @@ func (r *AppointmentRepository) CheckConflict(
 	hasConflict, err := r.queries.CheckAppointmentConflict(ctx, params)
 	if err != nil {
 		return false, fmt.Errorf("erro ao verificar conflito: %w", err)
+	}
+
+	return hasConflict, nil
+}
+
+// CheckBlockedTimeConflict verifica se há conflito com horários bloqueados.
+func (r *AppointmentRepository) CheckBlockedTimeConflict(
+	ctx context.Context,
+	tenantID string,
+	professionalID string,
+	startTime, endTime time.Time,
+) (bool, error) {
+	params := db.CheckBlockedTimeConflictForAppointmentParams{
+		TenantID:       uuidStringToPgtype(tenantID),
+		ProfessionalID: uuidStringToPgtype(professionalID),
+		StartTime:      timestampToTimestamptz(startTime),
+		EndTime:        timestampToTimestamptz(endTime),
+	}
+
+	hasConflict, err := r.queries.CheckBlockedTimeConflictForAppointment(ctx, params)
+	if err != nil {
+		return false, fmt.Errorf("erro ao verificar conflito com bloqueio: %w", err)
+	}
+
+	return hasConflict, nil
+}
+
+// CheckMinimumIntervalConflict verifica se há conflito de intervalo mínimo.
+func (r *AppointmentRepository) CheckMinimumIntervalConflict(
+	ctx context.Context,
+	tenantID string,
+	professionalID string,
+	startTime, endTime time.Time,
+	excludeAppointmentID string,
+	intervalMinutes int,
+) (bool, error) {
+	excludeID := pgtype.UUID{}
+	if excludeAppointmentID != "" {
+		excludeID = uuidStringToPgtype(excludeAppointmentID)
+	}
+
+	params := db.CheckMinimumIntervalConflictParams{
+		TenantID:        uuidStringToPgtype(tenantID),
+		ProfessionalID:  uuidStringToPgtype(professionalID),
+		ExcludeID:       excludeID,
+		StartTime:       timestampToTimestamptz(startTime),
+		EndTime:         timestampToTimestamptz(endTime),
+		IntervalMinutes: int32(intervalMinutes),
+	}
+
+	hasConflict, err := r.queries.CheckMinimumIntervalConflict(ctx, params)
+	if err != nil {
+		return false, fmt.Errorf("erro ao verificar intervalo mínimo: %w", err)
 	}
 
 	return hasConflict, nil
@@ -349,17 +501,24 @@ func (r *AppointmentRepository) rowToDomain(row *db.GetAppointmentByIDRow, servi
 
 	return &entity.Appointment{
 		ID:                    pgUUIDToString(row.ID),
-		TenantID:              pgUUIDToString(row.TenantID),
+		TenantID:              pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:        pgUUIDToString(row.ProfessionalID),
 		CustomerID:            pgUUIDToString(row.CustomerID),
 		StartTime:             timestamptzToTime(row.StartTime),
 		EndTime:               timestamptzToTime(row.EndTime),
+		CheckedInAt:           pgTimestamptzToTimePtr(row.CheckedInAt),
+		StartedAt:             pgTimestamptzToTimePtr(row.StartedAt),
+		FinishedAt:            pgTimestamptzToTimePtr(row.FinishedAt),
 		Status:                status,
 		TotalPrice:            valueobject.NewMoneyFromDecimal(row.TotalPrice),
 		Notes:                 pgTextToStr(row.Notes),
 		CanceledReason:        pgTextToStr(row.CanceledReason),
 		GoogleCalendarEventID: pgTextToStr(row.GoogleCalendarEventID),
+		CommandID:             pgUUIDPtrToString(row.CommandID),
 		Services:              domainServices,
+		ProfessionalName:      row.ProfessionalName,
+		CustomerName:          row.CustomerName,
+		CustomerPhone:         row.CustomerPhone,
 		CreatedAt:             timestamptzToTime(row.CreatedAt),
 		UpdatedAt:             timestamptzToTime(row.UpdatedAt),
 	}
@@ -370,16 +529,23 @@ func (r *AppointmentRepository) listRowToDomain(row *db.ListAppointmentsRow) *en
 
 	return &entity.Appointment{
 		ID:                    pgUUIDToString(row.ID),
-		TenantID:              pgUUIDToString(row.TenantID),
+		TenantID:              pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:        pgUUIDToString(row.ProfessionalID),
 		CustomerID:            pgUUIDToString(row.CustomerID),
 		StartTime:             timestamptzToTime(row.StartTime),
 		EndTime:               timestamptzToTime(row.EndTime),
+		CheckedInAt:           pgTimestamptzToTimePtr(row.CheckedInAt),
+		StartedAt:             pgTimestamptzToTimePtr(row.StartedAt),
+		FinishedAt:            pgTimestamptzToTimePtr(row.FinishedAt),
 		Status:                status,
 		TotalPrice:            valueobject.NewMoneyFromDecimal(row.TotalPrice),
 		Notes:                 pgTextToStr(row.Notes),
 		CanceledReason:        pgTextToStr(row.CanceledReason),
 		GoogleCalendarEventID: pgTextToStr(row.GoogleCalendarEventID),
+		CommandID:             pgUUIDPtrToString(row.CommandID),
+		ProfessionalName:      row.ProfessionalName,
+		CustomerName:          row.CustomerName,
+		CustomerPhone:         row.CustomerPhone,
 		CreatedAt:             timestamptzToTime(row.CreatedAt),
 		UpdatedAt:             timestamptzToTime(row.UpdatedAt),
 	}
@@ -390,16 +556,23 @@ func (r *AppointmentRepository) professionalRangeRowToDomain(row *db.ListAppoint
 
 	return &entity.Appointment{
 		ID:                    pgUUIDToString(row.ID),
-		TenantID:              pgUUIDToString(row.TenantID),
+		TenantID:              pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:        pgUUIDToString(row.ProfessionalID),
 		CustomerID:            pgUUIDToString(row.CustomerID),
 		StartTime:             timestamptzToTime(row.StartTime),
 		EndTime:               timestamptzToTime(row.EndTime),
+		CheckedInAt:           pgTimestamptzToTimePtr(row.CheckedInAt),
+		StartedAt:             pgTimestamptzToTimePtr(row.StartedAt),
+		FinishedAt:            pgTimestamptzToTimePtr(row.FinishedAt),
 		Status:                status,
 		TotalPrice:            valueobject.NewMoneyFromDecimal(row.TotalPrice),
 		Notes:                 pgTextToStr(row.Notes),
 		CanceledReason:        pgTextToStr(row.CanceledReason),
 		GoogleCalendarEventID: pgTextToStr(row.GoogleCalendarEventID),
+		CommandID:             pgUUIDPtrToString(row.CommandID),
+		ProfessionalName:      row.ProfessionalName,
+		CustomerName:          row.CustomerName,
+		CustomerPhone:         row.CustomerPhone,
 		CreatedAt:             timestamptzToTime(row.CreatedAt),
 		UpdatedAt:             timestamptzToTime(row.UpdatedAt),
 	}
@@ -410,16 +583,23 @@ func (r *AppointmentRepository) customerRowToDomain(row *db.ListAppointmentsByCu
 
 	return &entity.Appointment{
 		ID:                    pgUUIDToString(row.ID),
-		TenantID:              pgUUIDToString(row.TenantID),
+		TenantID:              pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:        pgUUIDToString(row.ProfessionalID),
 		CustomerID:            pgUUIDToString(row.CustomerID),
 		StartTime:             timestamptzToTime(row.StartTime),
 		EndTime:               timestamptzToTime(row.EndTime),
+		CheckedInAt:           pgTimestamptzToTimePtr(row.CheckedInAt),
+		StartedAt:             pgTimestamptzToTimePtr(row.StartedAt),
+		FinishedAt:            pgTimestamptzToTimePtr(row.FinishedAt),
 		Status:                status,
 		TotalPrice:            valueobject.NewMoneyFromDecimal(row.TotalPrice),
 		Notes:                 pgTextToStr(row.Notes),
 		CanceledReason:        pgTextToStr(row.CanceledReason),
 		GoogleCalendarEventID: pgTextToStr(row.GoogleCalendarEventID),
+		CommandID:             pgUUIDPtrToString(row.CommandID),
+		ProfessionalName:      row.ProfessionalName,
+		CustomerName:          row.CustomerName,
+		CustomerPhone:         row.CustomerPhone,
 		CreatedAt:             timestamptzToTime(row.CreatedAt),
 		UpdatedAt:             timestamptzToTime(row.UpdatedAt),
 	}

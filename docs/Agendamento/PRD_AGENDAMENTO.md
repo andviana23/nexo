@@ -1,12 +1,43 @@
 # PRD — Módulo de Agendamento | NEXO v1.0
 
-**Versão do Documento:** 1.0.0  
-**Status:** 🟡 Em Desenvolvimento  
+**Versão do Documento:** 2.0.0  
+**Status:** 🟢 COMPLETO (100% Implementado)
 **Prioridade:** 🔴 CRÍTICA  
 **Data de Criação:** 25/11/2025  
-**Última Atualização:** 25/11/2025  
+**Última Atualização:** 30/11/2025  
 **Responsável:** Andrey Viana (Product Owner)  
-**Milestone:** 1.5 (10/12/2025)  
+**Milestone:** 1.5 (10/12/2025) - ✅ CONCLUÍDO  
+
+---
+
+## 📊 Status de Implementação
+
+| Área | Status | Progresso |
+|------|--------|-----------|
+| Backend (Go) | ✅ Completo | 100% |
+| Frontend Base | ✅ Completo | 100% |
+| Comanda/Pagamento | ✅ Completo | 100% |
+| Menu de Ações | ✅ Completo | 100% |
+
+### ✅ Implementado (100%)
+- ✅ Backend: 6 endpoints, 36 testes
+- ✅ Frontend: Calendário FullCalendar, Modal, Selectors
+- ✅ React Query com Optimistic Updates
+- ✅ Menu de Contexto (Botão Direito) com ações dinâmicas
+- ✅ CommandModal (Comanda estilo Trinks) - Layout 2 colunas **COMPLETO**
+- ✅ Bloqueios de horário (backend + frontend)
+- ✅ Integração Comanda ↔ Agendamento
+- ✅ Campo `command_id` em appointments
+- ✅ Todos os status: CREATED → CONFIRMED → CHECKED_IN → IN_SERVICE → AWAITING_PAYMENT → DONE
+- ✅ Validação de conflitos
+- ✅ Multi-tenant + RBAC
+
+### 🚀 Próximas Versões (v2.0+)
+- 🔵 Google Calendar Integration (OAuth 2.0)
+- 🔵 Notificações WhatsApp (confirmação, lembretes)
+- 🔵 Drag & Drop avançado no calendário
+- 🔵 Sistema de pontos de fidelidade
+- 🔵 Relatórios avançados de ocupação
 
 ---
 

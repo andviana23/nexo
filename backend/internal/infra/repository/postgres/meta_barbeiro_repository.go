@@ -24,7 +24,7 @@ func NewMetaBarbeiroRepository(queries *db.Queries) *MetaBarbeiroRepository {
 
 // Create persiste uma nova meta de barbeiro.
 func (r *MetaBarbeiroRepository) Create(ctx context.Context, meta *entity.MetaBarbeiro) error {
-	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	tenantUUID := entityUUIDToPgtype(meta.TenantID)
 	barbeiroUUID := uuidStringToPgtype(meta.BarbeiroID)
 
 	params := db.CreateMetaBarbeiroParams{
@@ -83,7 +83,7 @@ func (r *MetaBarbeiroRepository) FindByBarbeiroMesAno(ctx context.Context, tenan
 
 // Update atualiza uma meta existente.
 func (r *MetaBarbeiroRepository) Update(ctx context.Context, meta *entity.MetaBarbeiro) error {
-	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	tenantUUID := entityUUIDToPgtype(meta.TenantID)
 	idUUID := uuidStringToPgtype(meta.ID)
 
 	params := db.UpdateMetaBarbeiroParams{
@@ -161,7 +161,7 @@ func (r *MetaBarbeiroRepository) toDomain(model *db.MetasBarbeiro) (*entity.Meta
 
 	meta := &entity.MetaBarbeiro{
 		ID:                       pgUUIDToString(model.ID),
-		TenantID:                 pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		BarbeiroID:               pgUUIDToString(model.BarbeiroID),
 		MesAno:                   mesAno,
 		MetaServicosGerais:       numericToMoney(model.MetaServicosGerais),

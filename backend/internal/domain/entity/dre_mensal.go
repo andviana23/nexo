@@ -11,7 +11,7 @@ import (
 // DREMensal representa o Demonstrativo de Resultado do Exercício mensal
 type DREMensal struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 	MesAno   valueobject.MesAno
 
 	// Receitas
@@ -43,8 +43,8 @@ type DREMensal struct {
 }
 
 // NewDREMensal cria um novo DRE mensal
-func NewDREMensal(tenantID string, mesAno valueobject.MesAno) (*DREMensal, error) {
-	if tenantID == "" {
+func NewDREMensal(tenantID uuid.UUID, mesAno valueobject.MesAno) (*DREMensal, error) {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 
@@ -114,7 +114,7 @@ func (d *DREMensal) Calcular() {
 
 // Validate valida as regras de negócio do DRE
 func (d *DREMensal) Validate() error {
-	if d.TenantID == "" {
+	if d.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if d.MesAno.String() == "" {

@@ -143,7 +143,7 @@ INSERT INTO clientes (
     atualizado_em
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, true, NOW(), NOW()
-) RETURNING id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, criado_em, atualizado_em
+) RETURNING id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, asaas_customer_id, is_subscriber, criado_em, atualizado_em
 `
 
 type CreateCustomerParams struct {
@@ -214,6 +214,8 @@ func (q *Queries) CreateCustomer(ctx context.Context, arg CreateCustomerParams) 
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -221,7 +223,7 @@ func (q *Queries) CreateCustomer(ctx context.Context, arg CreateCustomerParams) 
 }
 
 const getCustomerByCPF = `-- name: GetCustomerByCPF :one
-SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, criado_em, atualizado_em FROM clientes
+SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, asaas_customer_id, is_subscriber, criado_em, atualizado_em FROM clientes
 WHERE tenant_id = $1 AND cpf = $2 AND ativo = true
 `
 
@@ -252,6 +254,8 @@ func (q *Queries) GetCustomerByCPF(ctx context.Context, arg GetCustomerByCPFPara
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -260,7 +264,7 @@ func (q *Queries) GetCustomerByCPF(ctx context.Context, arg GetCustomerByCPFPara
 
 const getCustomerByID = `-- name: GetCustomerByID :one
 
-SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, criado_em, atualizado_em FROM clientes
+SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, asaas_customer_id, is_subscriber, criado_em, atualizado_em FROM clientes
 WHERE id = $1 AND tenant_id = $2
 `
 
@@ -294,6 +298,8 @@ func (q *Queries) GetCustomerByID(ctx context.Context, arg GetCustomerByIDParams
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -301,7 +307,7 @@ func (q *Queries) GetCustomerByID(ctx context.Context, arg GetCustomerByIDParams
 }
 
 const getCustomerByPhone = `-- name: GetCustomerByPhone :one
-SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, criado_em, atualizado_em FROM clientes
+SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, asaas_customer_id, is_subscriber, criado_em, atualizado_em FROM clientes
 WHERE tenant_id = $1 AND telefone = $2 AND ativo = true
 `
 
@@ -332,6 +338,8 @@ func (q *Queries) GetCustomerByPhone(ctx context.Context, arg GetCustomerByPhone
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -341,7 +349,7 @@ func (q *Queries) GetCustomerByPhone(ctx context.Context, arg GetCustomerByPhone
 const getCustomerDataForExport = `-- name: GetCustomerDataForExport :one
 
 SELECT 
-    c.id, c.tenant_id, c.nome, c.email, c.telefone, c.cpf, c.data_nascimento, c.genero, c.endereco_logradouro, c.endereco_numero, c.endereco_complemento, c.endereco_bairro, c.endereco_cidade, c.endereco_estado, c.endereco_cep, c.observacoes, c.tags, c.ativo, c.criado_em, c.atualizado_em,
+    c.id, c.tenant_id, c.nome, c.email, c.telefone, c.cpf, c.data_nascimento, c.genero, c.endereco_logradouro, c.endereco_numero, c.endereco_complemento, c.endereco_bairro, c.endereco_cidade, c.endereco_estado, c.endereco_cep, c.observacoes, c.tags, c.ativo, c.asaas_customer_id, c.is_subscriber, c.criado_em, c.atualizado_em,
     COALESCE(
         (SELECT json_agg(json_build_object(
             'data', a.start_time,
@@ -382,6 +390,8 @@ type GetCustomerDataForExportRow struct {
 	Observacoes           *string            `json:"observacoes"`
 	Tags                  []string           `json:"tags"`
 	Ativo                 *bool              `json:"ativo"`
+	AsaasCustomerID       *string            `json:"asaas_customer_id"`
+	IsSubscriber          bool               `json:"is_subscriber"`
 	CriadoEm              pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm          pgtype.Timestamptz `json:"atualizado_em"`
 	HistoricoAtendimentos interface{}        `json:"historico_atendimentos"`
@@ -412,6 +422,8 @@ func (q *Queries) GetCustomerDataForExport(ctx context.Context, arg GetCustomerD
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.HistoricoAtendimentos,
@@ -454,7 +466,7 @@ func (q *Queries) GetCustomerStats(ctx context.Context, tenantID pgtype.UUID) (G
 
 const getCustomerWithHistory = `-- name: GetCustomerWithHistory :one
 SELECT 
-    c.id, c.tenant_id, c.nome, c.email, c.telefone, c.cpf, c.data_nascimento, c.genero, c.endereco_logradouro, c.endereco_numero, c.endereco_complemento, c.endereco_bairro, c.endereco_cidade, c.endereco_estado, c.endereco_cep, c.observacoes, c.tags, c.ativo, c.criado_em, c.atualizado_em,
+    c.id, c.tenant_id, c.nome, c.email, c.telefone, c.cpf, c.data_nascimento, c.genero, c.endereco_logradouro, c.endereco_numero, c.endereco_complemento, c.endereco_bairro, c.endereco_cidade, c.endereco_estado, c.endereco_cep, c.observacoes, c.tags, c.ativo, c.asaas_customer_id, c.is_subscriber, c.criado_em, c.atualizado_em,
     COALESCE(stats.total_atendimentos, 0) as total_atendimentos,
     COALESCE(stats.total_gasto, 0) as total_gasto,
     stats.ultimo_atendimento
@@ -496,6 +508,8 @@ type GetCustomerWithHistoryRow struct {
 	Observacoes         *string            `json:"observacoes"`
 	Tags                []string           `json:"tags"`
 	Ativo               *bool              `json:"ativo"`
+	AsaasCustomerID     *string            `json:"asaas_customer_id"`
+	IsSubscriber        bool               `json:"is_subscriber"`
 	CriadoEm            pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm        pgtype.Timestamptz `json:"atualizado_em"`
 	TotalAtendimentos   int64              `json:"total_atendimentos"`
@@ -525,6 +539,8 @@ func (q *Queries) GetCustomerWithHistory(ctx context.Context, arg GetCustomerWit
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.TotalAtendimentos,
@@ -599,7 +615,7 @@ func (q *Queries) ListActiveCustomers(ctx context.Context, tenantID pgtype.UUID)
 }
 
 const listCustomers = `-- name: ListCustomers :many
-SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, criado_em, atualizado_em FROM clientes
+SELECT id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, asaas_customer_id, is_subscriber, criado_em, atualizado_em FROM clientes
 WHERE tenant_id = $1
   AND ($2::bool IS NULL OR ativo = $2)
   AND (
@@ -663,6 +679,8 @@ func (q *Queries) ListCustomers(ctx context.Context, arg ListCustomersParams) ([
 			&i.Observacoes,
 			&i.Tags,
 			&i.Ativo,
+			&i.AsaasCustomerID,
+			&i.IsSubscriber,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -677,7 +695,7 @@ func (q *Queries) ListCustomers(ctx context.Context, arg ListCustomersParams) ([
 }
 
 const listCustomersWithoutAppointments = `-- name: ListCustomersWithoutAppointments :many
-SELECT c.id, c.tenant_id, c.nome, c.email, c.telefone, c.cpf, c.data_nascimento, c.genero, c.endereco_logradouro, c.endereco_numero, c.endereco_complemento, c.endereco_bairro, c.endereco_cidade, c.endereco_estado, c.endereco_cep, c.observacoes, c.tags, c.ativo, c.criado_em, c.atualizado_em
+SELECT c.id, c.tenant_id, c.nome, c.email, c.telefone, c.cpf, c.data_nascimento, c.genero, c.endereco_logradouro, c.endereco_numero, c.endereco_complemento, c.endereco_bairro, c.endereco_cidade, c.endereco_estado, c.endereco_cep, c.observacoes, c.tags, c.ativo, c.asaas_customer_id, c.is_subscriber, c.criado_em, c.atualizado_em
 FROM clientes c
 WHERE c.tenant_id = $1 
   AND c.ativo = true
@@ -724,6 +742,8 @@ func (q *Queries) ListCustomersWithoutAppointments(ctx context.Context, arg List
 			&i.Observacoes,
 			&i.Tags,
 			&i.Ativo,
+			&i.AsaasCustomerID,
+			&i.IsSubscriber,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -829,7 +849,7 @@ SET
     tags = COALESCE($17, tags),
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, asaas_customer_id, is_subscriber, criado_em, atualizado_em
 `
 
 type UpdateCustomerParams struct {
@@ -895,6 +915,8 @@ func (q *Queries) UpdateCustomer(ctx context.Context, arg UpdateCustomerParams) 
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -907,7 +929,7 @@ SET
     tags = $3,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, nome, email, telefone, cpf, data_nascimento, genero, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, observacoes, tags, ativo, asaas_customer_id, is_subscriber, criado_em, atualizado_em
 `
 
 type UpdateCustomerTagsParams struct {
@@ -938,6 +960,8 @@ func (q *Queries) UpdateCustomerTags(ctx context.Context, arg UpdateCustomerTags
 		&i.Observacoes,
 		&i.Tags,
 		&i.Ativo,
+		&i.AsaasCustomerID,
+		&i.IsSubscriber,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)

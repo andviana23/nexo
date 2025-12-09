@@ -51,10 +51,11 @@ func setupFinancialHandler() (*handler.FinancialHandler, *echo.Echo) {
 	marcarCompensacaoUC := financial.NewMarcarCompensacaoUseCase(compensacaoRepo, testLogger)
 
 	// Use cases - FluxoCaixa e DRE
-	generateFluxoDiarioUC := financial.NewGenerateFluxoDiarioUseCase(fluxoCaixaRepo, contaPagarRepo, contaReceberRepo, testLogger)
+	generateFluxoDiarioUC := financial.NewGenerateFluxoDiarioUseCase(fluxoCaixaRepo, contaPagarRepo, contaReceberRepo, compensacaoRepo, testLogger)
 	getFluxoCaixaUC := financial.NewGetFluxoCaixaUseCase(fluxoCaixaRepo, testLogger)
 	listFluxoCaixaUC := financial.NewListFluxoCaixaUseCase(fluxoCaixaRepo, testLogger)
-	generateDREUC := financial.NewGenerateDREUseCase(dreRepo, contaPagarRepo, contaReceberRepo, testLogger)
+	// DRE com commissionItemRepo nil (teste não precisa de comissões)
+	generateDREUC := financial.NewGenerateDREUseCase(dreRepo, contaPagarRepo, contaReceberRepo, nil, testLogger)
 	getDREUC := financial.NewGetDREUseCase(dreRepo, testLogger)
 	listDREUC := financial.NewListDREUseCase(dreRepo, testLogger)
 
@@ -83,7 +84,8 @@ func setupFinancialHandler() (*handler.FinancialHandler, *echo.Echo) {
 		generateDREUC,
 		getDREUC,
 		listDREUC,
-		nil, // placeholder para getDashboardUC
+		nil, // getPainelMensalUC - not needed for these tests
+		nil, // getProjecoesUC - not needed for these tests
 		testLogger,
 	)
 

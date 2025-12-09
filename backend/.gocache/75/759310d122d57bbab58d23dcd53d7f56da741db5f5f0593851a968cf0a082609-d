@@ -1,0 +1,5 @@
+./create_categoria_usecase.go
+./delete_categoria_usecase.go
+./get_categoria_usecase.go
+./list_categorias_usecase.go
+./update_categoria_usecase.go

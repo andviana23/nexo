@@ -2,6 +2,7 @@ package financial
 
 import (
 	"context"
+
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -60,9 +62,15 @@ func (uc *CreateCompensacaoUseCase) Execute(ctx context.Context, input CreateCom
 		return nil, fmt.Errorf("data da transação é obrigatória")
 	}
 
+	// Converter TenantID para UUID
+	tenantUUID, err := uuid.Parse(input.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("tenant_id inválido: %w", err)
+	}
+
 	// Criar entidade de domínio
 	comp, err := entity.NewCompensacaoBancaria(
-		input.TenantID,
+		tenantUUID,
 		input.ReceitaID,
 		input.MeioPagamentoID,
 		input.DataTransacao,

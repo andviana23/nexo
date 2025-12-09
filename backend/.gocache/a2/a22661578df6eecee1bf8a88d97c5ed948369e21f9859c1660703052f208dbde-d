@@ -1,0 +1,8 @@
+./cancel_appointment.go
+./create_appointment.go
+./finish_with_command.go
+./reschedule_appointment.go
+./update_status.go
+./create_appointment_test.go
+./mocks_test.go
+./usecase_test.go

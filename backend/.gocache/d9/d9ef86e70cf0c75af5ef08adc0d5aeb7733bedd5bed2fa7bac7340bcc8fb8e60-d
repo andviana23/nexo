@@ -1,0 +1,7 @@
+./abrir_caixa.go
+./fechar_caixa.go
+./get_caixa.go
+./get_totais.go
+./list_historico.go
+./reforco.go
+./sangria.go

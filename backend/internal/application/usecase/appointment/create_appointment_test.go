@@ -10,8 +10,12 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+// Tenant de teste fixo para manter consistência
+var testTenantID = "11111111-1111-1111-1111-111111111111"
 
 func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 	logger := zap.NewNop()
@@ -19,6 +23,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 	t.Run("should create appointment successfully", func(t *testing.T) {
 		// Arrange
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{
@@ -29,10 +34,10 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -50,8 +55,9 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 		if result == nil {
 			t.Fatal("expected result, got nil")
 		}
-		if result.TenantID != input.TenantID {
-			t.Errorf("expected tenant_id %s, got %s", input.TenantID, result.TenantID)
+		expectedTenantUUID, _ := uuid.Parse(input.TenantID)
+		if result.TenantID != expectedTenantUUID {
+			t.Errorf("expected tenant_id %s, got %s", input.TenantID, result.TenantID.String())
 		}
 		if result.ProfessionalID != input.ProfessionalID {
 			t.Errorf("expected professional_id %s, got %s", input.ProfessionalID, result.ProfessionalID)
@@ -66,11 +72,12 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail without tenant_id", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
 			TenantID:       "",
@@ -92,14 +99,15 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail without professional_id", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -118,14 +126,15 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail without customer_id", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -144,14 +153,15 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail without start_time", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Time{}, // zero
@@ -170,14 +180,15 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail without services", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -196,6 +207,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail when professional not found", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{
 			ExistsFn: func(ctx context.Context, tenantID, professionalID string) (bool, error) {
 				return false, nil
@@ -204,10 +216,10 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-not-exists",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -226,6 +238,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail when customer not found", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{
 			ExistsFn: func(ctx context.Context, tenantID, customerID string) (bool, error) {
@@ -234,10 +247,10 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 		}
 		mockSvcReader := &MockServiceReader{}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-not-exists",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -256,6 +269,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail when service not found", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{
@@ -265,10 +279,10 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -291,6 +305,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 				return true, nil // Has conflict
 			},
 		}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{
@@ -301,10 +316,10 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -323,6 +338,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should calculate end_time and total_price correctly", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{
@@ -334,11 +350,11 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		startTime := time.Now().Add(24 * time.Hour)
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      startTime,
@@ -366,6 +382,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail when service is inactive", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
+		mockCommandRepo := &MockCommandRepository{}
 		mockProfReader := &MockProfessionalReader{}
 		mockCustReader := &MockCustomerReader{}
 		mockSvcReader := &MockServiceReader{
@@ -376,10 +393,10 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewCreateAppointmentUseCase(mockRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
+		uc := NewCreateAppointmentUseCase(mockRepo, mockCommandRepo, mockSvcReader, mockProfReader, mockCustReader, logger)
 
 		input := CreateAppointmentInput{
-			TenantID:       "tenant-123",
+			TenantID:       testTenantID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -465,6 +482,110 @@ func TestListAppointmentsUseCase_Execute(t *testing.T) {
 		}
 		if result.PageSize != 20 { // Should default to 20 since 500 > 100
 			t.Errorf("expected page_size to be capped, got %d", result.PageSize)
+		}
+	})
+
+	t.Run("should filter by date range", func(t *testing.T) {
+		startDate := time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC)
+		endDate := time.Date(2025, 12, 1, 23, 59, 59, 0, time.UTC)
+
+		mockRepo := &MockAppointmentRepository{
+			ListFn: func(ctx context.Context, tenantID string, filter port.AppointmentFilter) ([]*entity.Appointment, int64, error) {
+				if filter.StartDate.IsZero() {
+					t.Error("expected start_date to be set")
+				}
+				if filter.EndDate.IsZero() {
+					t.Error("expected end_date to be set")
+				}
+				if !filter.StartDate.Equal(startDate) {
+					t.Errorf("expected start_date %v, got %v", startDate, filter.StartDate)
+				}
+				if !filter.EndDate.Equal(endDate) {
+					t.Errorf("expected end_date %v, got %v", endDate, filter.EndDate)
+				}
+				return []*entity.Appointment{}, 0, nil
+			},
+		}
+
+		uc := NewListAppointmentsUseCase(mockRepo, logger)
+
+		input := ListAppointmentsInput{
+			TenantID:  "tenant-123",
+			StartDate: startDate,
+			EndDate:   endDate,
+		}
+
+		_, err := uc.Execute(context.Background(), input)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+	})
+
+	t.Run("should filter by multiple statuses", func(t *testing.T) {
+		statuses := []valueobject.AppointmentStatus{
+			valueobject.AppointmentStatusCreated,
+			valueobject.AppointmentStatusConfirmed,
+			valueobject.AppointmentStatusAwaitingPayment,
+		}
+
+		mockRepo := &MockAppointmentRepository{
+			ListFn: func(ctx context.Context, tenantID string, filter port.AppointmentFilter) ([]*entity.Appointment, int64, error) {
+				if len(filter.Statuses) != 3 {
+					t.Errorf("expected 3 statuses, got %d", len(filter.Statuses))
+				}
+				// Verificar se todos os status esperados estão presentes
+				for _, expected := range statuses {
+					found := false
+					for _, actual := range filter.Statuses {
+						if actual == expected {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("expected status %s to be in filter", expected)
+					}
+				}
+				return []*entity.Appointment{}, 0, nil
+			},
+		}
+
+		uc := NewListAppointmentsUseCase(mockRepo, logger)
+
+		input := ListAppointmentsInput{
+			TenantID: "tenant-123",
+			Statuses: statuses,
+		}
+
+		_, err := uc.Execute(context.Background(), input)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+	})
+
+	t.Run("should filter by single status as array", func(t *testing.T) {
+		mockRepo := &MockAppointmentRepository{
+			ListFn: func(ctx context.Context, tenantID string, filter port.AppointmentFilter) ([]*entity.Appointment, int64, error) {
+				if len(filter.Statuses) != 1 {
+					t.Errorf("expected 1 status, got %d", len(filter.Statuses))
+				}
+				if filter.Statuses[0] != valueobject.AppointmentStatusAwaitingPayment {
+					t.Errorf("expected status AWAITING_PAYMENT, got %s", filter.Statuses[0])
+				}
+				return []*entity.Appointment{}, 0, nil
+			},
+		}
+
+		uc := NewListAppointmentsUseCase(mockRepo, logger)
+
+		input := ListAppointmentsInput{
+			TenantID: "tenant-123",
+			Statuses: []valueobject.AppointmentStatus{valueobject.AppointmentStatusAwaitingPayment},
+		}
+
+		_, err := uc.Execute(context.Background(), input)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
 		}
 	})
 }

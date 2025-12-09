@@ -28,7 +28,7 @@ func NewDREMensalRepository(queries *db.Queries) *DREMensalRepository {
 
 // Create persiste uma nova DRE Mensal no banco de dados.
 func (r *DREMensalRepository) Create(ctx context.Context, dre *entity.DREMensal) error {
-	tenantUUID := uuidStringToPgtype(dre.TenantID)
+	tenantUUID := entityUUIDToPgtype(dre.TenantID)
 
 	params := db.CreateDREMensalParams{
 		TenantID:             tenantUUID,
@@ -57,7 +57,7 @@ func (r *DREMensalRepository) Create(ctx context.Context, dre *entity.DREMensal)
 	}
 
 	dre.ID = pgUUIDToString(result.ID)
-	dre.TenantID = pgUUIDToString(result.TenantID)
+	dre.TenantID = pgtypeToEntityUUID(result.TenantID)
 	dre.CriadoEm = timestamptzToTime(result.CriadoEm)
 	dre.AtualizadoEm = timestamptzToTime(result.AtualizadoEm)
 
@@ -158,7 +158,7 @@ func (r *DREMensalRepository) ListByPeriod(ctx context.Context, tenantID string,
 // Update atualiza uma DRE Mensal existente.
 func (r *DREMensalRepository) Update(ctx context.Context, dre *entity.DREMensal) error {
 	idPg := uuidStringToPgtype(dre.ID)
-	tenantPg := uuidStringToPgtype(dre.TenantID)
+	tenantPg := entityUUIDToPgtype(dre.TenantID)
 
 	params := db.UpdateDREMensalParams{
 		ID:                   idPg,
@@ -310,7 +310,7 @@ func (r *DREMensalRepository) modelToDREMensal(m *db.DreMensal) (*entity.DREMens
 
 	dre := &entity.DREMensal{
 		ID:                   pgUUIDToString(m.ID),
-		TenantID:             pgUUIDToString(m.TenantID),
+		TenantID:             pgtypeToEntityUUID(m.TenantID),
 		MesAno:               mesAno,
 		ReceitaServicos:      numericToMoney(m.ReceitaServicos),
 		ReceitaProdutos:      numericToMoney(m.ReceitaProdutos),

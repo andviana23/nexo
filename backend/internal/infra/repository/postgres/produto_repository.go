@@ -2,12 +2,14 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	db "github.com/andviana23/barber-analytics-backend/internal/infra/db/sqlc"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/shopspring/decimal"
 )
 
@@ -24,24 +26,27 @@ func NewProdutoRepository(queries *db.Queries) port.ProdutoRepository {
 // Create cria novo produto
 func (r *ProdutoRepositoryPG) Create(ctx context.Context, produto *entity.Produto) error {
 	params := db.CreateProdutoParams{
-		TenantID:         uuidToPgUUID(produto.TenantID),
-		CategoriaID:      uuidPtrToPgUUID(produto.CategoriaID),
-		Nome:             produto.Nome,
-		Descricao:        strPtrToPgText(produto.Descricao),
-		Sku:              strPtrToPgText(produto.SKU),
-		CodigoBarras:     produto.CodigoBarras,
-		Preco:            produto.Preco,
-		Custo:            decimalPtrToNumeric(produto.Custo),
-		CategoriaProduto: string(produto.Categoria),
-		UnidadeMedida:    string(produto.UnidadeMedida),
-		QuantidadeAtual:  produto.QuantidadeAtual,
-		QuantidadeMinima: produto.QuantidadeMinima,
-		Localizacao:      produto.Localizacao,
-		Lote:             produto.Lote,
-		DataValidade:     timePtrToDate(produto.DataValidade),
-		Ncm:              produto.NCM,
-		PermiteVenda:     produto.PermiteVenda,
-		Ativo:            boolToPgBool(produto.Ativo),
+		TenantID:               uuidToPgUUID(produto.TenantID),
+		CategoriaProdutoID:     uuidPtrToPgUUID(produto.CategoriaProdutoID),
+		Nome:                   produto.Nome,
+		Descricao:              produto.Descricao,
+		Sku:                    produto.SKU,
+		CodigoBarras:           produto.CodigoBarras,
+		Preco:                  produto.Preco,
+		Custo:                  decimalPtrToNumeric(produto.Custo),
+		UnidadeMedida:          string(produto.UnidadeMedida),
+		QuantidadeAtual:        produto.QuantidadeAtual,
+		QuantidadeMinima:       produto.QuantidadeMinima,
+		EstoqueMaximo:          int32Ptr(produto.EstoqueMaximo),
+		ValorVendaProfissional: decimalPtrToNumeric(produto.ValorVendaProfissional),
+		ValorEntrada:           decimalPtrToNumeric(produto.ValorEntrada),
+		FornecedorID:           uuidPtrToPgUUID(produto.FornecedorID),
+		Localizacao:            produto.Localizacao,
+		Lote:                   produto.Lote,
+		DataValidade:           timePtrToDate(produto.DataValidade),
+		Ncm:                    produto.NCM,
+		PermiteVenda:           produto.PermiteVenda,
+		Ativo:                  boolPtr(produto.Ativo),
 	}
 
 	result, err := r.queries.CreateProduto(ctx, params)
@@ -63,6 +68,10 @@ func (r *ProdutoRepositoryPG) FindByID(ctx context.Context, tenantID, id uuid.UU
 		TenantID: uuidToPgUUID(tenantID),
 	})
 	if err != nil {
+		// Se não encontrou, retorna nil (não é erro)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("erro ao buscar produto: %w", err)
 	}
 
@@ -76,7 +85,28 @@ func (r *ProdutoRepositoryPG) FindBySKU(ctx context.Context, tenantID uuid.UUID,
 		TenantID: uuidToPgUUID(tenantID),
 	})
 	if err != nil {
+		// Se não encontrou, retorna nil (não é erro)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("erro ao buscar produto por SKU: %w", err)
+	}
+
+	return r.toDomain(result), nil
+}
+
+// FindByCodigoBarras busca produto por código de barras
+func (r *ProdutoRepositoryPG) FindByCodigoBarras(ctx context.Context, tenantID uuid.UUID, codigoBarras string) (*entity.Produto, error) {
+	result, err := r.queries.GetProdutoByCodigoBarras(ctx, db.GetProdutoByCodigoBarrasParams{
+		CodigoBarras: strPtrToPgText(codigoBarras),
+		TenantID:     uuidToPgUUID(tenantID),
+	})
+	if err != nil {
+		// Se não encontrou, retorna nil (não é erro)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("erro ao buscar produto por código de barras: %w", err)
 	}
 
 	return r.toDomain(result), nil
@@ -133,23 +163,27 @@ func (r *ProdutoRepositoryPG) ListAbaixoDoMinimo(ctx context.Context, tenantID u
 // Update atualiza produto existente
 func (r *ProdutoRepositoryPG) Update(ctx context.Context, produto *entity.Produto) error {
 	params := db.UpdateProdutoParams{
-		ID:               uuidToPgUUID(produto.ID),
-		TenantID:         uuidToPgUUID(produto.TenantID),
-		CategoriaID:      uuidPtrToPgUUID(produto.CategoriaID),
-		Nome:             produto.Nome,
-		Descricao:        strPtrToPgText(produto.Descricao),
-		Sku:              strPtrToPgText(produto.SKU),
-		CodigoBarras:     produto.CodigoBarras,
-		Preco:            produto.Preco,
-		Custo:            decimalPtrToNumeric(produto.Custo),
-		CategoriaProduto: string(produto.Categoria),
-		UnidadeMedida:    string(produto.UnidadeMedida),
-		QuantidadeMinima: produto.QuantidadeMinima,
-		Localizacao:      produto.Localizacao,
-		Lote:             produto.Lote,
-		DataValidade:     timePtrToDate(produto.DataValidade),
-		Ncm:              produto.NCM,
-		PermiteVenda:     produto.PermiteVenda,
+		ID:                     uuidToPgUUID(produto.ID),
+		TenantID:               uuidToPgUUID(produto.TenantID),
+		CategoriaProdutoID:     uuidPtrToPgUUID(produto.CategoriaProdutoID),
+		Nome:                   produto.Nome,
+		Descricao:              produto.Descricao,
+		Sku:                    produto.SKU,
+		CodigoBarras:           produto.CodigoBarras,
+		Preco:                  produto.Preco,
+		Custo:                  decimalPtrToNumeric(produto.Custo),
+		UnidadeMedida:          string(produto.UnidadeMedida),
+		QuantidadeMinima:       produto.QuantidadeMinima,
+		QuantidadeAtual:        produto.QuantidadeAtual,
+		EstoqueMaximo:          int32Ptr(produto.EstoqueMaximo),
+		ValorVendaProfissional: decimalPtrToNumeric(produto.ValorVendaProfissional),
+		ValorEntrada:           decimalPtrToNumeric(produto.ValorEntrada),
+		FornecedorID:           uuidPtrToPgUUID(produto.FornecedorID),
+		Localizacao:            produto.Localizacao,
+		Lote:                   produto.Lote,
+		DataValidade:           timePtrToDate(produto.DataValidade),
+		Ncm:                    produto.NCM,
+		PermiteVenda:           produto.PermiteVenda,
 	}
 
 	result, err := r.queries.UpdateProduto(ctx, params)
@@ -190,27 +224,35 @@ func (r *ProdutoRepositoryPG) Delete(ctx context.Context, tenantID, id uuid.UUID
 
 // toDomain converte modelo sqlc para entidade de domínio
 func (r *ProdutoRepositoryPG) toDomain(p db.Produto) *entity.Produto {
+	var estoqueMaximo int32
+	if p.EstoqueMaximo != nil {
+		estoqueMaximo = *p.EstoqueMaximo
+	}
+
 	return &entity.Produto{
-		ID:               pgUUIDToUUID(p.ID),
-		TenantID:         pgUUIDToUUID(p.TenantID),
-		CategoriaID:      pgUUIDToUUIDPtr(p.CategoriaID),
-		Nome:             p.Nome,
-		Descricao:        pgTextToStr(p.Descricao),
-		SKU:              pgTextToStr(p.Sku),
-		CodigoBarras:     p.CodigoBarras,
-		Preco:            p.Preco,
-		Custo:            numericToDecimalPtr(p.Custo),
-		Categoria:        entity.CategoriaProduto(p.CategoriaProduto),
-		UnidadeMedida:    entity.UnidadeMedida(p.UnidadeMedida),
-		QuantidadeAtual:  p.QuantidadeAtual,
-		QuantidadeMinima: p.QuantidadeMinima,
-		Localizacao:      p.Localizacao,
-		Lote:             p.Lote,
-		DataValidade:     dateToTimePtr(p.DataValidade),
-		NCM:              p.Ncm,
-		PermiteVenda:     p.PermiteVenda,
-		Ativo:            boolPtrToBool(p.Ativo),
-		CriadoEm:         p.CriadoEm.Time,
-		AtualizadoEm:     p.AtualizadoEm.Time,
+		ID:                     pgUUIDToUUID(p.ID),
+		TenantID:               pgUUIDToUUID(p.TenantID),
+		CategoriaProdutoID:     pgUUIDToUUIDPtr(p.CategoriaProdutoID),
+		FornecedorID:           pgUUIDToUUIDPtr(p.FornecedorID),
+		Nome:                   p.Nome,
+		Descricao:              p.Descricao,
+		SKU:                    p.Sku,
+		CodigoBarras:           p.CodigoBarras,
+		Preco:                  p.Preco,
+		Custo:                  numericToDecimalPtr(p.Custo),
+		ValorVendaProfissional: numericToDecimalPtr(p.ValorVendaProfissional),
+		ValorEntrada:           numericToDecimalPtr(p.ValorEntrada),
+		UnidadeMedida:          entity.UnidadeMedida(p.UnidadeMedida),
+		QuantidadeAtual:        p.QuantidadeAtual,
+		QuantidadeMinima:       p.QuantidadeMinima,
+		EstoqueMaximo:          estoqueMaximo,
+		Localizacao:            p.Localizacao,
+		Lote:                   p.Lote,
+		DataValidade:           dateToTimePtr(p.DataValidade),
+		NCM:                    p.Ncm,
+		PermiteVenda:           p.PermiteVenda,
+		Ativo:                  boolPtrToBool(p.Ativo),
+		CriadoEm:               p.CriadoEm.Time,
+		AtualizadoEm:           p.AtualizadoEm.Time,
 	}
 }

@@ -24,7 +24,7 @@ func NewPrecificacaoSimulacaoRepository(queries *db.Queries) *PrecificacaoSimula
 
 // Create persiste uma nova simulação de precificação.
 func (r *PrecificacaoSimulacaoRepository) Create(ctx context.Context, simulacao *entity.PrecificacaoSimulacao) error {
-	tenantUUID := uuidStringToPgtype(simulacao.TenantID)
+	tenantUUID := entityUUIDToPgtype(simulacao.TenantID)
 	itemUUID := uuidStringToPgtype(simulacao.ItemID)
 
 	// CriadoPor pode vir de contexto - usar UUID zero por padrão
@@ -249,7 +249,7 @@ func (r *PrecificacaoSimulacaoRepository) toDomain(model *db.PrecificacaoSimulac
 
 	simulacao := &entity.PrecificacaoSimulacao{
 		ID:                  pgUUIDToString(model.ID),
-		TenantID:            pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		ItemID:              pgUUIDToString(model.ItemID),
 		TipoItem:            tipoItem,
 		CustoMateriais:      numericToMoney(model.CustoMateriais),

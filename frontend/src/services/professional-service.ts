@@ -16,6 +16,7 @@ import type {
     UpdateProfessionalRequest,
     UpdateProfessionalStatusRequest,
 } from '@/types/professional';
+import axios from 'axios';
 
 // =============================================================================
 // ENDPOINTS

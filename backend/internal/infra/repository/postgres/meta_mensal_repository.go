@@ -8,6 +8,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
 	db "github.com/andviana23/barber-analytics-backend/internal/infra/db/sqlc"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // MetaMensalRepository implementa port.MetaMensalRepository usando sqlc.
@@ -24,9 +25,9 @@ func NewMetaMensalRepository(queries *db.Queries) *MetaMensalRepository {
 
 // Create persiste uma nova meta mensal.
 func (r *MetaMensalRepository) Create(ctx context.Context, meta *entity.MetaMensal) error {
-	tenantUUID := uuidStringToPgtype(meta.TenantID)
-	// CriadoPor vem do DB, não da entidade - usar UUID vazio ou extrair de contexto
-	criadoPorUUID := uuidStringToPgtype("00000000-0000-0000-0000-000000000000")
+	tenantUUID := entityUUIDToPgtype(meta.TenantID)
+	// CriadoPor: passar UUID inválido que será tratado como NULL pelo pgtype
+	var criadoPorUUID pgtype.UUID // .Valid será false, resultando em NULL
 	origemStr := meta.Origem.String()
 	statusStr := meta.Status
 	params := db.CreateMetaMensalParams{
@@ -76,7 +77,7 @@ func (r *MetaMensalRepository) FindByMesAno(ctx context.Context, tenantID string
 
 // Update atualiza uma meta existente.
 func (r *MetaMensalRepository) Update(ctx context.Context, meta *entity.MetaMensal) error {
-	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	tenantUUID := entityUUIDToPgtype(meta.TenantID)
 	idUUID := uuidStringToPgtype(meta.ID)
 	params := db.UpdateMetaMensalParams{
 		ID:              idUUID,
@@ -153,11 +154,11 @@ func (r *MetaMensalRepository) toDomain(model *db.MetasMensai) (*entity.MetaMens
 	if model.Status != nil {
 		status = *model.Status
 	} else {
-		status = "ATIVA"
+		status = "PENDENTE"
 	}
 	meta := &entity.MetaMensal{
 		ID:              pgUUIDToString(model.ID),
-		TenantID:        pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		MesAno:          mesAno,
 		MetaFaturamento: rawDecimalToMoney(model.MetaFaturamento),
 		Origem:          origem,

@@ -8,6 +8,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -55,8 +56,14 @@ func (uc *SetMetaMensalUseCase) Execute(ctx context.Context, input SetMetaMensal
 		return existing, nil
 	}
 
+	// Converter tenant_id de string para uuid.UUID
+	tenantUUID, err := uuid.Parse(input.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("tenant_id inválido: %w", err)
+	}
+
 	// Criar nova meta
-	meta, err := entity.NewMetaMensal(input.TenantID, input.MesAno, input.MetaFaturamento, input.Origem)
+	meta, err := entity.NewMetaMensal(tenantUUID, input.MesAno, input.MetaFaturamento, input.Origem)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao criar meta mensal: %w", err)
 	}

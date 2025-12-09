@@ -108,15 +108,10 @@ func boolToPgBool(b bool) *bool {
 
 // decimalToNumeric converte decimal.Decimal para pgtype.Numeric
 func decimalToNumeric(d decimal.Decimal) pgtype.Numeric {
-	if d.IsZero() {
-		return pgtype.Numeric{Valid: true}
-	}
-
 	var num pgtype.Numeric
 	if err := num.Scan(d.String()); err != nil {
 		return pgtype.Numeric{Valid: false}
 	}
-
 	return num
 }
 
@@ -157,6 +152,25 @@ func timeToPgTimestamp(t time.Time) pgtype.Timestamptz {
 	}
 }
 
+// timePtrToPgTimestamptz converte *time.Time para pgtype.Timestamptz
+func timePtrToPgTimestamptz(t *time.Time) pgtype.Timestamptz {
+	if t == nil {
+		return pgtype.Timestamptz{Valid: false}
+	}
+	return pgtype.Timestamptz{
+		Time:  *t,
+		Valid: true,
+	}
+}
+
+// pgTimestamptzToTimePtr converte pgtype.Timestamptz para *time.Time
+func pgTimestamptzToTimePtr(t pgtype.Timestamptz) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Time
+}
+
 // timePtrToDate converte *time.Time para pgtype.Date
 func timePtrToDate(t *time.Time) pgtype.Date {
 	if t == nil {
@@ -186,13 +200,34 @@ func boolPtrToBool(b *bool) bool {
 	return *b
 }
 
+// boolPtr converte bool para *bool
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 // === VALUE OBJECT CONVERSIONS (para módulos antigos) ===
 
-// uuidStringToPgtype converte string UUID para pgtype.UUID
+// uuidStringToPgtype converte string UUID para pgtype.UUID (deprecated: usar uuidToPgUUID)
 func uuidStringToPgtype(s string) pgtype.UUID {
 	var pguuid pgtype.UUID
 	_ = pguuid.Scan(s)
 	return pguuid
+}
+
+// entityUUIDToPgtype converte uuid.UUID (entidade) para pgtype.UUID
+func entityUUIDToPgtype(u uuid.UUID) pgtype.UUID {
+	return pgtype.UUID{
+		Bytes: u,
+		Valid: u != uuid.Nil,
+	}
+}
+
+// pgtypeToEntityUUID converte pgtype.UUID para uuid.UUID (entidade)
+func pgtypeToEntityUUID(u pgtype.UUID) uuid.UUID {
+	if !u.Valid {
+		return uuid.Nil
+	}
+	return u.Bytes
 }
 
 // dateToDate converte time.Time para pgtype.Date (compatibilidade antiga)
@@ -231,6 +266,24 @@ func pgUUIDToString(u pgtype.UUID) string {
 		return ""
 	}
 	return uuid.UUID(u.Bytes).String()
+}
+
+// pgUUIDPtrToString converte pgtype.UUID (nullable) para string
+func pgUUIDPtrToString(u pgtype.UUID) string {
+	if !u.Valid {
+		return ""
+	}
+	return uuid.UUID(u.Bytes).String()
+}
+
+// uuidStrPtrToPgtype converte string (possivelmente vazia) para pgtype.UUID nullable
+func uuidStrPtrToPgtype(s string) pgtype.UUID {
+	if s == "" {
+		return pgtype.UUID{Valid: false}
+	}
+	var pguuid pgtype.UUID
+	_ = pguuid.Scan(s)
+	return pguuid
 }
 
 // timestamptzToTime converte pgtype.Timestamptz para time.Time
@@ -320,5 +373,38 @@ func timeToDate(t time.Time) pgtype.Date {
 	return pgtype.Date{
 		Time:  t,
 		Valid: !t.IsZero(),
+	}
+}
+
+// int32Ptr converte int32 para *int32
+func int32Ptr(i int32) *int32 {
+	return &i
+}
+
+// interfaceToMoney converte interface{} (resultado de SUM do sqlc) para valueobject.Money
+func interfaceToMoney(v interface{}) valueobject.Money {
+	if v == nil {
+		return valueobject.Zero()
+	}
+
+	switch val := v.(type) {
+	case decimal.Decimal:
+		return valueobject.NewMoneyFromDecimal(val)
+	case pgtype.Numeric:
+		return numericToMoney(val)
+	case float64:
+		return valueobject.NewMoneyFromDecimal(decimal.NewFromFloat(val))
+	case int64:
+		return valueobject.NewMoneyFromDecimal(decimal.NewFromInt(val))
+	case int:
+		return valueobject.NewMoneyFromDecimal(decimal.NewFromInt(int64(val)))
+	case string:
+		d, err := decimal.NewFromString(val)
+		if err != nil {
+			return valueobject.Zero()
+		}
+		return valueobject.NewMoneyFromDecimal(d)
+	default:
+		return valueobject.Zero()
 	}
 }

@@ -1,0 +1,15 @@
+./delete_meta_barbeiro.go
+./delete_meta_mensal.go
+./delete_meta_ticket_medio.go
+./get_meta_barbeiro.go
+./get_meta_mensal.go
+./get_meta_ticket_medio.go
+./list_metas_barbeiro.go
+./list_metas_mensais.go
+./list_metas_ticket_medio.go
+./set_meta_barbeiro.go
+./set_meta_mensal.go
+./set_meta_ticket.go
+./update_meta_barbeiro.go
+./update_meta_mensal.go
+./update_meta_ticket_medio.go

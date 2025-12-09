@@ -5,20 +5,18 @@
  * Serviço de agendamentos - comunicação com API de appointments do backend.
  */
 
-import { api } from '@/lib/axios';
+import { api, getErrorMessage, isAxiosError } from '@/lib/axios';
 import { APPOINTMENT_STATUS_COLORS } from '@/lib/fullcalendar-config';
 import type {
-  AppointmentResponse,
-  AvailabilityResponse,
-  CalendarEvent,
-  CalendarResource,
-  CheckAvailabilityParams,
-  CreateAppointmentRequest,
-  ListAppointmentsFilters,
-  ListAppointmentsResponse,
-  Professional,
-  UpdateAppointmentRequest,
-  UpdateAppointmentStatusRequest,
+    AppointmentResponse,
+    CalendarEvent,
+    CalendarResource,
+    CreateAppointmentRequest,
+    ListAppointmentsFilters,
+    ListAppointmentsResponse,
+    Professional,
+    RescheduleAppointmentRequest,
+    UpdateAppointmentStatusRequest
 } from '@/types/appointment';
 
 // =============================================================================
@@ -29,13 +27,20 @@ const APPOINTMENT_ENDPOINTS = {
   list: '/appointments',
   create: '/appointments',
   getById: (id: string) => `/appointments/${id}`,
-  update: (id: string) => `/appointments/${id}`,
-  delete: (id: string) => `/appointments/${id}`,
   updateStatus: (id: string) => `/appointments/${id}/status`,
-  availability: '/appointments/availability',
+  reschedule: (id: string) => `/appointments/${id}/reschedule`,
+  cancel: (id: string) => `/appointments/${id}/cancel`,
+  // Novos endpoints de workflow do agendamento
+  confirm: (id: string) => `/appointments/${id}/confirm`,
+  checkIn: (id: string) => `/appointments/${id}/check-in`,
+  startService: (id: string) => `/appointments/${id}/start`,
+  finishService: (id: string) => `/appointments/${id}/finish`,
+  complete: (id: string) => `/appointments/${id}/complete`,
+  noShow: (id: string) => `/appointments/${id}/no-show`,
+  // Recursos relacionados
   professionals: '/professionals',
   customers: '/customers',
-  services: '/services',
+  services: '/servicos',
 } as const;
 
 // =============================================================================
@@ -57,7 +62,11 @@ export const appointmentService = {
       return response.data;
     } catch (error) {
       console.error('[appointment-service] Erro ao listar agendamentos:', error);
-      // Retornar resposta vazia em caso de erro para não travar o calendário
+      // Para erros de permissão/escopo ou conflitos conhecidos, propaga como erro tipado
+      if (isAxiosError(error) && error.response && [403, 404, 409].includes(error.response.status)) {
+        mapAppointmentError(error);
+      }
+      // Retornar resposta vazia em caso de erro inesperado para não travar o calendário
       return { data: [], page: 1, page_size: 20, total: 0 };
     }
   },
@@ -66,66 +75,168 @@ export const appointmentService = {
    * Busca um agendamento pelo ID
    */
   async getById(id: string): Promise<AppointmentResponse> {
-    const response = await api.get<{ data: AppointmentResponse }>(
+    const response = await api.get<AppointmentResponse>(
       APPOINTMENT_ENDPOINTS.getById(id)
     );
-    return response.data.data;
+    return response.data;
   },
 
   /**
    * Cria um novo agendamento
    */
   async create(data: CreateAppointmentRequest): Promise<AppointmentResponse> {
-    const response = await api.post<{ data: AppointmentResponse }>(
-      APPOINTMENT_ENDPOINTS.create,
-      data
-    );
-    return response.data.data;
+    try {
+      const response = await api.post<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.create,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
   },
 
   /**
-   * Atualiza um agendamento existente
+   * Atualiza um agendamento existente (reagendamento)
+   * Backend usa PATCH /appointments/:id/reschedule
    */
-  async update(id: string, data: UpdateAppointmentRequest): Promise<AppointmentResponse> {
-    const response = await api.put<{ data: AppointmentResponse }>(
-      APPOINTMENT_ENDPOINTS.update(id),
-      data
-    );
-    return response.data.data;
+  async reschedule(id: string, data: RescheduleAppointmentRequest): Promise<AppointmentResponse> {
+    try {
+      const response = await api.patch<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.reschedule(id),
+        data
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
   },
 
   /**
    * Cancela um agendamento
+   * Backend usa POST /appointments/:id/cancel
    */
   async cancel(id: string, reason?: string): Promise<void> {
-    await api.delete(APPOINTMENT_ENDPOINTS.delete(id), {
-      data: reason ? { reason } : undefined,
-    });
+    try {
+      await api.post(APPOINTMENT_ENDPOINTS.cancel(id), {
+        reason: reason,
+      });
+    } catch (error) {
+      mapAppointmentError(error);
+    }
   },
 
   /**
    * Atualiza o status de um agendamento
+   * Backend usa PATCH /appointments/:id/status
    */
   async updateStatus(
     id: string,
     data: UpdateAppointmentStatusRequest
   ): Promise<AppointmentResponse> {
-    const response = await api.put<{ data: AppointmentResponse }>(
-      APPOINTMENT_ENDPOINTS.updateStatus(id),
-      data
-    );
-    return response.data.data;
+    try {
+      const response = await api.patch<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.updateStatus(id),
+        data
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
+  },
+
+  // ===========================================================================
+  // WORKFLOW DO AGENDAMENTO - Novos endpoints de transição de status
+  // ===========================================================================
+
+  /**
+   * Confirma um agendamento
+   * Transição: CREATED → CONFIRMED
+   */
+  async confirm(id: string): Promise<AppointmentResponse> {
+    try {
+      const response = await api.post<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.confirm(id)
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
   },
 
   /**
-   * Verifica disponibilidade de um profissional em uma data
+   * Marca cliente como chegou (check-in)
+   * Transição: CONFIRMED → CHECKED_IN
    */
-  async checkAvailability(params: CheckAvailabilityParams): Promise<AvailabilityResponse> {
-    const response = await api.get<AvailabilityResponse>(
-      APPOINTMENT_ENDPOINTS.availability,
-      { params }
-    );
-    return response.data;
+  async checkIn(id: string): Promise<AppointmentResponse> {
+    try {
+      const response = await api.post<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.checkIn(id)
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
+  },
+
+  /**
+   * Inicia o atendimento
+   * Transição: CONFIRMED/CHECKED_IN → IN_SERVICE
+   */
+  async startService(id: string): Promise<AppointmentResponse> {
+    try {
+      const response = await api.post<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.startService(id)
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
+  },
+
+  /**
+   * Finaliza o atendimento (aguardando pagamento)
+   * Transição: IN_SERVICE → AWAITING_PAYMENT
+   */
+  async finishService(id: string): Promise<AppointmentResponse> {
+    try {
+      const response = await api.post<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.finishService(id)
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
+  },
+
+  /**
+   * Conclui o agendamento (pagamento recebido)
+   * Transição: IN_SERVICE/AWAITING_PAYMENT → DONE
+   */
+  async complete(id: string): Promise<AppointmentResponse> {
+    try {
+      const response = await api.post<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.complete(id)
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
+  },
+
+  /**
+   * Marca cliente como não compareceu
+   * Transição: CONFIRMED/CHECKED_IN → NO_SHOW
+   */
+  async noShow(id: string): Promise<AppointmentResponse> {
+    try {
+      const response = await api.post<AppointmentResponse>(
+        APPOINTMENT_ENDPOINTS.noShow(id)
+      );
+      return response.data;
+    } catch (error) {
+      mapAppointmentError(error);
+    }
   },
 
   /**
@@ -176,14 +287,20 @@ export const appointmentService = {
 export function appointmentsToCalendarEvents(
   appointments: AppointmentResponse[]
 ): CalendarEvent[] {
+  // Guard para array undefined/null
+  if (!appointments || !Array.isArray(appointments)) {
+    console.warn('[appointmentsToCalendarEvents] appointments is undefined or not an array');
+    return [];
+  }
+
   return appointments.map((appointment) => {
     const statusColors = APPOINTMENT_STATUS_COLORS[appointment.status];
-    const serviceNames = appointment.services.map((s) => s.name).join(', ');
+    const serviceNames = (appointment.services || []).map((s) => s.service_name).join(', ');
     
     return {
       id: appointment.id,
-      resourceId: appointment.professional.id,
-      title: `${appointment.customer.name} - ${serviceNames}`,
+      resourceId: appointment.professional_id,
+      title: `${appointment.customer_name} - ${serviceNames}`,
       start: appointment.start_time,
       end: appointment.end_time,
       backgroundColor: statusColors?.backgroundColor,
@@ -202,6 +319,12 @@ export function appointmentsToCalendarEvents(
 export function professionalsToCalendarResources(
   professionals: Professional[]
 ): CalendarResource[] {
+  // Guard para array undefined/null
+  if (!professionals || !Array.isArray(professionals)) {
+    console.warn('[professionalsToCalendarResources] professionals is undefined or not an array');
+    return [];
+  }
+
   return professionals.map((professional) => ({
     id: professional.id,
     title: professional.name,
@@ -232,10 +355,17 @@ export class TimeSlotConflictError extends AppointmentError {
   }
 }
 
-export class ProfessionalInactiveError extends AppointmentError {
+export class BlockedTimeError extends AppointmentError {
   constructor() {
-    super('Este barbeiro não está disponível no momento.', 'PROFESSIONAL_INACTIVE');
-    this.name = 'ProfessionalInactiveError';
+    super('Horário bloqueado para o profissional.', 'BLOCKED_TIME');
+    this.name = 'BlockedTimeError';
+  }
+}
+
+export class ProfessionalNotFoundError extends AppointmentError {
+  constructor() {
+    super('Profissional não encontrado.', 'PROFESSIONAL_NOT_FOUND');
+    this.name = 'ProfessionalNotFoundError';
   }
 }
 
@@ -246,6 +376,27 @@ export class CustomerNotFoundError extends AppointmentError {
   }
 }
 
+export class ServiceNotFoundError extends AppointmentError {
+  constructor() {
+    super('Serviço não encontrado.', 'SERVICE_NOT_FOUND');
+    this.name = 'ServiceNotFoundError';
+  }
+}
+
+export class AppointmentNotFoundError extends AppointmentError {
+  constructor() {
+    super('Agendamento não encontrado.', 'APPOINTMENT_NOT_FOUND');
+    this.name = 'AppointmentNotFoundError';
+  }
+}
+
+export class ForbiddenScopeError extends AppointmentError {
+  constructor() {
+    super('Acesso negado: barbeiro só pode agir nos próprios agendamentos.', 'FORBIDDEN_SCOPE');
+    this.name = 'ForbiddenScopeError';
+  }
+}
+
 export class InsufficientIntervalError extends AppointmentError {
   constructor() {
     super('Intervalo mínimo de 10 minutos entre agendamentos.', 'INSUFFICIENT_INTERVAL');
@@ -253,9 +404,63 @@ export class InsufficientIntervalError extends AppointmentError {
   }
 }
 
-export class InvalidStatusTransitionError extends AppointmentError {
+export class InvalidTransitionError extends AppointmentError {
   constructor() {
-    super('Transição de status inválida.', 'INVALID_STATUS_TRANSITION');
-    this.name = 'InvalidStatusTransitionError';
+    super('Transição de status ou fluxo não permitida.', 'INVALID_TRANSITION');
+    this.name = 'InvalidTransitionError';
   }
+}
+
+// Mantido para compatibilidade com código legado
+export class ProfessionalInactiveError extends AppointmentError {
+  constructor() {
+    super('Este barbeiro não está disponível no momento.', 'PROFESSIONAL_INACTIVE');
+    this.name = 'ProfessionalInactiveError';
+  }
+}
+
+/**
+ * Mapeia respostas de erro da API para erros tipados de agendamento.
+ */
+function mapAppointmentError(error: unknown): never {
+  if (!isAxiosError(error) || !error.response) {
+    throw error instanceof Error ? error : new AppointmentError('Erro ao processar agendamento.');
+  }
+
+  const status = error.response.status;
+  const data = error.response.data as { error?: string; message?: string } | undefined;
+  const code = (data?.error || '').toUpperCase();
+  const message = (data?.message || '').toLowerCase();
+
+  if (status === 403) {
+    throw new ForbiddenScopeError();
+  }
+
+  if (status === 404) {
+    if (code.includes('PROFESSIONAL') || message.includes('profission')) {
+      throw new ProfessionalNotFoundError();
+    }
+    if (code.includes('SERVICE') || message.includes('servi')) {
+      throw new ServiceNotFoundError();
+    }
+    if (code.includes('CUSTOMER') || message.includes('cliente')) {
+      throw new CustomerNotFoundError();
+    }
+    throw new AppointmentNotFoundError();
+  }
+
+  if (status === 409) {
+    if (code === 'BLOCKED_TIME' || message.includes('bloque')) {
+      throw new BlockedTimeError();
+    }
+    if (code === 'INSUFFICIENT_INTERVAL' || message.includes('interval')) {
+      throw new InsufficientIntervalError();
+    }
+    if (code === 'INVALID_TRANSITION' || message.includes('transi')) {
+      throw new InvalidTransitionError();
+    }
+    throw new TimeSlotConflictError();
+  }
+
+  throw new AppointmentError(getErrorMessage(error), code || 'APPOINTMENT_ERROR');
 }

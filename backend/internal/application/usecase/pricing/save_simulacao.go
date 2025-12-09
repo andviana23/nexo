@@ -7,6 +7,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -38,7 +39,7 @@ func (uc *SaveSimulacaoUseCase) Execute(ctx context.Context, input SaveSimulacao
 		return fmt.Errorf("simulação é obrigatória")
 	}
 
-	if input.Simulacao.TenantID == "" {
+	if input.Simulacao.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 
@@ -47,7 +48,7 @@ func (uc *SaveSimulacaoUseCase) Execute(ctx context.Context, input SaveSimulacao
 	}
 
 	uc.logger.Info("Simulação salva no histórico",
-		zap.String("tenant_id", input.Simulacao.TenantID),
+		zap.String("tenant_id", input.Simulacao.TenantID.String()),
 		zap.String("simulacao_id", input.Simulacao.ID),
 	)
 

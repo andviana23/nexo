@@ -2,6 +2,8 @@ package financial
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 	"fmt"
 	"time"
 
@@ -24,6 +26,7 @@ type GenerateFluxoDiarioUseCase struct {
 	fluxoRepo         port.FluxoCaixaDiarioRepository
 	contasPagarRepo   port.ContaPagarRepository
 	contasReceberRepo port.ContaReceberRepository
+	compensacaoRepo   port.CompensacaoBancariaRepository
 	logger            *zap.Logger
 }
 
@@ -32,12 +35,14 @@ func NewGenerateFluxoDiarioUseCase(
 	fluxoRepo port.FluxoCaixaDiarioRepository,
 	contasPagarRepo port.ContaPagarRepository,
 	contasReceberRepo port.ContaReceberRepository,
+	compensacaoRepo port.CompensacaoBancariaRepository,
 	logger *zap.Logger,
 ) *GenerateFluxoDiarioUseCase {
 	return &GenerateFluxoDiarioUseCase{
 		fluxoRepo:         fluxoRepo,
 		contasPagarRepo:   contasPagarRepo,
 		contasReceberRepo: contasReceberRepo,
+		compensacaoRepo:   compensacaoRepo,
 		logger:            logger,
 	}
 }
@@ -57,7 +62,7 @@ func (uc *GenerateFluxoDiarioUseCase) Execute(ctx context.Context, input Generat
 	fluxo, err := uc.fluxoRepo.FindByData(ctx, input.TenantID, input.Data)
 	if err != nil {
 		// Criar novo fluxo se não existir
-		fluxo, err = entity.NewFluxoCaixaDiario(input.TenantID, input.Data)
+		fluxo, err = entity.NewFluxoCaixaDiario(uuid.MustParse(input.TenantID), input.Data)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao criar fluxo de caixa: %w", err)
 		}
@@ -84,7 +89,24 @@ func (uc *GenerateFluxoDiarioUseCase) Execute(ctx context.Context, input Generat
 	if err != nil {
 		return nil, fmt.Errorf("erro ao calcular entradas previstas: %w", err)
 	}
+
+	// Incluir compensações bancárias previstas para o dia
+	if uc.compensacaoRepo != nil {
+		compensacoes, err := uc.compensacaoRepo.ListByDateRange(ctx, input.TenantID, input.Data, input.Data)
+		if err == nil {
+			for _, comp := range compensacoes {
+				if comp.Status == valueobject.StatusCompensacaoPrevisto || comp.Status == valueobject.StatusCompensacaoConfirmado {
+					// Adicionar valor líquido às entradas previstas (aguardando compensação)
+					entradasPrevistas = entradasPrevistas.Add(comp.ValorLiquido)
+				} else if comp.Status == valueobject.StatusCompensacaoCompensado {
+					// Adicionar valor líquido às entradas confirmadas
+					entradasConfirmadas = entradasConfirmadas.Add(comp.ValorLiquido)
+				}
+			}
+		}
+	}
 	fluxo.EntradasPrevistas = entradasPrevistas
+	fluxo.EntradasConfirmadas = entradasConfirmadas
 
 	// Calcular saídas pagas (contas pagas)
 	saidasPagas, err := uc.contasPagarRepo.SumByPeriod(ctx, input.TenantID, input.Data, input.Data, &statusPago)

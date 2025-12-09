@@ -12,65 +12,65 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-    CalendarIcon,
-    Loader2Icon,
-    MailIcon,
-    PhoneIcon,
-    UserIcon,
+  CalendarIcon,
+  Loader2Icon,
+  MailIcon,
+  PhoneIcon,
+  UserIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import {
-    useCreateProfessional,
-    useUpdateProfessional,
+  useCreateProfessional,
+  useUpdateProfessional,
 } from '@/hooks/use-professionals';
 import {
-    createProfessionalSchema,
-    maskCPF,
-    maskPhone,
-    unmaskCPF,
-    unmaskPhone,
-    type CreateProfessionalFormData,
+  createProfessionalSchema,
+  maskCPF,
+  maskPhone,
+  unmaskCPF,
+  unmaskPhone,
+  type CreateProfessionalFormData,
 } from '@/lib/validations/professional';
 import type {
-    ProfessionalModalState,
-    ProfessionalResponse,
+  ProfessionalModalState,
+  ProfessionalResponse,
 } from '@/types/professional';
 
 import {
-    ProfessionalStatusBadge,
-    ProfessionalTypeBadge,
+  ProfessionalStatusBadge,
+  ProfessionalTypeBadge,
 } from './ProfessionalBadge';
 
 // =============================================================================
@@ -124,8 +124,8 @@ export function ProfessionalModal({
     },
   });
 
-  const tipoWatch = form.watch('tipo');
-  const tambemBarbeiroWatch = form.watch('tambem_barbeiro');
+  const tipoWatch = useWatch({ control: form.control, name: 'tipo' });
+  const tambemBarbeiroWatch = useWatch({ control: form.control, name: 'tambem_barbeiro' });
 
   // Mostra campos de comissão se for Barbeiro ou Gerente+Barbeiro
   const showCommissionFields = useMemo(() => {
@@ -147,8 +147,8 @@ export function ProfessionalModal({
         observacoes: '',
         tambem_barbeiro: false, // Será calculado a partir do tipo
         tipo_comissao: professional.tipo_comissao || 'PERCENTUAL',
-        comissao: professional.comissao,
-        comissao_produtos: professional.comissao_produtos,
+        comissao: professional.comissao ? Number(professional.comissao) : undefined,
+        comissao_produtos: professional.comissao_produtos ? Number(professional.comissao_produtos) : undefined,
       });
     } else if (mode === 'create') {
       form.reset({
@@ -173,15 +173,16 @@ export function ProfessionalModal({
   const onSubmit = useCallback(
     async (values: CreateProfessionalFormData) => {
       // Prepara dados removendo campos que não existem no backend
-      const { tambem_barbeiro, comissao_produtos, ...rest } = values;
+      const { tambem_barbeiro: _tambemBarbeiro, ...rest } = values;
+      void _tambemBarbeiro;
       
-      // Limpa máscaras, formata data e converte comissao para string
+      // Limpa máscaras, formata data e mantém comissao como number
       const data = {
         ...rest,
         cpf: unmaskCPF(rest.cpf),
         telefone: unmaskPhone(rest.telefone),
         data_admissao: format(rest.data_admissao, 'yyyy-MM-dd'),
-        comissao: rest.comissao?.toString() || '0',
+        comissao: rest.comissao ?? 0,
       };
 
       // DEBUG: Log do payload

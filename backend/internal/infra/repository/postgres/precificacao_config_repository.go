@@ -23,7 +23,7 @@ func NewPrecificacaoConfigRepository(queries *db.Queries) *PrecificacaoConfigRep
 
 // Create persiste uma nova configuração de precificação.
 func (r *PrecificacaoConfigRepository) Create(ctx context.Context, config *entity.PrecificacaoConfig) error {
-	tenantUUID := uuidStringToPgtype(config.TenantID)
+	tenantUUID := entityUUIDToPgtype(config.TenantID)
 
 	params := db.CreatePrecificacaoConfigParams{
 		TenantID:                  tenantUUID,
@@ -77,7 +77,7 @@ func (r *PrecificacaoConfigRepository) FindByTenantID(ctx context.Context, tenan
 
 // Update atualiza uma configuração.
 func (r *PrecificacaoConfigRepository) Update(ctx context.Context, config *entity.PrecificacaoConfig) error {
-	tenantUUID := uuidStringToPgtype(config.TenantID)
+	tenantUUID := entityUUIDToPgtype(config.TenantID)
 	idUUID := uuidStringToPgtype(config.ID)
 
 	params := db.UpdatePrecificacaoConfigParams{
@@ -142,7 +142,7 @@ func (r *PrecificacaoConfigRepository) toDomain(model *db.PrecificacaoConfig) (*
 
 	config := &entity.PrecificacaoConfig{
 		ID:                        pgUUIDToString(model.ID),
-		TenantID:                  pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		MargemDesejada:            margemDesejada,
 		MarkupAlvo:                numericToDecimal(model.MarkupAlvo),
 		ImpostoPercentual:         impostoPercentual,

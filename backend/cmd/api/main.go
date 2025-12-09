@@ -263,8 +263,8 @@ func main() {
 	generateFluxoDiarioUC := financial.NewGenerateFluxoDiarioUseCase(fluxoCaixaRepo, contaPagarRepo, contaReceberRepo, compensacaoRepo, logger)
 	getFluxoCaixaUC := financial.NewGetFluxoCaixaUseCase(fluxoCaixaRepo, logger)
 	listFluxoCaixaUC := financial.NewListFluxoCaixaUseCase(fluxoCaixaRepo, logger)
-	// DRE (com dependências de ContaPagar e ContaReceber)
-	generateDREUC := financial.NewGenerateDREUseCase(dreRepo, contaPagarRepo, contaReceberRepo, logger)
+	// DRE (com dependências de ContaPagar, ContaReceber e CommissionItem)
+	generateDREUC := financial.NewGenerateDREUseCase(dreRepo, contaPagarRepo, contaReceberRepo, commissionItemRepo, logger)
 	getDREUC := financial.NewGetDREUseCase(dreRepo, logger)
 	listDREUC := financial.NewListDREUseCase(dreRepo, logger)
 	// DespesaFixa (7 use cases)
@@ -287,7 +287,8 @@ func main() {
 	listarAlertasUC := stock.NewListarAlertasEstoqueBaixoUseCase(produtoRepo)
 
 	// Initialize use cases - Appointments (7 use cases)
-	createAppointmentUC := appointment.NewCreateAppointmentUseCase(appointmentRepo, serviceReader, professionalReader, customerReader, logger)
+	// G-001: createAppointmentUC agora recebe commandRepo para criar comanda automaticamente
+	createAppointmentUC := appointment.NewCreateAppointmentUseCase(appointmentRepo, commandRepo, serviceReader, professionalReader, customerReader, logger)
 	listAppointmentsUC := appointment.NewListAppointmentsUseCase(appointmentRepo, logger)
 	getAppointmentUC := appointment.NewGetAppointmentUseCase(appointmentRepo, logger)
 	updateAppointmentStatusUC := appointment.NewUpdateAppointmentStatusUseCase(appointmentRepo, commandRepo, logger)
@@ -314,6 +315,7 @@ func main() {
 	removeCommandPaymentUC := command.NewRemoveCommandPaymentUseCase(commandRepo, commandMapper)
 	closeCommandUC := command.NewCloseCommandUseCase(commandRepo, appointmentRepo, commandMapper)
 	// T-EST-002, T-COM-001: Finalização integrada com estoque e comissões
+	// COM-001: Agora com hierarquia de 4 níveis para regras de comissão
 	finalizarComandaIntegradaUC := command.NewFinalizarComandaIntegradaUseCase(
 		commandRepo,
 		appointmentRepo,
@@ -324,6 +326,8 @@ func main() {
 		movimentacaoRepo,
 		commissionItemRepo,
 		commissionRuleRepo,
+		serviceReader,      // COM-001: Para buscar comissão do serviço
+		professionalReader, // COM-001: Para buscar comissão do profissional
 		commandMapper,
 		logger,
 	)
@@ -454,9 +458,11 @@ func main() {
 	getCommissionPeriodSummaryUC := commissionUC.NewGetCommissionPeriodSummaryUseCase(commissionPeriodRepo)
 	listCommissionPeriodsUC := commissionUC.NewListCommissionPeriodsUseCase(commissionPeriodRepo)
 	// T-COM-002: Fechar período com geração de ContaPagar
+	// COM-004: Incluir advanceRepo para dedução automática de adiantamentos
 	closeCommissionPeriodUC := commissionUC.NewCloseCommissionPeriodUseCase(
 		commissionPeriodRepo,
 		commissionItemRepo,
+		advanceRepo,
 		contaPagarRepo,
 		professionalReader,
 		logger,
@@ -500,9 +506,10 @@ func main() {
 
 	// Register financial cron jobs
 	financialDeps := scheduler.FinancialJobDeps{
-		GenerateDRE:         generateDREUC,
-		GenerateFluxoDiario: generateFluxoDiarioUC,
-		MarcarCompensacoes:  marcarCompensacaoUC,
+		GenerateDRE:              generateDREUC,
+		GenerateFluxoDiario:      generateFluxoDiarioUC,
+		MarcarCompensacoes:       marcarCompensacaoUC,
+		GerarContasDespesasFixas: gerarContasFromDespesasUC,
 	}
 
 	// Parse tenant list from ENV (SCHEDULER_TENANTS="tenant1,tenant2,...")
@@ -866,6 +873,19 @@ func main() {
 	protected := api.Group("")
 	protected.Use(mw.JWTMiddleware(jwtManager, logger))
 
+	// =============================================================================
+	// T-ASAAS-003: Middleware de verificação de assinatura
+	// Bloqueia tenants inadimplentes (assinatura vencida > 5 dias)
+	// =============================================================================
+	subscriptionChecker := mw.NewDefaultSubscriptionChecker(subscriptionRepo, logger)
+	requireActiveSubscription := mw.RequireActiveSubscription(subscriptionChecker, logger)
+
+	// Grupo guarded: JWT + verificação de assinatura ativa
+	// Usado em rotas críticas de negócio (agendamentos, comandas, caixa, financeiro)
+	guarded := api.Group("")
+	guarded.Use(mw.JWTMiddleware(jwtManager, logger))
+	guarded.Use(requireActiveSubscription)
+
 	// Metas routes - 15 endpoints completos (PROTEGIDAS)
 	metasGroup := protected.Group("/metas")
 
@@ -894,12 +914,13 @@ func main() {
 	pricingGroup := protected.Group("/pricing")
 	pricingHandler.RegisterRoutes(pricingGroup)
 
-	// Appointment routes - 12 endpoints (PROTEGIDAS com JWT + RBAC)
+	// Appointment routes - 12 endpoints (PROTEGIDAS com JWT + RBAC + ASSINATURA ATIVA)
 	// Regras:
 	// - BARBER só vê/edita seus próprios agendamentos (filtro aplicado no handler)
 	// - OWNER, MANAGER, RECEPTIONIST podem criar/listar/editar qualquer agendamento
 	// - Apenas OWNER e MANAGER podem alterar status para DONE e NO_SHOW
-	appointmentsGroup := protected.Group("/appointments")
+	// - T-ASAAS-003: Requer assinatura ativa (grupo guarded)
+	appointmentsGroup := guarded.Group("/appointments")
 	// Rotas com acesso geral (todos os roles autenticados podem acessar, mas BARBER tem escopo limitado)
 	appointmentsGroup.POST("", appointmentHandler.CreateAppointment, mw.RequireAnyRole(logger))
 	appointmentsGroup.GET("", appointmentHandler.ListAppointments, mw.RequireAnyRole(logger))
@@ -921,8 +942,9 @@ func main() {
 	blockedTimesGroup.GET("", blockedTimeHandler.ListBlockedTimes)
 	blockedTimesGroup.DELETE("/:id", blockedTimeHandler.DeleteBlockedTime)
 
-	// Command routes - 10 endpoints (PROTEGIDAS com JWT + RBAC)
-	commandsGroup := protected.Group("/commands")
+	// Command routes - 10 endpoints (PROTEGIDAS com JWT + RBAC + ASSINATURA ATIVA)
+	// T-ASAAS-003: Requer assinatura ativa (grupo guarded)
+	commandsGroup := guarded.Group("/commands")
 	commandsGroup.POST("", commandHandler.CreateCommand, mw.RequireAnyRole(logger))
 	commandsGroup.GET("/by-appointment/:appointmentId", commandHandler.GetCommandByAppointment, mw.RequireAnyRole(logger))
 	commandsGroup.GET("/:id", commandHandler.GetCommand, mw.RequireAnyRole(logger))
@@ -959,8 +981,9 @@ func main() {
 	professionalsGroup.PUT("/:id/status", professionalHandler.UpdateProfessionalStatus)
 	professionalsGroup.DELETE("/:id", professionalHandler.DeleteProfessional)
 
-	// Financial routes - 19 endpoints (PROTEGIDAS com JWT + RBAC)
-	financialGroup := protected.Group("/financial")
+	// Financial routes - 19 endpoints (PROTEGIDAS com JWT + RBAC + ASSINATURA ATIVA)
+	// T-ASAAS-003: Requer assinatura ativa (grupo guarded)
+	financialGroup := guarded.Group("/financial")
 
 	// ContaPagar (6 endpoints: 5 CRUD + 1 marcarPagamento) - Apenas Admin
 	financialGroup.POST("/payables", financialHandler.CreateContaPagar, mw.RequireAdminAccess(logger))
@@ -1010,8 +1033,9 @@ func main() {
 	turnGroup.GET("/history/summary", barberTurnHandler.GetHistorySummary)                 // GET /api/v1/barber-turn/history/summary
 	turnGroup.GET("/available", barberTurnHandler.GetAvailableBarbers)                     // GET /api/v1/barber-turn/available
 
-	// Stock routes - 7 endpoints (PROTEGIDAS com JWT + RBAC)
-	stockGroup := protected.Group("/stock")
+	// Stock routes - 7 endpoints (PROTEGIDAS com JWT + RBAC + ASSINATURA ATIVA)
+	// T-ASAAS-003: Requer assinatura ativa (grupo guarded)
+	stockGroup := guarded.Group("/stock")
 	stockGroup.GET("/items", stockHandler.ListProdutos, mw.RequireAnyRole(logger))               // GET /api/v1/stock/items - Listar produtos
 	stockGroup.GET("/items/:id", stockHandler.GetProduto, mw.RequireAnyRole(logger))             // GET /api/v1/stock/items/:id - Buscar produto
 	stockGroup.POST("/products", stockHandler.CreateProduto, mw.RequireOwnerOrManager(logger))   // POST /api/v1/stock/products - Criar produto
@@ -1078,8 +1102,9 @@ func main() {
 	meiosPagamentoGroup.DELETE("/:id", meioPagamentoHandler.Delete)       // DELETE /api/v1/meios-pagamento/:id
 	meiosPagamentoGroup.PATCH("/:id/toggle", meioPagamentoHandler.Toggle) // PATCH /api/v1/meios-pagamento/:id/toggle
 
-	// Caixa Diário routes - 9 endpoints (PROTEGIDAS com JWT)
-	caixaHandler.RegisterRoutes(protected)
+	// Caixa Diário routes - 9 endpoints (PROTEGIDAS com JWT + ASSINATURA ATIVA)
+	// T-ASAAS-003: Requer assinatura ativa (grupo guarded)
+	caixaHandler.RegisterRoutes(guarded)
 
 	// Commission routes - 35+ endpoints (PROTEGIDAS com JWT + RBAC)
 	// Regras:

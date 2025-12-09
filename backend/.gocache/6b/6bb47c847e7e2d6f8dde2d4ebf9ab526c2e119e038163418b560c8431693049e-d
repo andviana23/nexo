@@ -1,0 +1,15 @@
+./appointment_mapper.go
+./caixa_mapper.go
+./categoria_produto_mapper.go
+./categoria_servico_mapper.go
+./command_mapper.go
+./despesa_fixa_mapper.go
+./financial_mapper.go
+./meio_pagamento_mapper.go
+./metas_mapper.go
+./painel_mensal_mapper.go
+./plan_mapper.go
+./pricing_mapper.go
+./servico_mapper.go
+./stock_mapper.go
+./subscription_mapper.go

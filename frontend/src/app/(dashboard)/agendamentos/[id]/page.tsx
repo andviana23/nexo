@@ -14,11 +14,14 @@ import {
     CalendarIcon,
     CheckCircle2Icon,
     ClockIcon,
+    CreditCardIcon,
     Loader2Icon,
     MoreVerticalIcon,
     PhoneIcon,
     ScissorsIcon,
+    UserCheckIcon,
     UserIcon,
+    UserXIcon,
     XCircleIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -26,7 +29,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
 import { AppointmentModal } from '@/components/appointments';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +44,11 @@ import { Separator } from '@/components/ui/separator';
 import {
     useAppointment,
     useCancelAppointment,
+    useCheckInAppointment,
+    useCompleteAppointment,
+    useFinishServiceAppointment,
+    useNoShowAppointment,
+    useStartServiceAppointment,
     useUpdateAppointmentStatus,
 } from '@/hooks/use-appointments';
 import type { AppointmentModalState, AppointmentStatus } from '@/types/appointment';
@@ -63,10 +71,20 @@ const STATUS_CONFIG: Record<
     color: 'bg-blue-100 text-blue-800 border-blue-200',
     icon: CheckCircle2Icon,
   },
+  CHECKED_IN: {
+    label: 'Cliente Chegou',
+    color: 'bg-violet-100 text-violet-800 border-violet-200',
+    icon: UserCheckIcon,
+  },
   IN_SERVICE: {
     label: 'Em Atendimento',
     color: 'bg-purple-100 text-purple-800 border-purple-200',
     icon: ScissorsIcon,
+  },
+  AWAITING_PAYMENT: {
+    label: 'Aguardando Pagamento',
+    color: 'bg-pink-100 text-pink-800 border-pink-200',
+    icon: CreditCardIcon,
   },
   DONE: {
     label: 'Concluído',
@@ -76,7 +94,7 @@ const STATUS_CONFIG: Record<
   NO_SHOW: {
     label: 'Não Compareceu',
     color: 'bg-orange-100 text-orange-800 border-orange-200',
-    icon: XCircleIcon,
+    icon: UserXIcon,
   },
   CANCELED: {
     label: 'Cancelado',
@@ -98,8 +116,9 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function formatPrice(cents: number): string {
-  return `R$ ${(cents / 100).toFixed(2)}`;
+function formatPrice(value: string | number): string {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  return `R$ ${numValue.toFixed(2)}`;
 }
 
 // =============================================================================
@@ -120,6 +139,11 @@ export default function AppointmentDetailsPage() {
   // Queries e Mutations
   const { data: appointment, isLoading, isError } = useAppointment(id);
   const updateStatus = useUpdateAppointmentStatus();
+  const checkIn = useCheckInAppointment();
+  const startService = useStartServiceAppointment();
+  const finishService = useFinishServiceAppointment();
+  const complete = useCompleteAppointment();
+  const noShow = useNoShowAppointment();
   const cancelAppointment = useCancelAppointment();
 
   // Handlers de status
@@ -127,17 +151,25 @@ export default function AppointmentDetailsPage() {
     updateStatus.mutate({ id, data: { status: 'CONFIRMED' } });
   }, [id, updateStatus]);
 
-  const handleStartService = useCallback(() => {
-    updateStatus.mutate({ id, data: { status: 'IN_SERVICE' } });
-  }, [id, updateStatus]);
+  const handleCheckIn = useCallback(() => {
+    checkIn.mutate(id);
+  }, [id, checkIn]);
 
-  const handleFinish = useCallback(() => {
-    updateStatus.mutate({ id, data: { status: 'DONE' } });
-  }, [id, updateStatus]);
+  const handleStartService = useCallback(() => {
+    startService.mutate(id);
+  }, [id, startService]);
+
+  const handleFinishService = useCallback(() => {
+    finishService.mutate(id);
+  }, [id, finishService]);
+
+  const handleComplete = useCallback(() => {
+    complete.mutate(id);
+  }, [id, complete]);
 
   const handleNoShow = useCallback(() => {
-    updateStatus.mutate({ id, data: { status: 'NO_SHOW' } });
-  }, [id, updateStatus]);
+    noShow.mutate(id);
+  }, [id, noShow]);
 
   const handleCancel = useCallback(() => {
     if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
@@ -238,6 +270,9 @@ export default function AppointmentDetailsPage() {
               )}
               {appointment.status === 'CONFIRMED' && (
                 <>
+                  <DropdownMenuItem onClick={handleCheckIn}>
+                    Cliente Chegou
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleStartService}>
                     Iniciar Atendimento
                   </DropdownMenuItem>
@@ -246,9 +281,19 @@ export default function AppointmentDetailsPage() {
                   </DropdownMenuItem>
                 </>
               )}
+              {appointment.status === 'CHECKED_IN' && (
+                <DropdownMenuItem onClick={handleStartService}>
+                  Iniciar Atendimento
+                </DropdownMenuItem>
+              )}
               {appointment.status === 'IN_SERVICE' && (
-                <DropdownMenuItem onClick={handleFinish}>
+                <DropdownMenuItem onClick={handleFinishService}>
                   Finalizar Atendimento
+                </DropdownMenuItem>
+              )}
+              {appointment.status === 'AWAITING_PAYMENT' && (
+                <DropdownMenuItem onClick={handleComplete}>
+                  Concluir (Pagamento Recebido)
                 </DropdownMenuItem>
               )}
               
@@ -278,15 +323,15 @@ export default function AppointmentDetailsPage() {
             <div className="flex items-center gap-4">
               <Avatar className="size-16">
                 <AvatarFallback className="text-lg">
-                  {getInitials(appointment.customer.name)}
+                  {getInitials(appointment.customer_name)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-lg font-semibold">{appointment.customer.name}</p>
-                {appointment.customer.phone && (
+                <p className="text-lg font-semibold">{appointment.customer_name}</p>
+                {appointment.customer_phone && (
                   <p className="text-muted-foreground flex items-center gap-1">
                     <PhoneIcon className="size-4" />
-                    {appointment.customer.phone}
+                    {appointment.customer_phone}
                   </p>
                 )}
               </div>
@@ -305,16 +350,12 @@ export default function AppointmentDetailsPage() {
           <CardContent>
             <div className="flex items-center gap-4">
               <Avatar className="size-16">
-                <AvatarImage
-                  src={appointment.professional.avatar_url}
-                  alt={appointment.professional.name}
-                />
                 <AvatarFallback className="text-lg">
-                  {getInitials(appointment.professional.name)}
+                  {getInitials(appointment.professional_name)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-lg font-semibold">{appointment.professional.name}</p>
+                <p className="text-lg font-semibold">{appointment.professional_name}</p>
                 <p className="text-muted-foreground">Profissional</p>
               </div>
             </div>
@@ -361,11 +402,11 @@ export default function AppointmentDetailsPage() {
             <div className="space-y-3">
               {appointment.services.map((service) => (
                 <div
-                  key={service.id}
+                  key={service.service_id}
                   className="flex items-center justify-between"
                 >
                   <div>
-                    <p className="font-medium">{service.name}</p>
+                    <p className="font-medium">{service.service_name}</p>
                     <p className="text-sm text-muted-foreground">
                       {service.duration} min
                     </p>

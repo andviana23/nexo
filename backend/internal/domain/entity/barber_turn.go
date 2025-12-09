@@ -10,7 +10,7 @@ import (
 // BarberTurn representa um profissional na lista da vez
 type BarberTurn struct {
 	ID             string
-	TenantID       string
+	TenantID       uuid.UUID
 	ProfessionalID string
 
 	// Estado atual na fila
@@ -33,8 +33,8 @@ type BarberTurn struct {
 }
 
 // NewBarberTurn cria um novo registro de barbeiro na lista da vez
-func NewBarberTurn(tenantID, professionalID string) (*BarberTurn, error) {
-	if tenantID == "" {
+func NewBarberTurn(tenantID uuid.UUID, professionalID string) (*BarberTurn, error) {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if professionalID == "" {
@@ -94,7 +94,7 @@ func (b *BarberTurn) Reset() {
 
 // Validate valida as regras de negócio
 func (b *BarberTurn) Validate() error {
-	if b.TenantID == "" {
+	if b.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if b.ProfessionalID == "" {
@@ -123,7 +123,7 @@ func (b *BarberTurn) CanBeSelected() bool {
 // BarberTurnHistory histórico mensal de atendimentos
 type BarberTurnHistory struct {
 	ID             string
-	TenantID       string
+	TenantID       uuid.UUID
 	ProfessionalID string
 	MonthYear      string // Formato: "YYYY-MM"
 	TotalTurns     int
@@ -136,10 +136,10 @@ type BarberTurnHistory struct {
 
 // NewBarberTurnHistory cria um novo registro de histórico
 func NewBarberTurnHistory(
-	tenantID, professionalID, monthYear string,
+	tenantID uuid.UUID, professionalID, monthYear string,
 	totalTurns, finalPoints int,
 ) (*BarberTurnHistory, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if professionalID == "" {

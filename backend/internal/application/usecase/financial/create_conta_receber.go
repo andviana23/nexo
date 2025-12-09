@@ -2,6 +2,7 @@ package financial
 
 import (
 	"context"
+
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -61,9 +63,15 @@ func (uc *CreateContaReceberUseCase) Execute(ctx context.Context, input CreateCo
 		return nil, fmt.Errorf("data de vencimento não pode ser no passado")
 	}
 
+	// Converter TenantID para UUID
+	tenantUUID, err := uuid.Parse(input.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("tenant_id inválido: %w", err)
+	}
+
 	// Criar entidade de domínio
 	conta, err := entity.NewContaReceber(
-		input.TenantID,
+		tenantUUID,
 		input.Origem,
 		input.AssinaturaID,
 		input.Descricao,

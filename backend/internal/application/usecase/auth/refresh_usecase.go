@@ -63,6 +63,7 @@ func (uc *RefreshUseCase) Execute(ctx context.Context, refreshToken string) (*dt
 	accessToken, err := uc.jwtManager.GenerateAccessToken(
 		user.ID.String(),
 		user.TenantID.String(),
+		"", // unit_id será populado quando vínculo unidade for implementado
 		user.Email,
 		user.Role,
 	)

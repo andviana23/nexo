@@ -50,8 +50,9 @@ type FinancialHandler struct {
 	getDREUC      *financial.GetDREUseCase
 	listDREUC     *financial.ListDREUseCase
 
-	// Dashboard use case (TODO: implementar quando GetDashboardUseCase existir)
-	// getDashboardUC *financial.GetDashboardUseCase
+	// Dashboard e Projeções use cases
+	getPainelMensalUC *financial.GetPainelMensalUseCase
+	getProjecoesUC    *financial.GetProjecoesUseCase
 
 	logger *zap.Logger
 }
@@ -86,8 +87,9 @@ func NewFinancialHandler(
 	generateDREUC *financial.GenerateDREUseCase,
 	getDREUC *financial.GetDREUseCase,
 	listDREUC *financial.ListDREUseCase,
-	// Dashboard (TODO: implementar quando GetDashboardUseCase existir)
-	_ interface{}, // placeholder para getDashboardUC
+	// Dashboard e Projeções
+	getPainelMensalUC *financial.GetPainelMensalUseCase,
+	getProjecoesUC *financial.GetProjecoesUseCase,
 	logger *zap.Logger,
 ) *FinancialHandler {
 	return &FinancialHandler{
@@ -119,8 +121,10 @@ func NewFinancialHandler(
 		generateDREUC: generateDREUC,
 		getDREUC:      getDREUC,
 		listDREUC:     listDREUC,
-		// Dashboard (TODO)
-		logger: logger,
+		// Dashboard e Projeções
+		getPainelMensalUC: getPainelMensalUC,
+		getProjecoesUC:    getProjecoesUC,
+		logger:            logger,
 	}
 }
 
@@ -1129,7 +1133,7 @@ func (h *FinancialHandler) GetFluxoCaixa(c echo.Context) error {
 // @Produce json
 // @Param data_inicio query string false "Data início"
 // @Param data_fim query string false "Data fim"
-// @Success 200 {array} dto.FluxoCaixaResponse
+// @Success 200 {array} dto.FluxoCaixaDiarioResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/financial/cashflow [get]
@@ -1189,7 +1193,7 @@ func (h *FinancialHandler) ListFluxoCaixa(c echo.Context) error {
 // @Tags Financial
 // @Produce json
 // @Param month path string true "Mês (YYYY-MM)"
-// @Success 200 {object} dto.DREResponse
+// @Success 200 {object} dto.DREMensalResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/v1/financial/dre/{month} [get]
@@ -1300,11 +1304,97 @@ func (h *FinancialHandler) ListDRE(c echo.Context) error {
 // @Router /api/v1/financial/dashboard [get]
 // @Security BearerAuth
 func (h *FinancialHandler) GetDashboard(c echo.Context) error {
-	// TODO: Implementar quando GetDashboardUseCase existir
-	return c.JSON(http.StatusNotImplemented, dto.ErrorResponse{
-		Error:   "not_implemented",
-		Message: "Dashboard financeiro ainda não implementado",
-	})
+	ctx := c.Request().Context()
+
+	tenantID, ok := c.Get("tenant_id").(string)
+	if !ok || tenantID == "" {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Tenant ID não encontrado",
+		})
+	}
+
+	// Parse query params (year, month)
+	now := time.Now()
+	ano := now.Year()
+	mes := int(now.Month())
+
+	if y := c.QueryParam("year"); y != "" {
+		if parsed, err := parseIntParam(y); err == nil {
+			ano = parsed
+		}
+	}
+	if m := c.QueryParam("month"); m != "" {
+		if parsed, err := parseIntParam(m); err == nil {
+			mes = parsed
+		}
+	}
+
+	input := financial.PainelMensalInput{
+		TenantID: tenantID,
+		Ano:      ano,
+		Mes:      mes,
+	}
+
+	result, err := h.getPainelMensalUC.Execute(ctx, input)
+	if err != nil {
+		h.logger.Error("erro ao buscar painel mensal", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: err.Error(),
+		})
+	}
+
+	response := mapper.ToPainelMensalResponse(result)
+	return c.JSON(http.StatusOK, response)
+}
+
+// GetProjections godoc
+// @Summary Obter projeções financeiras
+// @Description Retorna as projeções financeiras para os próximos meses
+// @Tags Financial
+// @Produce json
+// @Param months_ahead query int false "Quantidade de meses para projetar (1-12, default: 3)"
+// @Success 200 {object} dto.ProjecoesResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/v1/financial/projections [get]
+// @Security BearerAuth
+func (h *FinancialHandler) GetProjections(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	tenantID, ok := c.Get("tenant_id").(string)
+	if !ok || tenantID == "" {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Tenant ID não encontrado",
+		})
+	}
+
+	// Parse months_ahead (default: 3)
+	mesesAhead := 3
+	if m := c.QueryParam("months_ahead"); m != "" {
+		if parsed, err := parseIntParam(m); err == nil && parsed >= 1 && parsed <= 12 {
+			mesesAhead = parsed
+		}
+	}
+
+	input := financial.ProjecoesInput{
+		TenantID:   tenantID,
+		MesesAhead: mesesAhead,
+	}
+
+	result, err := h.getProjecoesUC.Execute(ctx, input)
+	if err != nil {
+		h.logger.Error("erro ao buscar projeções", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: err.Error(),
+		})
+	}
+
+	response := mapper.ToProjecoesResponse(result)
+	return c.JSON(http.StatusOK, response)
 }
 
 // RegisterRoutes registra todas as rotas financeiras
@@ -1336,6 +1426,20 @@ func (h *FinancialHandler) RegisterRoutes(g *echo.Group) {
 	g.GET("/dre/:month", h.GetDRE)
 	g.GET("/dre", h.ListDRE)
 
-	// Dashboard
+	// Dashboard e Projeções
 	g.GET("/dashboard", h.GetDashboard)
+	g.GET("/projections", h.GetProjections)
+}
+
+// parseIntParam converte uma string de parâmetro para int
+func parseIntParam(s string) (int, error) {
+	var result int
+	_, err := decimal.NewFromString(s)
+	if err != nil {
+		return 0, err
+	}
+	// Usar decimal para parsing seguro, então converter para int
+	d, _ := decimal.NewFromString(s)
+	result = int(d.IntPart())
+	return result, nil
 }

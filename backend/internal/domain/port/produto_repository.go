@@ -14,6 +14,7 @@ type ProdutoRepository interface {
 	Create(ctx context.Context, produto *entity.Produto) error
 	FindByID(ctx context.Context, tenantID, produtoID uuid.UUID) (*entity.Produto, error)
 	FindBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*entity.Produto, error)
+	FindByCodigoBarras(ctx context.Context, tenantID uuid.UUID, codigoBarras string) (*entity.Produto, error)
 	Update(ctx context.Context, produto *entity.Produto) error
 	Delete(ctx context.Context, tenantID, produtoID uuid.UUID) error
 

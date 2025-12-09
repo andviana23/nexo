@@ -140,11 +140,16 @@ stop: ## Parar backend + frontend
 	else \
 		echo "   $(YELLOW)⚠️  Frontend não estava rodando$(NC)"; \
 	fi
-	@echo "   Finalizando processos remanescentes..."
-	@pkill -9 -f "air" 2>/dev/null || true
+	@echo "   Finalizando TODOS os processos Next.js..."
 	@pkill -9 -f "next dev" 2>/dev/null || true
 	@pkill -9 -f "next-server" 2>/dev/null || true
+	@pkill -9 -f "node.*\.next/dev" 2>/dev/null || true
+	@pkill -9 -f "webpack-loaders" 2>/dev/null || true
+	@pkill -9 -f "postcss\.js" 2>/dev/null || true
 	@pkill -9 -f "node.*next" 2>/dev/null || true
+	@echo "   Finalizando processos Air (backend)..."
+	@pkill -9 -f "air" 2>/dev/null || true
+	@echo "   Liberando portas 3000 e 8080..."
 	@lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 	@lsof -ti:8080 | xargs kill -9 2>/dev/null || true
 	@echo "   Removendo arquivos de lock..."

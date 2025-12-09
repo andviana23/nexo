@@ -93,6 +93,31 @@ type ContaReceberRepository interface {
 
 	// SumByOrigem soma valores por origem
 	SumByOrigem(ctx context.Context, tenantID, origem string, inicio, fim time.Time) (valueobject.Money, error)
+
+	// Integração Asaas (Migration 041)
+	// UpsertByAsaasPaymentID cria ou atualiza conta a receber pela cobrança Asaas (idempotência)
+	UpsertByAsaasPaymentID(ctx context.Context, conta *entity.ContaReceber) error
+
+	// GetByAsaasPaymentID busca conta por ID de pagamento Asaas
+	GetByAsaasPaymentID(ctx context.Context, tenantID, asaasPaymentID string) (*entity.ContaReceber, error)
+
+	// SumByCompetencia soma valores por mês de competência (DRE)
+	SumByCompetencia(ctx context.Context, tenantID, competenciaMes string, status *valueobject.StatusConta) (valueobject.Money, error)
+
+	// ListBySubscriptionID lista contas de uma subscription (nova tabela)
+	ListBySubscriptionID(ctx context.Context, tenantID, subscriptionID string) ([]*entity.ContaReceber, error)
+
+	// SumByReceivedDate soma valores recebidos em um período (para fluxo de caixa)
+	SumByReceivedDate(ctx context.Context, tenantID string, inicio, fim time.Time) (valueobject.Money, error)
+
+	// SumByConfirmedDate soma valores confirmados em um período (para DRE regime competência)
+	SumByConfirmedDate(ctx context.Context, tenantID string, inicio, fim time.Time) (valueobject.Money, error)
+
+	// MarcarRecebidaViaAsaas marca conta como recebida via webhook Asaas
+	MarcarRecebidaViaAsaas(ctx context.Context, tenantID, asaasPaymentID string, dataRecebimento time.Time, valorPago valueobject.Money) error
+
+	// EstornarViaAsaas estorna conta via webhook Asaas
+	EstornarViaAsaas(ctx context.Context, tenantID, asaasPaymentID, observacao string) error
 }
 
 // ContaReceberListFilters filtros para listagem de contas a receber

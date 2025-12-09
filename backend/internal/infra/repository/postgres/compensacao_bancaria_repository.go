@@ -26,7 +26,7 @@ func NewCompensacaoBancariaRepository(queries *db.Queries) *CompensacaoBancariaR
 
 // Create persiste uma nova compensação bancária.
 func (r *CompensacaoBancariaRepository) Create(ctx context.Context, comp *entity.CompensacaoBancaria) error {
-	tenantUUID := uuidStringToPgtype(comp.TenantID)
+	tenantUUID := entityUUIDToPgtype(comp.TenantID)
 	receitaUUID := uuidStringToPgtype(comp.ReceitaID)
 	meioPagamentoUUID := uuidStringToPgtype(comp.MeioPagamentoID)
 
@@ -98,7 +98,7 @@ func (r *CompensacaoBancariaRepository) FindByReceitaID(ctx context.Context, ten
 
 // Update atualiza uma compensação existente.
 func (r *CompensacaoBancariaRepository) Update(ctx context.Context, comp *entity.CompensacaoBancaria) error {
-	tenantUUID := uuidStringToPgtype(comp.TenantID)
+	tenantUUID := entityUUIDToPgtype(comp.TenantID)
 	idUUID := uuidStringToPgtype(comp.ID)
 
 	statusStr := comp.Status.String()
@@ -250,7 +250,7 @@ func (r *CompensacaoBancariaRepository) toDomain(model *db.CompensacoesBancaria)
 
 	comp := &entity.CompensacaoBancaria{
 		ID:              pgUUIDToString(model.ID),
-		TenantID:        pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		ReceitaID:       pgUUIDToString(model.ReceitaID),
 		DataTransacao:   dateToTime(model.DataTransacao),
 		DataCompensacao: dateToTime(model.DataCompensacao),

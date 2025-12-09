@@ -725,7 +725,7 @@ func mapCustomerToResponse(c *entity.Customer) dto.CustomerResponse {
 
 	return dto.CustomerResponse{
 		ID:                  c.ID,
-		TenantID:            c.TenantID,
+		TenantID:            c.TenantID.String(),
 		Nome:                c.Nome,
 		Telefone:            c.Telefone,
 		Email:               c.Email,

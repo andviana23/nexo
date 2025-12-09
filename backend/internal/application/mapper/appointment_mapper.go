@@ -12,26 +12,33 @@ func AppointmentToResponse(a *entity.Appointment) dto.AppointmentResponse {
 		services = append(services, dto.AppointmentServiceResponse{
 			ServiceID:   svc.ServiceID,
 			ServiceName: svc.ServiceName,
-			Price:       svc.PriceAtBooking.String(),
+			Price:       svc.PriceAtBooking.Raw(), // Retorna "50.00" em vez de "R$ 50,00" para evitar NaN no frontend
 			Duration:    svc.DurationAtBooking,
 		})
 	}
 
 	return dto.AppointmentResponse{
 		ID:                    a.ID,
-		TenantID:              a.TenantID,
+		TenantID:              a.TenantID.String(),
 		ProfessionalID:        a.ProfessionalID,
+		ProfessionalName:      a.ProfessionalName,
 		CustomerID:            a.CustomerID,
+		CustomerName:          a.CustomerName,
+		CustomerPhone:         a.CustomerPhone,
 		StartTime:             a.StartTime,
 		EndTime:               a.EndTime,
 		Duration:              a.Duration(),
+		CheckedInAt:           a.CheckedInAt,
+		StartedAt:             a.StartedAt,
+		FinishedAt:            a.FinishedAt,
 		Status:                a.Status.String(),
 		StatusDisplay:         a.Status.DisplayName(),
 		StatusColor:           a.Status.Color(),
-		TotalPrice:            a.TotalPrice.String(),
+		TotalPrice:            a.TotalPrice.Raw(), // Retorna "50.00" em vez de "R$ 50,00" para evitar NaN no frontend
 		Notes:                 a.Notes,
 		CanceledReason:        a.CanceledReason,
 		GoogleCalendarEventID: a.GoogleCalendarEventID,
+		CommandID:             a.CommandID, // Campo command_id adicionado
 		Services:              services,
 		CreatedAt:             a.CreatedAt,
 		UpdatedAt:             a.UpdatedAt,
@@ -65,11 +72,11 @@ func AppointmentToCalendarEvent(a *entity.Appointment) dto.CalendarEventResponse
 		BorderColor:     a.Status.Color(),
 		ExtendedProps: dto.CalendarEventExtendedProps{
 			Status:           a.Status.String(),
-			CustomerName:     "", // Precisa vir do join
-			CustomerPhone:    "", // Precisa vir do join
-			ProfessionalName: "", // Precisa vir do join
+			CustomerName:     a.CustomerName,
+			CustomerPhone:    a.CustomerPhone,
+			ProfessionalName: a.ProfessionalName,
 			Services:         serviceNames,
-			TotalPrice:       a.TotalPrice.String(),
+			TotalPrice:       a.TotalPrice.Raw(), // Retorna "50.00" em vez de "R$ 50,00"
 			Notes:            a.Notes,
 		},
 	}

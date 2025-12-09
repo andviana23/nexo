@@ -124,6 +124,20 @@ O Barber Analytics Pro implementa **RBAC (Role-Based Access Control)** para cont
 |-----------|-------|---------|------------|----------|
 | `dashboard:read` | ✅ | ✅ | ✅ | ❌ |
 
+### Appointments
+
+| Permissão | Owner | Manager/Receptionist* | Accountant | Employee |
+|-----------|-------|-----------------------|------------|----------|
+| `appointment:create` | ✅ | ✅ | ❌ | ✅ (somente para si) |
+| `appointment:read` | ✅ | ✅ | ❌ | ✅ (somente para si) |
+| `appointment:reschedule` | ✅ | ✅ | ❌ | ✅ (somente para si, sem trocar profissional) |
+| `appointment:update` | ✅ | ✅ | ❌ | ✅ (somente para si) |
+| `appointment:status` | ✅ | ✅ | ❌ | ✅ (somente para si) |
+| `appointment:cancel` | ✅ | ✅ | ❌ | ✅ (somente para si) |
+| `appointment:availability` | ✅ | ✅ | ❌ | ✅ (apenas disponibilidade do próprio profissional) |
+
+*Recepcionista utiliza o perfil/role `Manager` para acesso aos agendamentos.
+
 ---
 
 ## 🛠️ Uso no Backend

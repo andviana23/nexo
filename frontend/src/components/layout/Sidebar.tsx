@@ -19,21 +19,34 @@ import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/store/auth-store';
 import { useSidebar } from '@/store/ui-store';
 import {
-  BarChart3,
-  Calendar,
-  ChevronDown,
-  ChevronLeft,
-  ClipboardList,
-  CreditCard,
-  DollarSign,
-  FolderOpen,
-  LayoutDashboard,
-  Menu,
-  Package,
-  Scissors,
-  Settings,
-  UserCog,
-  Users,
+    Banknote,
+    BarChart3,
+    Calculator,
+    Calendar,
+    CalendarDays,
+    ChevronDown,
+    ChevronLeft,
+    ClipboardList,
+    CreditCard,
+    DollarSign,
+    FileText,
+    FolderOpen,
+    HandCoins,
+    LayoutDashboard,
+    Menu,
+    Package,
+    Receipt,
+    RefreshCw,
+    Scissors,
+    ScrollText,
+    Settings,
+    Tags,
+    TrendingDown,
+    TrendingUp,
+    Truck,
+    UserCog,
+    Users,
+    Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -103,8 +116,25 @@ const navigationItems: NavigationItem[] = [
       },
       {
         title: 'Serviços',
-        href: '/servicos',
+        href: '/cadastros/servicos',
         icon: Scissors,
+      },
+      {
+        title: 'Categorias',
+        href: '/cadastros/categorias',
+        icon: Tags,
+      },
+      {
+        title: 'Tipos de Recebimento',
+        href: '/cadastros/tipos-recebimento',
+        icon: Receipt,
+        roles: ['owner', 'admin', 'manager'],
+      },
+      {
+        title: 'Fornecedores',
+        href: '/cadastros/fornecedores',
+        icon: Truck,
+        roles: ['owner', 'admin', 'manager'],
       },
     ],
   },
@@ -113,10 +143,82 @@ const navigationItems: NavigationItem[] = [
     href: '/estoque',
     icon: Package,
   },
+  // Menu colapsável: Financeiro
   {
     title: 'Financeiro',
-    href: '/financeiro',
     icon: DollarSign,
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/financeiro',
+        icon: Wallet,
+      },
+      {
+        title: 'Caixa Diário',
+        href: '/caixa',
+        icon: Banknote,
+      },
+      {
+        title: 'Contas a Pagar',
+        href: '/financeiro/contas-pagar',
+        icon: TrendingDown,
+      },
+      {
+        title: 'Contas a Receber',
+        href: '/financeiro/contas-receber',
+        icon: TrendingUp,
+      },
+      {
+        title: 'Despesas Fixas',
+        href: '/financeiro/despesas-fixas',
+        icon: RefreshCw,
+      },
+      {
+        title: 'DRE',
+        href: '/financeiro/dre',
+        icon: FileText,
+        roles: ['owner', 'admin'],
+      },
+      {
+        title: 'Fluxo de Caixa',
+        href: '/financeiro/fluxo-caixa',
+        icon: BarChart3,
+        roles: ['owner', 'admin'],
+      },
+    ],
+  },
+  // Menu colapsável: Comissões
+  {
+    title: 'Comissões',
+    icon: Calculator,
+    roles: ['owner', 'admin', 'manager'],
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/comissoes',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Regras',
+        href: '/comissoes/regras',
+        icon: ScrollText,
+      },
+      {
+        title: 'Períodos',
+        href: '/comissoes/periodos',
+        icon: CalendarDays,
+      },
+      {
+        title: 'Adiantamentos',
+        href: '/comissoes/adiantamentos',
+        icon: HandCoins,
+      },
+      {
+        title: 'Itens',
+        href: '/comissoes/itens',
+        icon: Calculator,
+      },
+    ],
   },
   {
     title: 'Relatórios',
@@ -344,7 +446,11 @@ function SidebarContent({
           variant="ghost"
           size="sm"
           onClick={() => setCollapsed(!isCollapsed)}
-          className={cn('w-full', isCollapsed && 'justify-center')}
+          className={cn(
+            'w-full flex items-center gap-2',
+            isCollapsed ? 'justify-center' : 'justify-start'
+          )}
+          title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
         >
           <ChevronLeft
             className={cn(
@@ -352,7 +458,7 @@ function SidebarContent({
               isCollapsed && 'rotate-180'
             )}
           />
-          {!isCollapsed && <span className="ml-2">Recolher</span>}
+          {!isCollapsed && <span>Recolher</span>}
         </Button>
       </div>
     </div>

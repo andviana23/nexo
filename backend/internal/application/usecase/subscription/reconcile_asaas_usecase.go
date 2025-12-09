@@ -9,6 +9,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -181,28 +182,33 @@ func (uc *ReconcileAsaasUseCase) Execute(ctx context.Context, input ReconcileAsa
 
 	// 4. Criar log de conciliação
 	if uc.reconciliationRepo != nil {
-		reconciliationLog := entity.NewAsaasReconciliationLog(input.TenantID, periodStart, periodEnd)
-
-		// Converter erros para JSON
-		var detailsJSON *string
-		if len(output.Errors) > 0 {
-			detailsStr := stringSliceToJSON(output.Errors)
-			detailsJSON = &detailsStr
-		}
-
-		reconciliationLog.SetResults(
-			output.TotalProcessed,                            // totalAsaas (simplificado)
-			output.TotalProcessed,                            // totalNexo
-			output.TotalMissingNexo+output.TotalMissingAsaas, // divergences
-			output.TotalAutoFixed,                            // autoFixed
-			output.TotalDivergent,                            // pendingReview
-			detailsJSON,
-		)
-
-		if err := uc.reconciliationRepo.Create(ctx, reconciliationLog); err != nil {
-			uc.logger.Warn("erro ao criar log de conciliação", zap.Error(err))
+		tenantUUID, err := uuid.Parse(input.TenantID)
+		if err != nil {
+			uc.logger.Warn("tenant_id inválido, não foi possível criar log de conciliação", zap.Error(err))
 		} else {
-			output.ReconciliationID = reconciliationLog.ID
+			reconciliationLog := entity.NewAsaasReconciliationLog(tenantUUID, periodStart, periodEnd)
+
+			// Converter erros para JSON
+			var detailsJSON *string
+			if len(output.Errors) > 0 {
+				detailsStr := stringSliceToJSON(output.Errors)
+				detailsJSON = &detailsStr
+			}
+
+			reconciliationLog.SetResults(
+				output.TotalProcessed,                            // totalAsaas (simplificado)
+				output.TotalProcessed,                            // totalNexo
+				output.TotalMissingNexo+output.TotalMissingAsaas, // divergences
+				output.TotalAutoFixed,                            // autoFixed
+				output.TotalDivergent,                            // pendingReview
+				detailsJSON,
+			)
+
+			if err := uc.reconciliationRepo.Create(ctx, reconciliationLog); err != nil {
+				uc.logger.Warn("erro ao criar log de conciliação", zap.Error(err))
+			} else {
+				output.ReconciliationID = reconciliationLog.ID
+			}
 		}
 	}
 
@@ -228,6 +234,12 @@ func (uc *ReconcileAsaasUseCase) listContasAssinaturaOrfas(ctx context.Context, 
 
 // createContaReceberFromPayment cria uma ContaReceber a partir de um SubscriptionPayment
 func (uc *ReconcileAsaasUseCase) createContaReceberFromPayment(ctx context.Context, tenantID string, payment *entity.SubscriptionPayment) error {
+	// Converter tenantID de string para uuid.UUID
+	tenantUUID, err := uuid.Parse(tenantID)
+	if err != nil {
+		return fmt.Errorf("tenant_id inválido: %w", err)
+	}
+
 	// Determinar data de vencimento
 	dataVencimento := time.Now()
 	if payment.DueDate != nil {
@@ -246,7 +258,7 @@ func (uc *ReconcileAsaasUseCase) createContaReceberFromPayment(ctx context.Conte
 	// Criar ContaReceber
 	subscriptionIDStr := payment.SubscriptionID.String()
 	conta, err := entity.NewContaReceber(
-		tenantID,
+		tenantUUID,
 		"ASSINATURA",
 		nil, // assinaturaID (tabela legada)
 		descricao,

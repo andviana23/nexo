@@ -1,0 +1,6689 @@
+basePath: /api/v1
+definitions:
+  dto.AbrirCaixaRequest:
+    properties:
+      saldo_inicial:
+        type: string
+    required:
+    - saldo_inicial
+    type: object
+  dto.AddBarberToTurnListRequest:
+    properties:
+      professional_id:
+        type: string
+    required:
+    - professional_id
+    type: object
+  dto.AddCommandItemRequest:
+    properties:
+      desconto_percentual:
+        maximum: 100
+        minimum: 0
+        type: number
+      desconto_valor:
+        type: string
+      descricao:
+        type: string
+      item_id:
+        type: string
+      observacoes:
+        type: string
+      preco_unitario:
+        type: string
+      quantidade:
+        minimum: 1
+        type: integer
+      tipo:
+        enum:
+        - SERVICO
+        - PRODUTO
+        - PACOTE
+        type: string
+    required:
+    - descricao
+    - item_id
+    - preco_unitario
+    - quantidade
+    - tipo
+    type: object
+  dto.AddCommandPaymentRequest:
+    properties:
+      meio_pagamento_id:
+        type: string
+      observacoes:
+        type: string
+      valor_recebido:
+        type: string
+    required:
+    - meio_pagamento_id
+    - valor_recebido
+    type: object
+  dto.AjustarEstoqueRequest:
+    properties:
+      motivo:
+        type: string
+      nova_quantidade:
+        description: Aceita decimal como string
+        type: string
+      produto_id:
+        type: string
+    required:
+    - motivo
+    - nova_quantidade
+    - produto_id
+    type: object
+  dto.AlertaEstoqueBaixo:
+    properties:
+      categoria:
+        type: string
+      nome:
+        type: string
+      percentual:
+        description: Percentual do estoque (atual/mínimo * 100)
+        type: string
+      produto_id:
+        type: string
+      quantidade_atual:
+        type: string
+      quantidade_minima:
+        type: string
+      severidade:
+        description: crítico, alerta, baixo
+        type: string
+      sku:
+        type: string
+      unidade_medida:
+        type: string
+    type: object
+  dto.AppointmentResponse:
+    properties:
+      canceled_reason:
+        type: string
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      customer_name:
+        type: string
+      customer_phone:
+        type: string
+      duration:
+        type: integer
+      end_time:
+        type: string
+      google_calendar_event_id:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      professional_id:
+        type: string
+      professional_name:
+        type: string
+      services:
+        items:
+          $ref: '#/definitions/dto.AppointmentServiceResponse'
+        type: array
+      start_time:
+        type: string
+      status:
+        type: string
+      status_color:
+        type: string
+      status_display:
+        type: string
+      tenant_id:
+        type: string
+      total_price:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.AppointmentServiceResponse:
+    properties:
+      duration:
+        type: integer
+      price:
+        type: string
+      service_id:
+        type: string
+      service_name:
+        type: string
+    type: object
+  dto.AvailableBarberResponse:
+    properties:
+      foto:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.BarberTurnResponse:
+    properties:
+      created_at:
+        type: string
+      current_points:
+        type: integer
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_turn_at:
+        type: string
+      position:
+        type: integer
+      professional_id:
+        type: string
+      professional_name:
+        type: string
+      professional_photo:
+        type: string
+      professional_type:
+        type: string
+      tenant_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.BarberTurnStatsResponse:
+    properties:
+      atendimentos_hoje:
+        type: integer
+      total_ativos:
+        type: integer
+      total_geral:
+        type: integer
+      total_pausados:
+        type: integer
+      total_pontos_mes:
+        type: integer
+      ultimo_atendimento:
+        type: string
+    type: object
+  dto.BlockedTimeResponse:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: string
+      is_recurring:
+        type: boolean
+      professional_id:
+        type: string
+      reason:
+        type: string
+      recurrence_rule:
+        type: string
+      start_time:
+        type: string
+      tenant_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.CaixaDiarioResponse:
+    properties:
+      created_at:
+        type: string
+      data_abertura:
+        type: string
+      data_fechamento:
+        type: string
+      divergencia:
+        type: string
+      id:
+        type: string
+      justificativa_divergencia:
+        type: string
+      operacoes:
+        items:
+          $ref: '#/definitions/dto.OperacaoCaixaResponse'
+        type: array
+      saldo_esperado:
+        type: string
+      saldo_inicial:
+        type: string
+      saldo_real:
+        type: string
+      status:
+        type: string
+      total_entradas:
+        type: string
+      total_reforcos:
+        type: string
+      total_saidas:
+        type: string
+      total_sangrias:
+        type: string
+      updated_at:
+        type: string
+      usuario_abertura_id:
+        type: string
+      usuario_abertura_nome:
+        type: string
+      usuario_fechamento_id:
+        type: string
+      usuario_fechamento_nome:
+        type: string
+    type: object
+  dto.CaixaDiarioResumoResponse:
+    properties:
+      data_abertura:
+        type: string
+      data_fechamento:
+        type: string
+      divergencia:
+        type: string
+      id:
+        type: string
+      saldo_esperado:
+        type: string
+      saldo_inicial:
+        type: string
+      saldo_real:
+        type: string
+      status:
+        type: string
+      tem_divergencia:
+        type: boolean
+      usuario_abertura_nome:
+        type: string
+      usuario_fechamento_nome:
+        type: string
+    type: object
+  dto.CaixaStatusResponse:
+    properties:
+      aberto:
+        type: boolean
+      caixa_atual:
+        $ref: '#/definitions/dto.CaixaDiarioResponse'
+      ultimo_fechamento:
+        type: string
+    type: object
+  dto.CancelAppointmentRequest:
+    properties:
+      reason:
+        type: string
+    type: object
+  dto.CategoriaServicoResponse:
+    properties:
+      ativa:
+        type: boolean
+      atualizado_em:
+        type: string
+      cor:
+        type: string
+      criado_em:
+        type: string
+      descricao:
+        type: string
+      icone:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      tenant_id:
+        type: string
+    type: object
+  dto.CheckExistsProfessionalResponse:
+    properties:
+      exists:
+        type: boolean
+    type: object
+  dto.CheckExistsResponse:
+    properties:
+      exists:
+        type: boolean
+    type: object
+  dto.CloseCommandRequest:
+    properties:
+      deixar_saldo_divida:
+        type: boolean
+      deixar_troco_gorjeta:
+        type: boolean
+      observacoes:
+        type: string
+    type: object
+  dto.CommandItemInput:
+    properties:
+      desconto_percentual:
+        maximum: 100
+        minimum: 0
+        type: number
+      desconto_valor:
+        type: string
+      descricao:
+        type: string
+      item_id:
+        type: string
+      observacoes:
+        type: string
+      preco_unitario:
+        description: String para evitar problemas com float
+        type: string
+      quantidade:
+        minimum: 1
+        type: integer
+      tipo:
+        enum:
+        - SERVICO
+        - PRODUTO
+        - PACOTE
+        type: string
+    required:
+    - descricao
+    - item_id
+    - preco_unitario
+    - quantidade
+    - tipo
+    type: object
+  dto.CommandItemResponse:
+    properties:
+      command_id:
+        type: string
+      criado_em:
+        type: string
+      desconto_percentual:
+        type: string
+      desconto_valor:
+        type: string
+      descricao:
+        type: string
+      id:
+        type: string
+      item_id:
+        type: string
+      observacoes:
+        type: string
+      preco_final:
+        type: string
+      preco_unitario:
+        type: string
+      quantidade:
+        type: integer
+      tipo:
+        type: string
+    type: object
+  dto.CommandPaymentResponse:
+    properties:
+      command_id:
+        type: string
+      criado_em:
+        type: string
+      criado_por:
+        type: string
+      id:
+        type: string
+      meio_pagamento_id:
+        type: string
+      observacoes:
+        type: string
+      taxa_fixa:
+        type: string
+      taxa_percentual:
+        type: string
+      valor_liquido:
+        type: string
+      valor_recebido:
+        type: string
+    type: object
+  dto.CommandResponse:
+    properties:
+      appointment_id:
+        type: string
+      atualizado_em:
+        type: string
+      criado_em:
+        type: string
+      customer_id:
+        type: string
+      deixar_saldo_divida:
+        type: boolean
+      deixar_troco_gorjeta:
+        type: boolean
+      desconto:
+        type: string
+      fechado_em:
+        type: string
+      fechado_por:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.CommandItemResponse'
+        type: array
+      numero:
+        type: string
+      observacoes:
+        type: string
+      payments:
+        items:
+          $ref: '#/definitions/dto.CommandPaymentResponse'
+        type: array
+      saldo_devedor:
+        type: string
+      status:
+        type: string
+      subtotal:
+        type: string
+      total:
+        type: string
+      total_recebido:
+        type: string
+      troco:
+        type: string
+    type: object
+  dto.CompensacaoBancariaResponse:
+    properties:
+      d_mais:
+        type: integer
+      data_compensacao:
+        type: string
+      data_compensado:
+        type: string
+      data_transacao:
+        type: string
+      id:
+        type: string
+      meio_pagamento_id:
+        type: string
+      receita_id:
+        type: string
+      status:
+        type: string
+      taxa_fixa:
+        type: string
+      taxa_percentual:
+        type: string
+      valor_bruto:
+        type: string
+      valor_liquido:
+        type: string
+    type: object
+  dto.ContaPagarResponse:
+    properties:
+      atualizado_em:
+        type: string
+      categoria_id:
+        type: string
+      comprovante_url:
+        type: string
+      criado_em:
+        type: string
+      data_pagamento:
+        type: string
+      data_vencimento:
+        type: string
+      descricao:
+        type: string
+      fornecedor:
+        type: string
+      id:
+        type: string
+      observacoes:
+        type: string
+      periodicidade:
+        type: string
+      pix_code:
+        type: string
+      recorrente:
+        type: boolean
+      status:
+        type: string
+      tipo:
+        type: string
+      valor:
+        type: string
+    type: object
+  dto.ContaReceberResponse:
+    properties:
+      assinatura_id:
+        type: string
+      atualizado_em:
+        type: string
+      criado_em:
+        type: string
+      data_recebimento:
+        type: string
+      data_vencimento:
+        type: string
+      descricao_origem:
+        type: string
+      id:
+        type: string
+      observacoes:
+        type: string
+      origem:
+        type: string
+      status:
+        type: string
+      valor:
+        type: string
+      valor_aberto:
+        type: string
+      valor_pago:
+        type: string
+    type: object
+  dto.CreateAppointmentRequest:
+    properties:
+      customer_id:
+        type: string
+      notes:
+        type: string
+      professional_id:
+        type: string
+      service_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      start_time:
+        type: string
+    required:
+    - customer_id
+    - professional_id
+    - service_ids
+    - start_time
+    type: object
+  dto.CreateBlockedTimeRequest:
+    properties:
+      end_time:
+        type: string
+      is_recurring:
+        type: boolean
+      professional_id:
+        type: string
+      reason:
+        maxLength: 255
+        minLength: 3
+        type: string
+      recurrence_rule:
+        type: string
+      start_time:
+        type: string
+    required:
+    - end_time
+    - professional_id
+    - reason
+    - start_time
+    type: object
+  dto.CreateCategoriaServicoRequest:
+    properties:
+      cor:
+        type: string
+      descricao:
+        maxLength: 500
+        type: string
+      icone:
+        maxLength: 50
+        type: string
+      nome:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - nome
+    type: object
+  dto.CreateCommandRequest:
+    properties:
+      appointment_id:
+        type: string
+      customer_id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.CommandItemInput'
+        minItems: 1
+        type: array
+      observacoes:
+        type: string
+    required:
+    - customer_id
+    - items
+    type: object
+  dto.CreateContaPagarRequest:
+    properties:
+      categoria_id:
+        type: string
+      data_vencimento:
+        type: string
+      descricao:
+        minLength: 3
+        type: string
+      fornecedor:
+        type: string
+      observacoes:
+        type: string
+      periodicidade:
+        type: string
+      pix_code:
+        type: string
+      recorrente:
+        type: boolean
+      tipo:
+        enum:
+        - FIXO
+        - VARIAVEL
+        type: string
+      valor:
+        type: string
+    required:
+    - categoria_id
+    - data_vencimento
+    - descricao
+    - fornecedor
+    - tipo
+    - valor
+    type: object
+  dto.CreateContaReceberRequest:
+    properties:
+      assinatura_id:
+        type: string
+      data_vencimento:
+        type: string
+      descricao_origem:
+        type: string
+      observacoes:
+        type: string
+      origem:
+        type: string
+      valor:
+        type: string
+    required:
+    - data_vencimento
+    - descricao_origem
+    - origem
+    - valor
+    type: object
+  dto.CreateCustomerRequest:
+    properties:
+      cpf:
+        type: string
+      data_nascimento:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      email:
+        description: Campos Opcionais
+        maxLength: 255
+        type: string
+      endereco_bairro:
+        maxLength: 100
+        type: string
+      endereco_cep:
+        type: string
+      endereco_cidade:
+        maxLength: 100
+        type: string
+      endereco_complemento:
+        maxLength: 100
+        type: string
+      endereco_estado:
+        type: string
+      endereco_logradouro:
+        description: Endereço
+        maxLength: 255
+        type: string
+      endereco_numero:
+        maxLength: 20
+        type: string
+      genero:
+        enum:
+        - M
+        - F
+        - NB
+        - PNI
+        type: string
+      nome:
+        description: Campos Obrigatórios
+        maxLength: 255
+        minLength: 3
+        type: string
+      observacoes:
+        description: CRM
+        maxLength: 500
+        type: string
+      tags:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+      telefone:
+        maxLength: 20
+        minLength: 10
+        type: string
+    required:
+    - nome
+    - telefone
+    type: object
+  dto.CreateDespesaFixaRequest:
+    properties:
+      categoria_id:
+        type: string
+      descricao:
+        maxLength: 255
+        minLength: 3
+        type: string
+      dia_vencimento:
+        maximum: 31
+        minimum: 1
+        type: integer
+      fornecedor:
+        type: string
+      observacoes:
+        type: string
+      unidade_id:
+        type: string
+      valor:
+        description: Dinheiro sempre string
+        type: string
+    required:
+    - descricao
+    - dia_vencimento
+    - valor
+    type: object
+  dto.CreateMeioPagamentoRequest:
+    properties:
+      ativo:
+        type: boolean
+      bandeira:
+        maxLength: 50
+        type: string
+      cor:
+        description: 'Hexadecimal #RRGGBB'
+        type: string
+      d_mais:
+        description: Dias para compensação
+        type: integer
+      icone:
+        description: Material Icons name
+        type: string
+      nome:
+        maxLength: 100
+        type: string
+      observacoes:
+        maxLength: 500
+        type: string
+      ordem_exibicao:
+        type: integer
+      taxa:
+        description: Percentual (0-100)
+        type: string
+      taxa_fixa:
+        description: Valor fixo R$
+        type: string
+      tipo:
+        enum:
+        - DINHEIRO
+        - PIX
+        - CREDITO
+        - DEBITO
+        - TRANSFERENCIA
+        - BOLETO
+        - OUTRO
+        type: string
+    required:
+    - nome
+    - tipo
+    type: object
+  dto.CreateProfessionalRequest:
+    properties:
+      comissao:
+        description: String para precisão decimal
+        type: string
+      cpf:
+        description: CPF (11) ou CNPJ (14)
+        maxLength: 14
+        minLength: 11
+        type: string
+      data_admissao:
+        type: string
+      email:
+        type: string
+      especialidades:
+        items:
+          type: string
+        type: array
+      foto:
+        type: string
+      horario_trabalho:
+        description: JSON string
+        type: string
+      nome:
+        maxLength: 100
+        minLength: 2
+        type: string
+      observacoes:
+        type: string
+      status:
+        enum:
+        - ATIVO
+        - INATIVO
+        - FERIAS
+        - LICENCA
+        - DEMITIDO
+        type: string
+      telefone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      tipo:
+        enum:
+        - BARBEIRO
+        - GERENTE
+        - RECEPCIONISTA
+        - OUTRO
+        type: string
+      tipo_comissao:
+        enum:
+        - PERCENTUAL
+        - FIXO
+        type: string
+    required:
+    - cpf
+    - data_admissao
+    - email
+    - nome
+    - telefone
+    - tipo
+    type: object
+  dto.CreateServicoRequest:
+    properties:
+      categoria_id:
+        type: string
+      comissao:
+        description: Percentual como string
+        type: string
+      cor:
+        type: string
+      descricao:
+        maxLength: 1000
+        type: string
+      duracao:
+        minimum: 5
+        type: integer
+      imagem:
+        type: string
+      nome:
+        maxLength: 255
+        minLength: 2
+        type: string
+      observacoes:
+        maxLength: 2000
+        type: string
+      preco:
+        description: Dinheiro como string
+        type: string
+      profissionais_ids:
+        items:
+          type: string
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+    required:
+    - duracao
+    - nome
+    - preco
+    type: object
+  dto.CustomerAddressExport:
+    properties:
+      bairro:
+        type: string
+      cep:
+        type: string
+      cidade:
+        type: string
+      complemento:
+        type: string
+      estado:
+        type: string
+      logradouro:
+        type: string
+      numero:
+        type: string
+    type: object
+  dto.CustomerAppointmentExport:
+    properties:
+      data:
+        type: string
+      profissional:
+        type: string
+      status:
+        type: string
+      valor_total:
+        type: string
+    type: object
+  dto.CustomerExportResponse:
+    properties:
+      dados_pessoais:
+        properties:
+          cpf:
+            type: string
+          data_nascimento:
+            type: string
+          email:
+            type: string
+          endereco:
+            $ref: '#/definitions/dto.CustomerAddressExport'
+          genero:
+            type: string
+          nome:
+            type: string
+          telefone:
+            type: string
+        type: object
+      data_exportacao:
+        type: string
+      historico_atendimentos:
+        items:
+          $ref: '#/definitions/dto.CustomerAppointmentExport'
+        type: array
+      metricas:
+        properties:
+          ticket_medio:
+            type: string
+          total_gasto:
+            type: string
+          total_visitas:
+            type: integer
+        type: object
+    type: object
+  dto.CustomerResponse:
+    properties:
+      ativo:
+        type: boolean
+      atualizado_em:
+        type: string
+      cpf:
+        type: string
+      criado_em:
+        type: string
+      data_nascimento:
+        type: string
+      email:
+        type: string
+      endereco_bairro:
+        type: string
+      endereco_cep:
+        type: string
+      endereco_cidade:
+        type: string
+      endereco_complemento:
+        type: string
+      endereco_estado:
+        type: string
+      endereco_logradouro:
+        description: Endereço
+        type: string
+      endereco_numero:
+        type: string
+      genero:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      observacoes:
+        description: CRM
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      telefone:
+        type: string
+      tenant_id:
+        type: string
+    type: object
+  dto.CustomerStatsResponse:
+    properties:
+      novos_ultimos_30_dias:
+        type: integer
+      total_ativos:
+        type: integer
+      total_geral:
+        type: integer
+      total_inativos:
+        type: integer
+    type: object
+  dto.CustomerSummaryResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      telefone:
+        type: string
+    type: object
+  dto.CustomerWithHistoryResponse:
+    properties:
+      ativo:
+        type: boolean
+      atualizado_em:
+        type: string
+      cpf:
+        type: string
+      criado_em:
+        type: string
+      data_nascimento:
+        type: string
+      email:
+        type: string
+      endereco_bairro:
+        type: string
+      endereco_cep:
+        type: string
+      endereco_cidade:
+        type: string
+      endereco_complemento:
+        type: string
+      endereco_estado:
+        type: string
+      endereco_logradouro:
+        description: Endereço
+        type: string
+      endereco_numero:
+        type: string
+      frequencia_media_dias:
+        type: integer
+      genero:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      observacoes:
+        description: CRM
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      telefone:
+        type: string
+      tenant_id:
+        type: string
+      ticket_medio:
+        type: string
+      total_atendimentos:
+        type: integer
+      total_gasto:
+        type: string
+      ultimo_atendimento:
+        type: string
+    type: object
+  dto.DREMensalResponse:
+    properties:
+      custo_comissoes:
+        type: string
+      custo_insumos:
+        type: string
+      custo_variavel_total:
+        type: string
+      despesa_fixa:
+        type: string
+      despesa_total:
+        type: string
+      despesa_variavel:
+        type: string
+      id:
+        type: string
+      lucro_liquido:
+        type: string
+      margem_bruta:
+        type: string
+      margem_operacional:
+        type: string
+      mes_ano:
+        type: string
+      processado_em:
+        type: string
+      receita_planos:
+        type: string
+      receita_produtos:
+        type: string
+      receita_servicos:
+        type: string
+      receita_total:
+        type: string
+      resultado_bruto:
+        type: string
+      resultado_operacional:
+        type: string
+    type: object
+  dto.DashboardMetricsResponse:
+    properties:
+      average_ticket:
+        type: string
+      break_even_point:
+        type: string
+      burn_rate:
+        type: string
+      runway:
+        type: number
+    type: object
+  dto.DashboardSummaryResponse:
+    properties:
+      current_balance:
+        description: Cashflow
+        type: string
+      custo_total:
+        type: string
+      ebitda:
+        type: string
+      lucro_operacional:
+        type: string
+      margem_lucro:
+        type: string
+      metrics:
+        allOf:
+        - $ref: '#/definitions/dto.DashboardMetricsResponse'
+        description: Metrics
+      net_cashflow:
+        type: string
+      payables_overdue:
+        type: string
+      payables_paid:
+        type: string
+      payables_pending:
+        type: string
+      payables_this_month:
+        type: string
+      payables_total:
+        description: Payables
+        type: string
+      projected_balance:
+        type: string
+      receita_bruta:
+        description: DRE
+        type: string
+      receita_liquida:
+        type: string
+      receivables_overdue:
+        type: string
+      receivables_pending:
+        type: string
+      receivables_received:
+        type: string
+      receivables_this_month:
+        type: string
+      receivables_total:
+        description: Receivables
+        type: string
+      total_expense:
+        type: string
+      total_income:
+        type: string
+    type: object
+  dto.DespesaFixaResponse:
+    properties:
+      ativo:
+        type: boolean
+      atualizado_em:
+        type: string
+      categoria_id:
+        type: string
+      criado_em:
+        type: string
+      descricao:
+        type: string
+      dia_vencimento:
+        type: integer
+      fornecedor:
+        type: string
+      id:
+        type: string
+      observacoes:
+        type: string
+      tenant_id:
+        description: Opcional, pode ser omitido
+        type: string
+      unidade_id:
+        type: string
+      valor:
+        description: Dinheiro sempre string
+        type: string
+    type: object
+  dto.DespesasFixasListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.DespesaFixaResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.DespesasFixasSummaryResponse:
+    properties:
+      total:
+        type: integer
+      total_ativas:
+        type: integer
+      valor_total:
+        description: Dinheiro sempre string
+        type: string
+    type: object
+  dto.ErrorResponse:
+    properties:
+      details:
+        additionalProperties: true
+        type: object
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  dto.FecharCaixaRequest:
+    properties:
+      justificativa:
+        type: string
+      saldo_real:
+        type: string
+    required:
+    - saldo_real
+    type: object
+  dto.FinancialDashboardResponse:
+    properties:
+      end_date:
+        type: string
+      month:
+        type: string
+      start_date:
+        type: string
+      summary:
+        $ref: '#/definitions/dto.DashboardSummaryResponse'
+    type: object
+  dto.FluxoCaixaDiarioResponse:
+    properties:
+      data:
+        type: string
+      entradas_confirmadas:
+        type: string
+      entradas_previstas:
+        type: string
+      id:
+        type: string
+      processado_em:
+        type: string
+      saidas_pagas:
+        type: string
+      saidas_previstas:
+        type: string
+      saldo_final:
+        type: string
+      saldo_inicial:
+        type: string
+    type: object
+  dto.GerarContasRequest:
+    properties:
+      ano:
+        description: Se vazio, usa ano atual
+        type: integer
+      mes:
+        description: Se vazio, usa mês atual
+        type: integer
+    type: object
+  dto.GerarContasResponse:
+    properties:
+      contas_criadas:
+        type: integer
+      detalhes_erros:
+        items:
+          type: string
+        type: array
+      erros:
+        type: integer
+      tempo_execucao_ms:
+        type: integer
+      total_despesas:
+        type: integer
+    type: object
+  dto.ItemEntradaRequest:
+    properties:
+      produto_id:
+        type: string
+      quantidade:
+        type: integer
+      valor_unitario:
+        type: string
+    required:
+    - produto_id
+    - quantidade
+    - valor_unitario
+    type: object
+  dto.ListAlertasEstoqueBaixoResponse:
+    properties:
+      alertas:
+        items:
+          $ref: '#/definitions/dto.AlertaEstoqueBaixo'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ListAppointmentsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.AppointmentResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.ListAvailableBarbersResponse:
+    properties:
+      barbers:
+        items:
+          $ref: '#/definitions/dto.AvailableBarberResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ListBarbersTurnResponse:
+    properties:
+      barbers:
+        items:
+          $ref: '#/definitions/dto.BarberTurnResponse'
+        type: array
+      next_barber:
+        $ref: '#/definitions/dto.NextBarberResponse'
+      stats:
+        $ref: '#/definitions/dto.BarberTurnStatsResponse'
+      total:
+        type: integer
+    type: object
+  dto.ListBlockedTimesResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.BlockedTimeResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ListCaixaHistoricoResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CaixaDiarioResumoResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.ListCategoriasServicosResponse:
+    properties:
+      categorias:
+        items:
+          $ref: '#/definitions/dto.CategoriaServicoResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ListCustomersResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.CustomerResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.ListHistorySummaryResponse:
+    properties:
+      summary:
+        items:
+          $ref: '#/definitions/dto.TurnHistorySummaryResponse'
+        type: array
+    type: object
+  dto.ListMeiosPagamentoResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.MeioPagamentoResponse'
+        type: array
+      total:
+        type: integer
+      total_ativo:
+        type: integer
+    type: object
+  dto.ListProfessionalsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.ProfessionalResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.ListServicosResponse:
+    properties:
+      servicos:
+        items:
+          $ref: '#/definitions/dto.ServicoResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ListTurnHistoryResponse:
+    properties:
+      history:
+        items:
+          $ref: '#/definitions/dto.TurnHistoryResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.MarcarPagamentoRequest:
+    properties:
+      comprovante_url:
+        type: string
+      data_pagamento:
+        type: string
+    required:
+    - data_pagamento
+    type: object
+  dto.MarcarRecebimentoRequest:
+    properties:
+      data_recebimento:
+        type: string
+      valor_pago:
+        type: string
+    required:
+    - data_recebimento
+    - valor_pago
+    type: object
+  dto.MeioPagamentoResponse:
+    properties:
+      ativo:
+        type: boolean
+      atualizado_em:
+        type: string
+      bandeira:
+        type: string
+      cor:
+        type: string
+      criado_em:
+        type: string
+      d_mais:
+        type: integer
+      d_mais_label:
+        description: 'Ex: "D+30"'
+        type: string
+      icone:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      observacoes:
+        type: string
+      ordem_exibicao:
+        type: integer
+      taxa:
+        description: Percentual como string
+        type: string
+      taxa_fixa:
+        description: Valor fixo como string
+        type: string
+      tenant_id:
+        type: string
+      tipo:
+        type: string
+      tipo_label:
+        description: Nome amigável do tipo
+        type: string
+    type: object
+  dto.MetaBarbeiroResponse:
+    properties:
+      atualizado_em:
+        type: string
+      barbeiro_id:
+        type: string
+      criado_em:
+        type: string
+      id:
+        type: string
+      mes_ano:
+        type: string
+      meta_produtos:
+        type: string
+      meta_servicos_extras:
+        type: string
+      meta_servicos_gerais:
+        type: string
+      percentual_produtos:
+        type: string
+      percentual_servicos_extras:
+        type: string
+      percentual_servicos_gerais:
+        type: string
+      realizado_produtos:
+        type: string
+      realizado_servicos_extras:
+        type: string
+      realizado_servicos_gerais:
+        type: string
+    type: object
+  dto.MetaMensalResponse:
+    properties:
+      atualizado_em:
+        type: string
+      criado_em:
+        type: string
+      id:
+        type: string
+      mes_ano:
+        type: string
+      meta_faturamento:
+        type: string
+      origem:
+        type: string
+      percentual:
+        type: string
+      realizado:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.MetaTicketResponse:
+    properties:
+      atualizado_em:
+        type: string
+      barbeiro_id:
+        type: string
+      criado_em:
+        type: string
+      id:
+        type: string
+      mes_ano:
+        type: string
+      meta_valor:
+        type: string
+      percentual:
+        type: string
+      ticket_medio_realizado:
+        type: string
+      tipo:
+        type: string
+    type: object
+  dto.MovimentacaoResponse:
+    properties:
+      created_at:
+        type: string
+      data:
+        description: Data da movimentação
+        type: string
+      fornecedor_id:
+        type: string
+      id:
+        type: string
+      observacoes:
+        type: string
+      produto_id:
+        type: string
+      produto_nome:
+        type: string
+      quantidade:
+        description: Decimal como string
+        type: string
+      tenant_id:
+        type: string
+      tipo:
+        type: string
+      usuario_id:
+        type: string
+      valor_total:
+        type: string
+      valor_unitario:
+        type: string
+    type: object
+  dto.NextBarberResponse:
+    properties:
+      current_points:
+        type: integer
+      professional_id:
+        type: string
+      professional_name:
+        type: string
+      professional_photo:
+        type: string
+    type: object
+  dto.OperacaoCaixaResponse:
+    properties:
+      created_at:
+        type: string
+      descricao:
+        type: string
+      destino:
+        type: string
+      id:
+        type: string
+      origem:
+        type: string
+      tipo:
+        type: string
+      usuario_id:
+        type: string
+      usuario_nome:
+        type: string
+      valor:
+        type: string
+    type: object
+  dto.ParametrosSimulacaoDTO:
+    properties:
+      custo_por_minuto:
+        type: number
+      observacoes_adicionais:
+        type: string
+      quantidade_mensal:
+        type: integer
+      tempo_medio_minutos:
+        type: integer
+    type: object
+  dto.PrecificacaoConfigResponse:
+    properties:
+      atualizado_em:
+        type: string
+      comissao_percentual_default:
+        type: string
+      criado_em:
+        type: string
+      id:
+        type: string
+      imposto_percentual:
+        type: string
+      margem_desejada:
+        type: string
+      markup_alvo:
+        type: string
+    type: object
+  dto.PrecificacaoSimulacaoResponse:
+    properties:
+      comissao_percentual:
+        type: string
+      criado_em:
+        type: string
+      custo_mao_de_obra:
+        type: string
+      custo_materiais:
+        type: string
+      custo_total:
+        type: string
+      diferenca_percentual:
+        type: string
+      id:
+        type: string
+      imposto_percentual:
+        type: string
+      item_id:
+        type: string
+      lucro_estimado:
+        type: string
+      margem_desejada:
+        type: string
+      margem_final:
+        type: string
+      preco_atual:
+        type: string
+      preco_sugerido:
+        type: string
+      tipo_item:
+        type: string
+    type: object
+  dto.ProfessionalResponse:
+    properties:
+      atualizado_em:
+        type: string
+      comissao:
+        type: string
+      cpf:
+        type: string
+      criado_em:
+        type: string
+      data_admissao:
+        type: string
+      data_demissao:
+        type: string
+      email:
+        type: string
+      especialidades:
+        items:
+          type: string
+        type: array
+      foto:
+        type: string
+      horario_trabalho:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      observacoes:
+        type: string
+      status:
+        type: string
+      telefone:
+        type: string
+      tenant_id:
+        type: string
+      tipo:
+        type: string
+      tipo_comissao:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dto.ProjecaoMensalResponse:
+    properties:
+      ano:
+        type: integer
+      confianca:
+        description: '"Alta", "Média", "Baixa"'
+        type: string
+      despesas_fixas:
+        type: string
+      despesas_projetadas:
+        type: string
+      dias_uteis:
+        type: integer
+      lucro_projetado:
+        type: string
+      mes:
+        type: integer
+      meta_diaria:
+        type: string
+      nome_mes:
+        type: string
+      receita_projetada:
+        type: string
+    type: object
+  dto.ProjecoesResponse:
+    properties:
+      data_geracao:
+        type: string
+      media_despesas_3_meses:
+        type: string
+      media_receita_3_meses:
+        type: string
+      projecoes:
+        items:
+          $ref: '#/definitions/dto.ProjecaoMensalResponse'
+        type: array
+      tendencia_receita:
+        description: '"Crescente", "Estável", "Decrescente"'
+        type: string
+    type: object
+  dto.RecordTurnRequest:
+    properties:
+      professional_id:
+        type: string
+    required:
+    - professional_id
+    type: object
+  dto.RecordTurnResponse:
+    properties:
+      last_turn_at:
+        type: string
+      message:
+        type: string
+      new_points:
+        type: integer
+      previous_points:
+        type: integer
+      professional_id:
+        type: string
+      professional_name:
+        type: string
+    type: object
+  dto.ReforcoRequest:
+    properties:
+      descricao:
+        minLength: 5
+        type: string
+      origem:
+        enum:
+        - TROCO
+        - CAPITAL_GIRO
+        - TRANSFERENCIA
+        - OUTROS
+        type: string
+      valor:
+        type: string
+    required:
+    - descricao
+    - origem
+    - valor
+    type: object
+  dto.RegistrarEntradaRequest:
+    properties:
+      data_entrada:
+        description: YYYY-MM-DD
+        type: string
+      fornecedor_id:
+        type: string
+      gerar_financeiro:
+        description: Se true, cria conta a pagar
+        type: boolean
+      itens:
+        items:
+          $ref: '#/definitions/dto.ItemEntradaRequest'
+        minItems: 1
+        type: array
+      observacoes:
+        type: string
+    required:
+    - fornecedor_id
+    - itens
+    type: object
+  dto.RegistrarSaidaRequest:
+    properties:
+      motivo:
+        enum:
+        - VENDA
+        - USO_INTERNO
+        - PERDA
+        - DEVOLUCAO
+        type: string
+      observacoes:
+        type: string
+      produto_id:
+        type: string
+      quantidade:
+        description: Aceita decimal como string
+        type: string
+    required:
+    - motivo
+    - produto_id
+    - quantidade
+    type: object
+  dto.RescheduleAppointmentRequest:
+    properties:
+      new_start_time:
+        type: string
+      professional_id:
+        type: string
+    required:
+    - new_start_time
+    type: object
+  dto.ResetTurnListRequest:
+    properties:
+      save_history:
+        description: Se true, salva snapshot antes de resetar
+        type: boolean
+    type: object
+  dto.ResetTurnListResponse:
+    properties:
+      message:
+        type: string
+      snapshot:
+        $ref: '#/definitions/dto.TurnResetSnapshot'
+    type: object
+  dto.SangriaRequest:
+    properties:
+      descricao:
+        minLength: 5
+        type: string
+      destino:
+        enum:
+        - DEPOSITO
+        - PAGAMENTO
+        - COFRE
+        - OUTROS
+        type: string
+      valor:
+        type: string
+    required:
+    - descricao
+    - destino
+    - valor
+    type: object
+  dto.SaveConfigPrecificacaoRequest:
+    properties:
+      comissao_default:
+        type: string
+      imposto_percentual:
+        type: string
+      margem_desejada:
+        type: string
+      markup_alvo:
+        type: string
+    required:
+    - comissao_default
+    - imposto_percentual
+    - margem_desejada
+    - markup_alvo
+    type: object
+  dto.ServicoResponse:
+    properties:
+      ativo:
+        type: boolean
+      atualizado_em:
+        type: string
+      categoria_cor:
+        type: string
+      categoria_id:
+        type: string
+      categoria_nome:
+        type: string
+      comissao:
+        description: Percentual como string
+        type: string
+      cor:
+        type: string
+      criado_em:
+        type: string
+      descricao:
+        type: string
+      duracao:
+        description: em minutos
+        type: integer
+      duracao_formatada:
+        type: string
+      id:
+        type: string
+      imagem:
+        type: string
+      nome:
+        type: string
+      observacoes:
+        type: string
+      preco:
+        description: Retornado como string para precisão
+        type: string
+      preco_centavos:
+        type: integer
+      profissionais_ids:
+        items:
+          type: string
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+      tenant_id:
+        type: string
+    type: object
+  dto.ServicoStatsResponse:
+    properties:
+      comissao_media:
+        type: string
+      duracao_media:
+        type: number
+      preco_medio:
+        type: string
+      servicos_ativos:
+        type: integer
+      servicos_inativos:
+        type: integer
+      total_servicos:
+        type: integer
+    type: object
+  dto.SetMetaBarbeiroRequest:
+    properties:
+      barbeiro_id:
+        type: string
+      mes_ano:
+        type: string
+      meta_produtos:
+        type: string
+      meta_servicos_extras:
+        type: string
+      meta_servicos_gerais:
+        type: string
+    required:
+    - barbeiro_id
+    - mes_ano
+    - meta_produtos
+    - meta_servicos_extras
+    - meta_servicos_gerais
+    type: object
+  dto.SetMetaMensalRequest:
+    properties:
+      mes_ano:
+        description: YYYY-MM
+        type: string
+      meta_faturamento:
+        type: string
+      origem:
+        enum:
+        - MANUAL
+        - AUTOMATICA
+        type: string
+    required:
+    - mes_ano
+    - meta_faturamento
+    - origem
+    type: object
+  dto.SetMetaTicketRequest:
+    properties:
+      barbeiro_id:
+        type: string
+      mes_ano:
+        type: string
+      meta_valor:
+        type: string
+      tipo:
+        enum:
+        - GERAL
+        - BARBEIRO
+        type: string
+    required:
+    - mes_ano
+    - meta_valor
+    - tipo
+    type: object
+  dto.SimularPrecoRequest:
+    properties:
+      custo_mao_de_obra:
+        type: string
+      custo_materiais:
+        type: string
+      item_id:
+        type: string
+      parametros:
+        $ref: '#/definitions/dto.ParametrosSimulacaoDTO'
+      preco_atual:
+        type: string
+      tipo_item:
+        enum:
+        - SERVICO
+        - PRODUTO
+        type: string
+    required:
+    - custo_mao_de_obra
+    - custo_materiais
+    - item_id
+    - preco_atual
+    - tipo_item
+    type: object
+  dto.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dto.ToggleStatusResponse:
+    properties:
+      is_active:
+        type: boolean
+      message:
+        type: string
+      professional_id:
+        type: string
+      professional_name:
+        type: string
+    type: object
+  dto.TotaisCaixaResponse:
+    properties:
+      saldo_atual:
+        type: string
+      total_despesas:
+        type: string
+      total_reforcos:
+        type: string
+      total_sangrias:
+        type: string
+      total_vendas:
+        type: string
+    type: object
+  dto.TurnHistoryResponse:
+    properties:
+      created_at:
+        type: string
+      final_points:
+        type: integer
+      id:
+        type: string
+      month_year:
+        type: string
+      professional_id:
+        type: string
+      professional_name:
+        type: string
+      tenant_id:
+        type: string
+      total_turns:
+        type: integer
+    type: object
+  dto.TurnHistorySummaryResponse:
+    properties:
+      media_atendimentos:
+        type: number
+      month_year:
+        type: string
+      total_atendimentos:
+        type: integer
+      total_barbeiros:
+        type: integer
+    type: object
+  dto.TurnResetSnapshot:
+    properties:
+      history_records_created:
+        type: integer
+      month_year:
+        type: string
+      total_barbers:
+        type: integer
+      total_points_reset:
+        type: integer
+    type: object
+  dto.UpdateAppointmentStatusRequest:
+    properties:
+      reason:
+        type: string
+      status:
+        enum:
+        - CREATED
+        - CONFIRMED
+        - CHECKED_IN
+        - IN_SERVICE
+        - AWAITING_PAYMENT
+        - DONE
+        - NO_SHOW
+        - CANCELED
+        type: string
+    required:
+    - status
+    type: object
+  dto.UpdateCategoriaServicoRequest:
+    properties:
+      cor:
+        type: string
+      descricao:
+        maxLength: 500
+        type: string
+      icone:
+        maxLength: 50
+        type: string
+      nome:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - nome
+    type: object
+  dto.UpdateContaPagarRequest:
+    properties:
+      categoria_id:
+        type: string
+      data_vencimento:
+        type: string
+      descricao:
+        minLength: 3
+        type: string
+      fornecedor:
+        type: string
+      observacoes:
+        type: string
+      periodicidade:
+        type: string
+      pix_code:
+        type: string
+      recorrente:
+        type: boolean
+      tipo:
+        enum:
+        - FIXO
+        - VARIAVEL
+        type: string
+      valor:
+        type: string
+    type: object
+  dto.UpdateContaReceberRequest:
+    properties:
+      assinatura_id:
+        type: string
+      data_vencimento:
+        type: string
+      descricao_origem:
+        type: string
+      observacoes:
+        type: string
+      origem:
+        type: string
+      valor:
+        type: string
+    type: object
+  dto.UpdateCustomerRequest:
+    properties:
+      cpf:
+        type: string
+      data_nascimento:
+        type: string
+      email:
+        maxLength: 255
+        type: string
+      endereco_bairro:
+        maxLength: 100
+        type: string
+      endereco_cep:
+        type: string
+      endereco_cidade:
+        maxLength: 100
+        type: string
+      endereco_complemento:
+        maxLength: 100
+        type: string
+      endereco_estado:
+        type: string
+      endereco_logradouro:
+        description: Endereço
+        maxLength: 255
+        type: string
+      endereco_numero:
+        maxLength: 20
+        type: string
+      genero:
+        enum:
+        - M
+        - F
+        - NB
+        - PNI
+        type: string
+      nome:
+        maxLength: 255
+        minLength: 3
+        type: string
+      observacoes:
+        description: CRM
+        maxLength: 500
+        type: string
+      tags:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+      telefone:
+        maxLength: 20
+        minLength: 10
+        type: string
+    type: object
+  dto.UpdateDespesaFixaRequest:
+    properties:
+      categoria_id:
+        type: string
+      descricao:
+        maxLength: 255
+        minLength: 3
+        type: string
+      dia_vencimento:
+        maximum: 31
+        minimum: 1
+        type: integer
+      fornecedor:
+        type: string
+      observacoes:
+        type: string
+      unidade_id:
+        type: string
+      valor:
+        description: Dinheiro sempre string
+        type: string
+    required:
+    - descricao
+    - dia_vencimento
+    - valor
+    type: object
+  dto.UpdateMeioPagamentoRequest:
+    properties:
+      ativo:
+        type: boolean
+      bandeira:
+        maxLength: 50
+        type: string
+      cor:
+        type: string
+      d_mais:
+        type: integer
+      icone:
+        type: string
+      nome:
+        maxLength: 100
+        type: string
+      observacoes:
+        maxLength: 500
+        type: string
+      ordem_exibicao:
+        type: integer
+      taxa:
+        type: string
+      taxa_fixa:
+        type: string
+      tipo:
+        enum:
+        - DINHEIRO
+        - PIX
+        - CREDITO
+        - DEBITO
+        - TRANSFERENCIA
+        - BOLETO
+        - OUTRO
+        type: string
+    type: object
+  dto.UpdateProfessionalRequest:
+    properties:
+      comissao:
+        type: string
+      cpf:
+        description: CPF (11) ou CNPJ (14)
+        maxLength: 14
+        minLength: 11
+        type: string
+      data_admissao:
+        type: string
+      data_demissao:
+        type: string
+      email:
+        type: string
+      especialidades:
+        items:
+          type: string
+        type: array
+      foto:
+        type: string
+      horario_trabalho:
+        type: string
+      nome:
+        maxLength: 100
+        minLength: 2
+        type: string
+      observacoes:
+        type: string
+      status:
+        enum:
+        - ATIVO
+        - INATIVO
+        - FERIAS
+        - LICENCA
+        - DEMITIDO
+        type: string
+      telefone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      tipo:
+        enum:
+        - BARBEIRO
+        - GERENTE
+        - RECEPCIONISTA
+        - OUTRO
+        type: string
+      tipo_comissao:
+        enum:
+        - PERCENTUAL
+        - FIXO
+        type: string
+    required:
+    - cpf
+    - data_admissao
+    - email
+    - nome
+    - telefone
+    - tipo
+    type: object
+  dto.UpdateProfessionalStatusRequest:
+    properties:
+      data_demissao:
+        type: string
+      status:
+        enum:
+        - ATIVO
+        - INATIVO
+        - FERIAS
+        - LICENCA
+        - DEMITIDO
+        type: string
+    required:
+    - status
+    type: object
+  dto.UpdateServicoRequest:
+    properties:
+      categoria_id:
+        type: string
+      comissao:
+        type: string
+      cor:
+        type: string
+      descricao:
+        maxLength: 1000
+        type: string
+      duracao:
+        minimum: 5
+        type: integer
+      imagem:
+        type: string
+      nome:
+        maxLength: 255
+        minLength: 2
+        type: string
+      observacoes:
+        maxLength: 2000
+        type: string
+      preco:
+        type: string
+      profissionais_ids:
+        items:
+          type: string
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+    required:
+    - duracao
+    - nome
+    - preco
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@nexo.barber
+    name: API Support
+    url: https://nexo.barber/support
+  description: API completa para gestão de barbearias com módulos de Agendamento,
+    Comanda, Financeiro, Estoque e Analytics
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://nexo.barber/terms
+  title: NEXO - Barber Analytics API
+  version: "2.0"
+paths:
+  /api/v1/appointments:
+    get:
+      consumes:
+      - application/json
+      description: Lista agendamentos com filtros e paginação
+      parameters:
+      - description: ID do profissional
+        in: query
+        name: professional_id
+        type: string
+      - description: ID do cliente
+        in: query
+        name: customer_id
+        type: string
+      - description: Status (CREATED, CONFIRMED, IN_SERVICE, DONE, NO_SHOW, CANCELED)
+        in: query
+        name: status
+        type: string
+      - description: Data inicial (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Data final (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - default: 1
+        description: Página
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Tamanho da página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListAppointmentsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar agendamentos
+      tags:
+      - Agendamentos
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo agendamento
+      parameters:
+      - description: Dados do agendamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAppointmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflito de horário
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar agendamento
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Busca um agendamento por ID
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar agendamento
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancela um agendamento
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Motivo do cancelamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CancelAppointmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancelar agendamento
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/check-in:
+    post:
+      consumes:
+      - application/json
+      description: Marca que o cliente chegou na barbearia (CONFIRMED/CREATED -> CHECKED_IN)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Marcar cliente como chegou
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/complete:
+    post:
+      consumes:
+      - application/json
+      description: Marca o agendamento como concluído (AWAITING_PAYMENT/IN_SERVICE
+        -> DONE)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Concluir agendamento
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/finish:
+    post:
+      consumes:
+      - application/json
+      description: Finaliza o atendimento do cliente (IN_SERVICE -> AWAITING_PAYMENT)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Finalizar atendimento
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/no-show:
+    post:
+      consumes:
+      - application/json
+      description: Marca que o cliente não compareceu (-> NO_SHOW)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Marcar cliente como faltou
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/reschedule:
+    patch:
+      consumes:
+      - application/json
+      description: Reagenda um agendamento para novo horário
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo horário
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RescheduleAppointmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflito de horário
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reagendar agendamento
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/start:
+    post:
+      consumes:
+      - application/json
+      description: Inicia o atendimento do cliente (CHECKED_IN/CONFIRMED -> IN_SERVICE)
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Iniciar atendimento
+      tags:
+      - Agendamentos
+  /api/v1/appointments/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Atualiza o status de um agendamento
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateAppointmentStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AppointmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar status do agendamento
+      tags:
+      - Agendamentos
+  /api/v1/barber-turn/{professional_id}:
+    delete:
+      description: Remove um barbeiro da Lista da Vez (não preserva pontos)
+      parameters:
+      - description: ID do profissional
+        in: path
+        name: professional_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remover barbeiro da fila
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/{professional_id}/toggle-status:
+    put:
+      description: Alterna o status ativo/inativo de um barbeiro na fila
+      parameters:
+      - description: ID do profissional
+        in: path
+        name: professional_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ToggleStatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Pausar/Ativar barbeiro
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/add:
+    post:
+      consumes:
+      - application/json
+      description: Adiciona um profissional do tipo BARBEIRO à Lista da Vez
+      parameters:
+      - description: ID do profissional
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddBarberToTurnListRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.BarberTurnResponse'
+        "400":
+          description: Profissional não é barbeiro ou já está na lista
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Adicionar barbeiro à fila
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/available:
+    get:
+      description: Lista barbeiros ativos que ainda não estão na Lista da Vez
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListAvailableBarbersResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar barbeiros disponíveis
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/history:
+    get:
+      description: Lista histórico mensal de atendimentos
+      parameters:
+      - description: Mês/ano (YYYY-MM)
+        in: query
+        name: month_year
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListTurnHistoryResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar histórico
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/history/summary:
+    get:
+      description: Retorna resumo dos últimos 12 meses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListHistorySummaryResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Resumo do histórico
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/list:
+    get:
+      description: Lista todos os barbeiros na Lista da Vez ordenados por pontuação
+      parameters:
+      - description: Filtrar por status ativo
+        in: query
+        name: is_active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListBarbersTurnResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar barbeiros na fila
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/record:
+    post:
+      consumes:
+      - application/json
+      description: Incrementa pontos do barbeiro (+1) e reordena a fila
+      parameters:
+      - description: ID do profissional
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RecordTurnRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RecordTurnResponse'
+        "400":
+          description: Barbeiro pausado
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Barbeiro não encontrado
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Registrar atendimento
+      tags:
+      - Lista da Vez
+  /api/v1/barber-turn/reset:
+    post:
+      consumes:
+      - application/json
+      description: Zera todos os pontos e opcionalmente salva histórico
+      parameters:
+      - description: Configurações do reset
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResetTurnListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ResetTurnListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reset mensal
+      tags:
+      - Lista da Vez
+  /api/v1/blocked-times:
+    get:
+      consumes:
+      - application/json
+      description: Lista bloqueios de horário com filtros opcionais
+      parameters:
+      - description: ID do profissional
+        in: query
+        name: professional_id
+        type: string
+      - description: Data inicial (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: Data final (RFC3339)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListBlockedTimesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar bloqueios de horário
+      tags:
+      - Bloqueios
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo bloqueio de horário na agenda
+      parameters:
+      - description: Dados do bloqueio
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateBlockedTimeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.BlockedTimeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflito com bloqueio existente
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar bloqueio de horário
+      tags:
+      - Bloqueios
+  /api/v1/blocked-times/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove um bloqueio de horário
+      parameters:
+      - description: ID do bloqueio
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar bloqueio de horário
+      tags:
+      - Bloqueios
+  /api/v1/caixa/{id}:
+    get:
+      description: Retorna um caixa específico com operações
+      parameters:
+      - description: ID do caixa
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CaixaDiarioResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Buscar caixa por ID
+      tags:
+      - Caixa
+  /api/v1/caixa/aberto:
+    get:
+      description: Retorna o caixa aberto com todas as operações
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CaixaDiarioResponse'
+        "404":
+          description: Nenhum caixa aberto
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Caixa aberto
+      tags:
+      - Caixa
+  /api/v1/caixa/abrir:
+    post:
+      consumes:
+      - application/json
+      description: Abre um novo caixa diário com saldo inicial
+      parameters:
+      - description: Dados de abertura
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AbrirCaixaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CaixaDiarioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Já existe caixa aberto
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Abrir caixa
+      tags:
+      - Caixa
+  /api/v1/caixa/fechar:
+    post:
+      consumes:
+      - application/json
+      description: Fecha o caixa com conferência de saldo real
+      parameters:
+      - description: Dados de fechamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.FecharCaixaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CaixaDiarioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Caixa não aberto
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Fechar caixa
+      tags:
+      - Caixa
+  /api/v1/caixa/historico:
+    get:
+      description: Lista caixas fechados com paginação
+      parameters:
+      - description: Data início (YYYY-MM-DD)
+        in: query
+        name: data_inicio
+        type: string
+      - description: Data fim (YYYY-MM-DD)
+        in: query
+        name: data_fim
+        type: string
+      - description: ID do usuário
+        in: query
+        name: usuario_id
+        type: string
+      - default: 1
+        description: Página
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Itens por página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListCaixaHistoricoResponse'
+      summary: Histórico de caixas
+      tags:
+      - Caixa
+  /api/v1/caixa/reforco:
+    post:
+      consumes:
+      - application/json
+      description: Registra uma adição de dinheiro ao caixa
+      parameters:
+      - description: Dados do reforço
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReforcoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.OperacaoCaixaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Caixa não aberto
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Registrar reforço
+      tags:
+      - Caixa
+  /api/v1/caixa/sangria:
+    post:
+      consumes:
+      - application/json
+      description: Registra uma retirada de dinheiro do caixa
+      parameters:
+      - description: Dados da sangria
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SangriaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.OperacaoCaixaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Caixa não aberto
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Registrar sangria
+      tags:
+      - Caixa
+  /api/v1/caixa/status:
+    get:
+      description: Retorna se há caixa aberto e informações básicas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CaixaStatusResponse'
+      summary: Status do caixa
+      tags:
+      - Caixa
+  /api/v1/caixa/totais:
+    get:
+      description: Retorna os totais por tipo de operação
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TotaisCaixaResponse'
+        "404":
+          description: Caixa não aberto
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Totais do caixa
+      tags:
+      - Caixa
+  /api/v1/categorias-servicos:
+    get:
+      description: Lista todas as categorias de serviço com filtros opcionais
+      parameters:
+      - description: Apenas categorias ativas
+        in: query
+        name: apenas_ativas
+        type: boolean
+      - description: Ordenação (nome, criado_em)
+        in: query
+        name: order_by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListCategoriasServicosResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar categorias de serviço
+      tags:
+      - Categorias de Serviço
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova categoria de serviço
+      parameters:
+      - description: Dados da categoria
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCategoriaServicoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CategoriaServicoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Nome duplicado
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar categoria de serviço
+      tags:
+      - Categorias de Serviço
+  /api/v1/categorias-servicos/{id}:
+    delete:
+      description: Deleta uma categoria de serviço se não houver serviços vinculados
+      parameters:
+      - description: ID da categoria
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Categoria possui serviços vinculados
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar categoria de serviço
+      tags:
+      - Categorias de Serviço
+    get:
+      description: Busca uma categoria de serviço por ID
+      parameters:
+      - description: ID da categoria
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CategoriaServicoResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar categoria por ID
+      tags:
+      - Categorias de Serviço
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados de uma categoria de serviço existente
+      parameters:
+      - description: ID da categoria
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados a atualizar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCategoriaServicoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CategoriaServicoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Nome duplicado
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar categoria de serviço
+      tags:
+      - Categorias de Serviço
+  /api/v1/commands:
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova comanda para um agendamento
+      parameters:
+      - description: Dados da comanda
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCommandRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CommandResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Criar comanda
+      tags:
+      - Comandas
+  /api/v1/commands/{id}:
+    get:
+      description: Busca uma comanda por ID (com items e payments)
+      parameters:
+      - description: ID da comanda
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommandResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Buscar comanda
+      tags:
+      - Comandas
+  /api/v1/commands/{id}/close:
+    post:
+      consumes:
+      - application/json
+      description: Fecha a comanda e finaliza o atendimento
+      parameters:
+      - description: ID da comanda
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Opções de fechamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CloseCommandRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommandResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Fechar comanda
+      tags:
+      - Comandas
+  /api/v1/commands/{id}/items:
+    post:
+      consumes:
+      - application/json
+      description: Adiciona um item (serviço/produto) à comanda
+      parameters:
+      - description: ID da comanda
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do item
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddCommandItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommandResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Adicionar item à comanda
+      tags:
+      - Comandas
+  /api/v1/commands/{id}/items/{itemId}:
+    delete:
+      description: Remove um item da comanda
+      parameters:
+      - description: ID da comanda
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID do item
+        in: path
+        name: itemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommandResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remover item da comanda
+      tags:
+      - Comandas
+  /api/v1/commands/{id}/payments:
+    post:
+      consumes:
+      - application/json
+      description: Registra um pagamento na comanda
+      parameters:
+      - description: ID da comanda
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do pagamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddCommandPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommandResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Adicionar pagamento à comanda
+      tags:
+      - Comandas
+  /api/v1/commands/{id}/payments/{paymentId}:
+    delete:
+      description: Remove um pagamento da comanda
+      parameters:
+      - description: ID da comanda
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID do pagamento
+        in: path
+        name: paymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CommandResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remover pagamento da comanda
+      tags:
+      - Comandas
+  /api/v1/customers:
+    get:
+      consumes:
+      - application/json
+      description: Lista clientes com paginação e filtros
+      parameters:
+      - description: Busca por nome, telefone, email ou CPF
+        in: query
+        name: search
+        type: string
+      - description: Filtrar por status ativo
+        in: query
+        name: ativo
+        type: boolean
+      - collectionFormat: csv
+        description: Filtrar por tags
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      - description: Ordenar por (nome, criado_em, atualizado_em)
+        in: query
+        name: order_by
+        type: string
+      - default: 1
+        description: Página
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Tamanho da página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListCustomersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar clientes
+      tags:
+      - Clientes
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo cliente
+      parameters:
+      - description: Dados do cliente
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Telefone/CPF duplicado
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar cliente
+      tags:
+      - Clientes
+  /api/v1/customers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Inativa um cliente (soft delete)
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sem conteúdo
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Inativar cliente
+      tags:
+      - Clientes
+    get:
+      consumes:
+      - application/json
+      description: Busca um cliente pelo ID
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar cliente
+      tags:
+      - Clientes
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados de um cliente existente
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados a atualizar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar cliente
+      tags:
+      - Clientes
+  /api/v1/customers/{id}/export:
+    get:
+      consumes:
+      - application/json
+      description: Exporta todos os dados de um cliente para LGPD
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerExportResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Exportar dados do cliente (LGPD)
+      tags:
+      - Clientes
+  /api/v1/customers/{id}/history:
+    get:
+      consumes:
+      - application/json
+      description: Busca um cliente com histórico de atendimentos
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerWithHistoryResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar cliente com histórico
+      tags:
+      - Clientes
+  /api/v1/customers/check-cpf:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se CPF já está cadastrado
+      parameters:
+      - description: CPF a verificar
+        in: query
+        name: cpf
+        required: true
+        type: string
+      - description: ID a excluir da verificação
+        in: query
+        name: exclude_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CheckExistsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verificar CPF
+      tags:
+      - Clientes
+  /api/v1/customers/check-phone:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se telefone já está cadastrado
+      parameters:
+      - description: Telefone a verificar
+        in: query
+        name: telefone
+        required: true
+        type: string
+      - description: ID a excluir da verificação
+        in: query
+        name: exclude_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CheckExistsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verificar telefone
+      tags:
+      - Clientes
+  /api/v1/customers/search:
+    get:
+      consumes:
+      - application/json
+      description: Busca rápida de clientes por nome, telefone ou email
+      parameters:
+      - description: Termo de busca
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CustomerSummaryResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar clientes
+      tags:
+      - Clientes
+  /api/v1/customers/stats:
+    get:
+      consumes:
+      - application/json
+      description: Retorna estatísticas dos clientes do tenant
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CustomerStatsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Estatísticas de clientes
+      tags:
+      - Clientes
+  /api/v1/financial/cashflow:
+    get:
+      parameters:
+      - description: Data início
+        in: query
+        name: data_inicio
+        type: string
+      - description: Data fim
+        in: query
+        name: data_fim
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.FluxoCaixaDiarioResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar fluxo de caixa
+      tags:
+      - Financial
+  /api/v1/financial/cashflow/{id}:
+    get:
+      parameters:
+      - description: ID do fluxo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FluxoCaixaDiarioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar fluxo de caixa diário
+      tags:
+      - Financial
+  /api/v1/financial/compensations:
+    get:
+      parameters:
+      - description: Data início
+        in: query
+        name: data_inicio
+        type: string
+      - description: Data fim
+        in: query
+        name: data_fim
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CompensacaoBancariaResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar compensações bancárias
+      tags:
+      - Financial
+  /api/v1/financial/compensations/{id}:
+    delete:
+      parameters:
+      - description: ID da compensação
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar compensação bancária
+      tags:
+      - Financial
+    get:
+      parameters:
+      - description: ID da compensação
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CompensacaoBancariaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar compensação bancária
+      tags:
+      - Financial
+  /api/v1/financial/dashboard:
+    get:
+      description: Retorna dados agregados de payables, receivables, cashflow e DRE
+      parameters:
+      - description: Data de início (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: Data de fim (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: Mês no formato YYYY-MM
+        in: query
+        name: month
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FinancialDashboardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obter dashboard financeiro
+      tags:
+      - Financial
+  /api/v1/financial/dre:
+    get:
+      parameters:
+      - description: Mês/Ano início (YYYY-MM)
+        in: query
+        name: mes_ano_inicio
+        type: string
+      - description: Mês/Ano fim (YYYY-MM)
+        in: query
+        name: mes_ano_fim
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.DREMensalResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar DREs mensais
+      tags:
+      - Financial
+  /api/v1/financial/dre/{month}:
+    get:
+      parameters:
+      - description: Mês (YYYY-MM)
+        in: path
+        name: month
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DREMensalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar DRE mensal
+      tags:
+      - Financial
+  /api/v1/financial/fixed-expenses:
+    get:
+      description: Retorna lista paginada de despesas fixas
+      parameters:
+      - description: 'Página (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Itens por página (default: 20)'
+        in: query
+        name: page_size
+        type: integer
+      - description: Filtrar por status ativo
+        in: query
+        name: ativo
+        type: boolean
+      - description: Filtrar por categoria
+        in: query
+        name: categoria_id
+        type: string
+      - description: Filtrar por unidade
+        in: query
+        name: unidade_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DespesasFixasListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar despesas fixas
+      tags:
+      - Despesas Fixas
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova despesa fixa recorrente
+      parameters:
+      - description: Dados da despesa fixa
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateDespesaFixaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.DespesaFixaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar despesa fixa
+      tags:
+      - Despesas Fixas
+  /api/v1/financial/fixed-expenses/{id}:
+    delete:
+      description: Remove uma despesa fixa
+      parameters:
+      - description: ID da despesa fixa
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir despesa fixa
+      tags:
+      - Despesas Fixas
+    get:
+      description: Retorna uma despesa fixa específica
+      parameters:
+      - description: ID da despesa fixa
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DespesaFixaResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obter despesa fixa por ID
+      tags:
+      - Despesas Fixas
+    put:
+      consumes:
+      - application/json
+      description: Atualiza uma despesa fixa existente
+      parameters:
+      - description: ID da despesa fixa
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados atualizados
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateDespesaFixaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DespesaFixaResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar despesa fixa
+      tags:
+      - Despesas Fixas
+  /api/v1/financial/fixed-expenses/{id}/toggle:
+    patch:
+      description: Ativa ou desativa uma despesa fixa
+      parameters:
+      - description: ID da despesa fixa
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DespesaFixaResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Alternar status ativo/inativo
+      tags:
+      - Despesas Fixas
+  /api/v1/financial/fixed-expenses/generate:
+    post:
+      consumes:
+      - application/json
+      description: Cria contas a pagar para o mês especificado a partir das despesas
+        fixas ativas
+      parameters:
+      - description: Mês/Ano para geração
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GerarContasRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GerarContasResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Gerar contas a pagar a partir de despesas fixas
+      tags:
+      - Despesas Fixas
+  /api/v1/financial/fixed-expenses/summary:
+    get:
+      description: Retorna totais e soma de valores das despesas fixas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DespesasFixasSummaryResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obter resumo de despesas fixas
+      tags:
+      - Despesas Fixas
+  /api/v1/financial/payables:
+    get:
+      parameters:
+      - description: Filtrar por status
+        in: query
+        name: status
+        type: string
+      - description: Data início (YYYY-MM-DD)
+        in: query
+        name: data_inicio
+        type: string
+      - description: Data fim (YYYY-MM-DD)
+        in: query
+        name: data_fim
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ContaPagarResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar contas a pagar
+      tags:
+      - Financial
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova conta a pagar (despesa)
+      parameters:
+      - description: Dados da conta a pagar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateContaPagarRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ContaPagarResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar conta a pagar
+      tags:
+      - Financial
+  /api/v1/financial/payables/{id}:
+    delete:
+      parameters:
+      - description: ID da conta
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar conta a pagar
+      tags:
+      - Financial
+    get:
+      parameters:
+      - description: ID da conta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ID da conta
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ContaPagarResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar conta a pagar por ID
+      tags:
+      - Financial
+      - Financial
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID da conta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados para atualização
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateContaPagarRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ContaPagarResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar conta a pagar
+      tags:
+      - Financial
+  /api/v1/financial/payables/{id}/pay:
+    post:
+      consumes:
+      - application/json
+      description: Marca uma conta a pagar como paga
+      parameters:
+      - description: ID da conta a pagar
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do pagamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MarcarPagamentoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Marcar pagamento
+      tags:
+      - Financial
+  /api/v1/financial/projections:
+    get:
+      description: Retorna as projeções financeiras para os próximos meses
+      parameters:
+      - description: 'Quantidade de meses para projetar (1-12, default: 3)'
+        in: query
+        name: months_ahead
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProjecoesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obter projeções financeiras
+      tags:
+      - Financial
+  /api/v1/financial/receivables:
+    get:
+      parameters:
+      - description: Filtrar por status
+        in: query
+        name: status
+        type: string
+      - description: Data início (YYYY-MM-DD)
+        in: query
+        name: data_inicio
+        type: string
+      - description: Data fim (YYYY-MM-DD)
+        in: query
+        name: data_fim
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ContaReceberResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar contas a receber
+      tags:
+      - Financial
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova conta a receber (receita)
+      parameters:
+      - description: Dados da conta a receber
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateContaReceberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ContaReceberResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar conta a receber
+      tags:
+      - Financial
+  /api/v1/financial/receivables/{id}:
+    delete:
+      parameters:
+      - description: ID da conta
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar conta a receber
+      tags:
+      - Financial
+    get:
+      parameters:
+      - description: ID da conta
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ContaReceberResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar conta a receber por ID
+      tags:
+      - Financial
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID da conta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados para atualização
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateContaReceberRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ContaReceberResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar conta a receber
+      tags:
+      - Financial
+  /api/v1/financial/receivables/{id}/receive:
+    post:
+      consumes:
+      - application/json
+      description: Marca uma conta a receber como recebida (total ou parcial)
+      parameters:
+      - description: ID da conta a receber
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do recebimento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MarcarRecebimentoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Marcar recebimento
+      tags:
+      - Financial
+  /api/v1/metas/barbers:
+    get:
+      parameters:
+      - description: ID do barbeiro (opcional)
+        in: query
+        name: barbeiro_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.MetaBarbeiroResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar metas de barbeiros
+      tags:
+      - Metas
+    post:
+      consumes:
+      - application/json
+      description: Define ou atualiza as metas individuais de um barbeiro
+      parameters:
+      - description: Dados da meta do barbeiro
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetMetaBarbeiroRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaBarbeiroResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Definir/atualizar meta de barbeiro
+      tags:
+      - Metas
+  /api/v1/metas/barbers/{id}:
+    delete:
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Deletar meta de barbeiro
+      tags:
+      - Metas
+    get:
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaBarbeiroResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar meta de barbeiro
+      tags:
+      - Metas
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados atualizados
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetMetaBarbeiroRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaBarbeiroResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar meta de barbeiro
+      tags:
+      - Metas
+  /api/v1/metas/monthly:
+    get:
+      description: Lista todas as metas mensais do tenant
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.MetaMensalResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar metas mensais
+      tags:
+      - Metas
+    post:
+      consumes:
+      - application/json
+      description: Define ou atualiza a meta de faturamento mensal
+      parameters:
+      - description: Dados da meta mensal
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetMetaMensalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaMensalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Definir/atualizar meta mensal
+      tags:
+      - Metas
+  /api/v1/metas/monthly/{id}:
+    delete:
+      description: Remove uma meta mensal
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Deletar meta mensal
+      tags:
+      - Metas
+    get:
+      description: Retorna uma meta mensal específica por ID
+      parameters:
+      - description: ID da meta mensal
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaMensalResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar meta mensal
+      tags:
+      - Metas
+    put:
+      consumes:
+      - application/json
+      description: Atualiza uma meta mensal existente
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados da meta
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetMetaMensalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaMensalResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar meta mensal
+      tags:
+      - Metas
+  /api/v1/metas/ticket:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.MetaTicketResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Listar metas de ticket médio
+      tags:
+      - Metas
+    post:
+      consumes:
+      - application/json
+      description: Define ou atualiza a meta de ticket médio (geral ou por barbeiro)
+      parameters:
+      - description: Dados da meta de ticket médio
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetMetaTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaTicketResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Definir/atualizar meta de ticket médio
+      tags:
+      - Metas
+  /api/v1/metas/ticket/{id}:
+    delete:
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Deletar meta de ticket médio
+      tags:
+      - Metas
+    get:
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaTicketResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar meta de ticket médio
+      tags:
+      - Metas
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID da meta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados atualizados
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetMetaTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MetaTicketResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar meta de ticket médio
+      tags:
+      - Metas
+  /api/v1/payment-methods:
+    get:
+      description: Lista todos os meios de pagamento do tenant
+      parameters:
+      - description: Filtrar por tipo (DINHEIRO, PIX, CREDITO, DEBITO, TRANSFERENCIA)
+        in: query
+        name: tipo
+        type: string
+      - description: Apenas ativos
+        in: query
+        name: apenas_ativos
+        type: boolean
+      - description: Buscar por nome
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListMeiosPagamentoResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar meios de pagamento
+      tags:
+      - Meios de Pagamento
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo meio de pagamento
+      parameters:
+      - description: Dados do meio de pagamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateMeioPagamentoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.MeioPagamentoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar meio de pagamento
+      tags:
+      - Meios de Pagamento
+  /api/v1/payment-methods/{id}:
+    delete:
+      description: Remove um meio de pagamento
+      parameters:
+      - description: ID do meio de pagamento
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Excluir meio de pagamento
+      tags:
+      - Meios de Pagamento
+    get:
+      description: Retorna um meio de pagamento pelo ID
+      parameters:
+      - description: ID do meio de pagamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MeioPagamentoResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar meio de pagamento por ID
+      tags:
+      - Meios de Pagamento
+    patch:
+      consumes:
+      - application/json
+      description: Atualiza um meio de pagamento existente
+      parameters:
+      - description: ID do meio de pagamento
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados a atualizar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMeioPagamentoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MeioPagamentoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar meio de pagamento
+      tags:
+      - Meios de Pagamento
+  /api/v1/payment-methods/{id}/toggle:
+    patch:
+      description: Alterna entre ativo e inativo
+      parameters:
+      - description: ID do meio de pagamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MeioPagamentoResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Alternar status do meio de pagamento
+      tags:
+      - Meios de Pagamento
+  /api/v1/pricing/config:
+    delete:
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar configuração de precificação
+      tags:
+      - Pricing
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PrecificacaoConfigResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar configuração de precificação
+      tags:
+      - Pricing
+    post:
+      consumes:
+      - application/json
+      description: Salva ou atualiza a configuração de precificação do tenant
+      parameters:
+      - description: Configuração de precificação
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SaveConfigPrecificacaoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PrecificacaoConfigResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Salvar configuração de precificação
+      tags:
+      - Pricing
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Configuração atualizada
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SaveConfigPrecificacaoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PrecificacaoConfigResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar configuração de precificação
+      tags:
+      - Pricing
+  /api/v1/pricing/simulate:
+    post:
+      consumes:
+      - application/json
+      description: Simula o preço sugerido com base nos custos e configuração
+      parameters:
+      - description: Dados para simulação
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SimularPrecoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PrecificacaoSimulacaoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Simular preço
+      tags:
+      - Pricing
+  /api/v1/pricing/simulations:
+    get:
+      parameters:
+      - description: Filtrar por item
+        in: query
+        name: item_id
+        type: string
+      - description: Filtrar por tipo de item
+        in: query
+        name: tipo_item
+        type: string
+      - default: 1
+        description: Número da página
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Tamanho da página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.PrecificacaoSimulacaoResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar simulações de precificação
+      tags:
+      - Pricing
+  /api/v1/pricing/simulations/{id}:
+    delete:
+      parameters:
+      - description: ID da simulação
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar simulação de precificação
+      tags:
+      - Pricing
+    get:
+      parameters:
+      - description: ID da simulação
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PrecificacaoSimulacaoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar simulação de precificação
+      tags:
+      - Pricing
+  /api/v1/professionals:
+    get:
+      consumes:
+      - application/json
+      description: Lista profissionais com filtros e paginação
+      parameters:
+      - description: Busca por nome, email ou CPF
+        in: query
+        name: search
+        type: string
+      - description: Filtrar por status
+        in: query
+        name: status
+        type: string
+      - description: Filtrar por tipo
+        in: query
+        name: tipo
+        type: string
+      - description: Ordenar por
+        in: query
+        name: order_by
+        type: string
+      - description: Página
+        in: query
+        name: page
+        type: integer
+      - description: Tamanho da página
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListProfessionalsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar profissionais
+      tags:
+      - Profissionais
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo profissional
+      parameters:
+      - description: Dados do profissional
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProfessionalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ProfessionalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar profissional
+      tags:
+      - Profissionais
+  /api/v1/professionals/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove um profissional (soft delete alterando status)
+      parameters:
+      - description: ID do profissional
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar profissional
+      tags:
+      - Profissionais
+    get:
+      consumes:
+      - application/json
+      description: Busca um profissional pelo ID
+      parameters:
+      - description: ID do profissional
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProfessionalResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar profissional
+      tags:
+      - Profissionais
+    put:
+      consumes:
+      - application/json
+      description: Atualiza um profissional existente
+      parameters:
+      - description: ID do profissional
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do profissional
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProfessionalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProfessionalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar profissional
+      tags:
+      - Profissionais
+  /api/v1/professionals/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Atualiza o status de um profissional
+      parameters:
+      - description: ID do profissional
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProfessionalStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProfessionalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar status do profissional
+      tags:
+      - Profissionais
+  /api/v1/professionals/check-cpf:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se CPF já existe no tenant
+      parameters:
+      - description: CPF para verificar
+        in: query
+        name: cpf
+        required: true
+        type: string
+      - description: ID para excluir da verificação
+        in: query
+        name: exclude_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CheckExistsProfessionalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verificar CPF
+      tags:
+      - Profissionais
+  /api/v1/professionals/check-email:
+    get:
+      consumes:
+      - application/json
+      description: Verifica se email já existe no tenant
+      parameters:
+      - description: Email para verificar
+        in: query
+        name: email
+        required: true
+        type: string
+      - description: ID para excluir da verificação
+        in: query
+        name: exclude_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CheckExistsProfessionalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verificar email
+      tags:
+      - Profissionais
+  /api/v1/servicos:
+    get:
+      description: Lista serviços com filtros opcionais
+      parameters:
+      - description: Apenas serviços ativos
+        in: query
+        name: apenas_ativos
+        type: boolean
+      - description: Filtrar por categoria
+        in: query
+        name: categoria_id
+        type: string
+      - description: Filtrar por profissional
+        in: query
+        name: profissional_id
+        type: string
+      - description: Buscar por nome/descrição/tags
+        in: query
+        name: search
+        type: string
+      - description: Ordenar por (nome, preco, duracao, criado_em)
+        in: query
+        name: order_by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListServicosResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar serviços
+      tags:
+      - Serviços
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo serviço
+      parameters:
+      - description: Dados do serviço
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateServicoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ServicoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Nome duplicado
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar serviço
+      tags:
+      - Serviços
+  /api/v1/servicos/{id}:
+    delete:
+      description: Deleta um serviço
+      parameters:
+      - description: ID do serviço
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deletar serviço
+      tags:
+      - Serviços
+    get:
+      description: Busca um serviço por ID
+      parameters:
+      - description: ID do serviço
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ServicoResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Buscar serviço por ID
+      tags:
+      - Serviços
+    put:
+      consumes:
+      - application/json
+      description: Atualiza um serviço existente
+      parameters:
+      - description: ID do serviço
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados do serviço
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateServicoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ServicoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "409":
+          description: Nome duplicado
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar serviço
+      tags:
+      - Serviços
+  /api/v1/servicos/{id}/toggle-status:
+    patch:
+      consumes:
+      - application/json
+      description: Altera o status ativo/inativo de um serviço
+      parameters:
+      - description: ID do serviço
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ServicoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Ativar/Desativar serviço
+      tags:
+      - Serviços
+  /api/v1/servicos/stats:
+    get:
+      description: Retorna estatísticas agregadas dos serviços
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ServicoStatsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Estatísticas de serviços
+      tags:
+      - Serviços
+  /api/v1/stock/adjust:
+    post:
+      consumes:
+      - application/json
+      description: Realiza ajuste manual de quantidade com auditoria
+      parameters:
+      - description: Dados do ajuste
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AjustarEstoqueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MovimentacaoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Ajustar estoque manualmente
+      tags:
+      - Estoque
+  /api/v1/stock/alerts:
+    get:
+      consumes:
+      - application/json
+      description: Lista produtos com estoque abaixo do minimo
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ListAlertasEstoqueBaixoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar alertas de estoque baixo
+      tags:
+      - Estoque
+  /api/v1/stock/entries:
+    post:
+      consumes:
+      - application/json
+      description: Registra entrada de produtos no estoque (compra/recebimento)
+      parameters:
+      - description: Dados da entrada
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegistrarEntradaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Registrar entrada de estoque
+      tags:
+      - Estoque
+  /api/v1/stock/exit:
+    post:
+      consumes:
+      - application/json
+      description: Registra saida de produto (venda, consumo interno, perda)
+      parameters:
+      - description: Dados da saida
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegistrarSaidaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.MovimentacaoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Registrar saida de estoque
+      tags:
+      - Estoque
+securityDefinitions:
+  BearerAuth:
+    description: 'Bearer token JWT (formato: "Bearer {token}")'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
+x-extension-openapi:
+  example: value on a json format

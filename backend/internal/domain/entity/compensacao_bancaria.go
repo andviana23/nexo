@@ -11,7 +11,7 @@ import (
 // CompensacaoBancaria representa uma compensação bancária (D+)
 type CompensacaoBancaria struct {
 	ID        string
-	TenantID  string
+	TenantID  uuid.UUID
 	ReceitaID string
 
 	DataTransacao   time.Time
@@ -34,14 +34,14 @@ type CompensacaoBancaria struct {
 
 // NewCompensacaoBancaria cria uma nova compensação bancária
 func NewCompensacaoBancaria(
-	tenantID, receitaID, meioPagamentoID string,
+	tenantID uuid.UUID, receitaID, meioPagamentoID string,
 	dataTransacao time.Time,
 	valorBruto valueobject.Money,
 	taxaPercentual valueobject.Percentage,
 	taxaFixa valueobject.Money,
 	dMais valueobject.DMais,
 ) (*CompensacaoBancaria, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if receitaID == "" {
@@ -111,7 +111,7 @@ func (c *CompensacaoBancaria) Cancelar() {
 
 // Validate valida as regras de negócio
 func (c *CompensacaoBancaria) Validate() error {
-	if c.TenantID == "" {
+	if c.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if c.ReceitaID == "" {

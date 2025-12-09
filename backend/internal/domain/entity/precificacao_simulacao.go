@@ -12,7 +12,7 @@ import (
 // PrecificacaoSimulacao representa uma simulação de precificação
 type PrecificacaoSimulacao struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 
 	ItemID   string
 	TipoItem string // SERVICO ou PRODUTO
@@ -47,13 +47,13 @@ type ParametrosSimulacao struct {
 
 // NewPrecificacaoSimulacao cria uma nova simulação
 func NewPrecificacaoSimulacao(
-	tenantID, itemID, tipoItem string,
+	tenantID uuid.UUID, itemID, tipoItem string,
 	custoMateriais, custoMaoDeObra valueobject.Money,
 	margemDesejada, comissao, imposto valueobject.Percentage,
 	precoAtual valueobject.Money,
 	parametros *ParametrosSimulacao,
 ) (*PrecificacaoSimulacao, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if itemID == "" {
@@ -159,7 +159,7 @@ func (p *PrecificacaoSimulacao) CalcularPrecoSugerido() {
 
 // Validate valida as regras de negócio
 func (p *PrecificacaoSimulacao) Validate() error {
-	if p.TenantID == "" {
+	if p.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if p.ItemID == "" {

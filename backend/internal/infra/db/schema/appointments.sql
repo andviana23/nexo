@@ -11,11 +11,15 @@ CREATE TABLE IF NOT EXISTS appointments (
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'CREATED' 
-        CHECK (status IN ('CREATED', 'CONFIRMED', 'IN_SERVICE', 'DONE', 'NO_SHOW', 'CANCELED')),
+        CHECK (status IN ('CREATED', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'AWAITING_PAYMENT', 'DONE', 'NO_SHOW', 'CANCELED')),
     total_price NUMERIC(10,2) NOT NULL CHECK (total_price >= 0),
     notes TEXT,
     canceled_reason TEXT,
     google_calendar_event_id VARCHAR(255),
+    command_id UUID REFERENCES commands(id) ON DELETE SET NULL,
+    checked_in_at TIMESTAMPTZ,
+    started_at TIMESTAMPTZ,
+    finished_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
@@ -27,6 +31,7 @@ CREATE INDEX IF NOT EXISTS idx_appointments_tenant_start ON appointments(tenant_
 CREATE INDEX IF NOT EXISTS idx_appointments_professional ON appointments(professional_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_customer ON appointments(customer_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
+CREATE INDEX IF NOT EXISTS idx_appointments_command_id ON appointments(command_id) WHERE command_id IS NOT NULL;
 
 -- =============================================================================
 -- Schema: appointment_services (para sqlc)

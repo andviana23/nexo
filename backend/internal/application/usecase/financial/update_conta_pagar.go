@@ -2,6 +2,7 @@ package financial
 
 import (
 "context"
+
 "fmt"
 
 "github.com/andviana23/barber-analytics-backend/internal/domain"

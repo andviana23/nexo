@@ -6,6 +6,7 @@
  *
  * @component CustomerSelector
  * @description Combobox com busca para selecionar cliente
+ * Conectado à API real via useActiveCustomers hook
  */
 
 import { Loader2Icon, PlusIcon, SearchIcon } from 'lucide-react';
@@ -14,6 +15,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useActiveCustomers } from '@/hooks/use-customers';
 import { cn } from '@/lib/utils';
 
 // =============================================================================
@@ -42,21 +44,6 @@ interface CustomerSelectorProps {
 }
 
 // =============================================================================
-// MOCK DATA (temporário até API estar pronta)
-// =============================================================================
-
-const MOCK_CUSTOMERS: Customer[] = [
-  { id: '1', name: 'João Silva', phone: '(11) 99999-1234', email: 'joao@email.com' },
-  { id: '2', name: 'Pedro Santos', phone: '(11) 98888-5678', email: 'pedro@email.com' },
-  { id: '3', name: 'Carlos Oliveira', phone: '(11) 97777-9012' },
-  { id: '4', name: 'Ricardo Lima', phone: '(11) 96666-3456', email: 'ricardo@email.com' },
-  { id: '5', name: 'Fernando Costa', phone: '(11) 95555-7890' },
-  { id: '6', name: 'Bruno Almeida', phone: '(11) 94444-2345', email: 'bruno@email.com' },
-  { id: '7', name: 'André Pereira', phone: '(11) 93333-6789' },
-  { id: '8', name: 'Marcos Souza', phone: '(11) 92222-0123', email: 'marcos@email.com' },
-];
-
-// =============================================================================
 // HELPERS
 // =============================================================================
 
@@ -83,9 +70,19 @@ export function CustomerSelector({
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
-  // TODO: Substituir por useQuery quando a API de customers estiver pronta
-  const customers = MOCK_CUSTOMERS;
-  const isLoading = false;
+  // Busca clientes ativos via API
+  const { data: customersData, isLoading } = useActiveCustomers(200);
+  
+  // Mapeia resposta da API para o formato do componente
+  const customers: Customer[] = useMemo(() => {
+    if (!customersData || !Array.isArray(customersData)) return [];
+    return customersData.map((c) => ({
+      id: c.id,
+      name: c.nome,
+      phone: c.telefone,
+      email: c.email,
+    }));
+  }, [customersData]);
 
   // Filtrar clientes pela busca
   const filteredCustomers = useMemo(() => {

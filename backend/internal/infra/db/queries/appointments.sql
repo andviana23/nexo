@@ -15,9 +15,10 @@ INSERT INTO appointments (
     total_price,
     notes,
     canceled_reason,
-    google_calendar_event_id
+    google_calendar_event_id,
+    command_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 ) RETURNING *;
 
 -- name: CreateAppointmentService :exec
@@ -60,6 +61,10 @@ SET
     notes = $8,
     canceled_reason = $9,
     google_calendar_event_id = $10,
+    checked_in_at = $11,
+    started_at = $12,
+    finished_at = $13,
+    command_id = $14,
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
 RETURNING *;
@@ -71,6 +76,49 @@ SET
     canceled_reason = $4,
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
+RETURNING *;
+
+-- name: CheckInAppointment :one
+-- Marca que o cliente chegou para o atendimento
+UPDATE appointments
+SET
+    status = 'CHECKED_IN',
+    checked_in_at = NOW(),
+    updated_at = NOW()
+WHERE id = $1 AND tenant_id = $2
+  AND status IN ('CREATED', 'CONFIRMED')
+RETURNING *;
+
+-- name: StartAppointment :one
+-- Inicia o atendimento (profissional começou os serviços)
+UPDATE appointments
+SET
+    status = 'IN_SERVICE',
+    started_at = NOW(),
+    updated_at = NOW()
+WHERE id = $1 AND tenant_id = $2
+  AND status = 'CHECKED_IN'
+RETURNING *;
+
+-- name: FinishAppointment :one
+-- Finaliza o atendimento (serviços concluídos, aguardando pagamento)
+UPDATE appointments
+SET
+    status = 'AWAITING_PAYMENT',
+    finished_at = NOW(),
+    updated_at = NOW()
+WHERE id = $1 AND tenant_id = $2
+  AND status = 'IN_SERVICE'
+RETURNING *;
+
+-- name: CompleteAppointment :one
+-- Completa o agendamento após pagamento confirmado
+UPDATE appointments
+SET
+    status = 'DONE',
+    updated_at = NOW()
+WHERE id = $1 AND tenant_id = $2
+  AND status = 'AWAITING_PAYMENT'
 RETURNING *;
 
 -- name: DeleteAppointment :exec
@@ -97,7 +145,7 @@ JOIN clientes c ON c.id = a.customer_id
 WHERE a.tenant_id = $1
   AND ($2::uuid IS NULL OR a.professional_id = $2)
   AND ($3::uuid IS NULL OR a.customer_id = $3)
-  AND ($4::text IS NULL OR a.status = $4)
+  AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR a.status = ANY($4::text[]))
   AND ($5::timestamptz IS NULL OR a.start_time >= $5)
   AND ($6::timestamptz IS NULL OR a.start_time < $6)
 ORDER BY a.start_time DESC
@@ -109,7 +157,7 @@ FROM appointments a
 WHERE a.tenant_id = $1
   AND ($2::uuid IS NULL OR a.professional_id = $2)
   AND ($3::uuid IS NULL OR a.customer_id = $3)
-  AND ($4::text IS NULL OR a.status = $4)
+  AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR a.status = ANY($4::text[]))
   AND ($5::timestamptz IS NULL OR a.start_time >= $5)
   AND ($6::timestamptz IS NULL OR a.start_time < $6);
 
@@ -144,6 +192,8 @@ ORDER BY a.start_time DESC
 LIMIT 50;
 
 -- name: CheckAppointmentConflict :one
+-- Verifica conflito com agendamentos existentes
+-- Parâmetros: tenant_id, professional_id, exclude_id, start_time, end_time
 SELECT EXISTS (
     SELECT 1 FROM appointments
     WHERE tenant_id = $1
@@ -153,6 +203,35 @@ SELECT EXISTS (
       AND start_time < $5
       AND end_time > $4
 ) as has_conflict;
+
+-- name: CheckBlockedTimeConflictForAppointment :one
+-- Verifica se há conflito com horários bloqueados (blocked_times)
+SELECT EXISTS (
+    SELECT 1 FROM blocked_times
+    WHERE tenant_id = sqlc.arg(tenant_id)::uuid
+      AND professional_id = sqlc.arg(professional_id)::uuid
+      AND start_time < sqlc.arg(end_time)::timestamptz
+      AND end_time > sqlc.arg(start_time)::timestamptz
+) as has_blocked_conflict;
+
+-- name: CheckMinimumIntervalConflict :one
+-- Verifica se há conflito de intervalo mínimo (10 minutos entre agendamentos)
+-- Um agendamento que termina exatamente quando outro começa não é conflito,
+-- mas se o intervalo for menor que 10 minutos, é conflito.
+SELECT EXISTS (
+    SELECT 1 FROM appointments
+    WHERE tenant_id = sqlc.arg(tenant_id)::uuid
+      AND professional_id = sqlc.arg(professional_id)::uuid
+      AND id != sqlc.arg(exclude_id)::uuid
+      AND status NOT IN ('CANCELED', 'NO_SHOW')
+      AND (
+          -- Agendamento existente termina menos de X minutos antes do novo início
+          (end_time > sqlc.arg(start_time)::timestamptz - (sqlc.arg(interval_minutes)::int * interval '1 minute') AND end_time <= sqlc.arg(start_time)::timestamptz)
+          OR
+          -- Novo agendamento termina menos de X minutos antes do início existente
+          (sqlc.arg(end_time)::timestamptz > start_time - (sqlc.arg(interval_minutes)::int * interval '1 minute') AND sqlc.arg(end_time)::timestamptz <= start_time)
+      )
+) as has_interval_conflict;
 
 -- name: CountAppointmentsByStatus :one
 SELECT COUNT(*)
@@ -182,7 +261,7 @@ SELECT EXISTS (
 ) as exists;
 
 -- name: GetProfessionalInfo :one
-SELECT id, nome, status, NULL::text as cor
+SELECT id, nome, status, NULL::text as cor, comissao::text as comissao, tipo_comissao
 FROM profissionais
 WHERE id = $1 AND tenant_id = $2;
 
@@ -210,12 +289,26 @@ SELECT EXISTS (
 ) as exists;
 
 -- name: GetServiceInfo :one
-SELECT id, nome, preco, duracao, ativo
+SELECT id, nome, preco, duracao, ativo, comissao::text as comissao
 FROM servicos
 WHERE id = $1 AND tenant_id = $2;
 
 -- name: GetServicesByIDs :many
-SELECT id, nome, preco, duracao, ativo
+SELECT id, nome, preco, duracao, ativo, comissao::text as comissao
 FROM servicos
 WHERE tenant_id = $1 AND id = ANY($2::uuid[])
 ORDER BY nome ASC;
+
+-- name: GetServicesForAppointments :many
+-- Busca todos os serviços de múltiplos agendamentos de uma vez (evita N+1)
+SELECT 
+    aps.appointment_id,
+    aps.service_id,
+    aps.price_at_booking,
+    aps.duration_at_booking,
+    aps.created_at,
+    s.nome as service_name
+FROM appointment_services aps
+JOIN servicos s ON s.id = aps.service_id
+WHERE aps.appointment_id = ANY($1::uuid[])
+ORDER BY aps.appointment_id, s.nome;

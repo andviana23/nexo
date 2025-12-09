@@ -65,11 +65,19 @@ func (r *ProfessionalReaderPG) FindByID(ctx context.Context, tenantID, professio
 		color = *row.Cor
 	}
 
+	// Converter string para *string (sqlc retorna string, mas pode ser vazio)
+	var comissao *string
+	if row.Comissao != "" {
+		comissao = &row.Comissao
+	}
+
 	return &port.ProfessionalInfo{
-		ID:     pgUUIDToString(row.ID),
-		Name:   row.Nome,
-		Status: status,
-		Color:  color,
+		ID:           pgUUIDToString(row.ID),
+		Name:         row.Nome,
+		Status:       status,
+		Color:        color,
+		Comissao:     comissao,
+		TipoComissao: row.TipoComissao,
 	}, nil
 }
 
@@ -207,12 +215,19 @@ func (r *ServiceReaderPG) FindByID(ctx context.Context, tenantID, serviceID stri
 		active = *row.Ativo
 	}
 
+	// Converter string para *string
+	var comissao *string
+	if row.Comissao != "" {
+		comissao = &row.Comissao
+	}
+
 	return &port.ServiceInfo{
 		ID:       pgUUIDToString(row.ID),
 		Name:     row.Nome,
 		Price:    valueobject.NewMoneyFromDecimal(row.Preco),
 		Duration: int(row.Duracao),
 		Active:   active,
+		Comissao: comissao,
 	}, nil
 }
 
@@ -240,12 +255,18 @@ func (r *ServiceReaderPG) FindByIDs(ctx context.Context, tenantID string, servic
 		if row.Ativo != nil {
 			active = *row.Ativo
 		}
+		// Converter string para *string
+		var comissao *string
+		if row.Comissao != "" {
+			comissao = &row.Comissao
+		}
 		services = append(services, &port.ServiceInfo{
 			ID:       pgUUIDToString(row.ID),
 			Name:     row.Nome,
 			Price:    valueobject.NewMoneyFromDecimal(row.Preco),
 			Duration: int(row.Duracao),
 			Active:   active,
+			Comissao: comissao,
 		})
 	}
 

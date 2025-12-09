@@ -1,0 +1,7 @@
+./add_command_item.go
+./add_command_payment.go
+./close_command.go
+./create_command.go
+./get_by_appointment.go
+./get_command.go
+./remove_items_payments.go

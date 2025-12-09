@@ -8,6 +8,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
@@ -63,9 +64,15 @@ func (uc *SaveConfigPrecificacaoUseCase) Execute(ctx context.Context, input Save
 		return existing, nil
 	}
 
+	// Converter tenant_id de string para uuid.UUID
+	tenantUUID, err := uuid.Parse(input.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("tenant_id inválido: %w", err)
+	}
+
 	// Criar nova configuração
 	config, err := entity.NewPrecificacaoConfig(
-		input.TenantID,
+		tenantUUID,
 		input.MargemDesejada,
 		input.ImpostoPercentual,
 		input.ComissaoDefault,

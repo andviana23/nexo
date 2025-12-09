@@ -90,37 +90,47 @@ export const FULLCALENDAR_DEFAULTS = {
   expandRows: true,
 } as const;
 
-// Mapeamento de status para cores
+// Mapeamento de status para cores - Conforme FLUXO_STATUS_AGENDAMENTO.md
 export const APPOINTMENT_STATUS_COLORS: Record<string, { backgroundColor: string; borderColor: string; textColor: string }> = {
   CREATED: {
-    backgroundColor: '#FEF3C7', // Yellow-100
-    borderColor: '#F59E0B',     // Amber-500
-    textColor: '#92400E',       // Amber-800
+    backgroundColor: '#fbbf24', // amber-400
+    borderColor: '#f59e0b',     // amber-500
+    textColor: '#78350f',       // amber-900
   },
   CONFIRMED: {
-    backgroundColor: '#DBEAFE', // Blue-100
-    borderColor: '#3B82F6',     // Blue-500
-    textColor: '#1E40AF',       // Blue-800
+    backgroundColor: '#22c55e', // green-500
+    borderColor: '#16a34a',     // green-600
+    textColor: '#14532d',       // green-900
+  },
+  CHECKED_IN: {
+    backgroundColor: '#3b82f6', // blue-500
+    borderColor: '#2563eb',     // blue-600
+    textColor: '#1e3a8a',       // blue-900
   },
   IN_SERVICE: {
-    backgroundColor: '#D1FAE5', // Green-100
-    borderColor: '#10B981',     // Emerald-500
-    textColor: '#065F46',       // Emerald-800
+    backgroundColor: '#a855f7', // purple-500
+    borderColor: '#9333ea',     // purple-600
+    textColor: '#581c87',       // purple-900
+  },
+  AWAITING_PAYMENT: {
+    backgroundColor: '#f97316', // orange-500
+    borderColor: '#ea580c',     // orange-600
+    textColor: '#7c2d12',       // orange-900
   },
   DONE: {
-    backgroundColor: '#E0E7FF', // Indigo-100
-    borderColor: '#6366F1',     // Indigo-500
-    textColor: '#3730A3',       // Indigo-800
+    backgroundColor: '#94a3b8', // slate-400
+    borderColor: '#64748b',     // slate-500
+    textColor: '#1e293b',       // slate-800
   },
   NO_SHOW: {
-    backgroundColor: '#FEE2E2', // Red-100
-    borderColor: '#EF4444',     // Red-500
-    textColor: '#991B1B',       // Red-800
+    backgroundColor: '#ef4444', // red-500
+    borderColor: '#dc2626',     // red-600
+    textColor: '#fef2f2',       // red-50
   },
   CANCELED: {
-    backgroundColor: '#F3F4F6', // Gray-100
-    borderColor: '#9CA3AF',     // Gray-400
-    textColor: '#4B5563',       // Gray-600
+    backgroundColor: '#64748b', // slate-500
+    borderColor: '#475569',     // slate-600
+    textColor: '#f1f5f9',       // slate-100
   },
 };
 
@@ -128,7 +138,9 @@ export const APPOINTMENT_STATUS_COLORS: Record<string, { backgroundColor: string
 export const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
   CREATED: 'Criado',
   CONFIRMED: 'Confirmado',
+  CHECKED_IN: 'Cliente Chegou',
   IN_SERVICE: 'Em Atendimento',
+  AWAITING_PAYMENT: 'Aguardando Pagamento',
   DONE: 'Concluído',
   NO_SHOW: 'Não Compareceu',
   CANCELED: 'Cancelado',

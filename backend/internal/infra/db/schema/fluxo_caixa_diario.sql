@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS fluxo_caixa_diario (
 
     saidas_pagas NUMERIC(15,2) DEFAULT 0,
     saidas_previstas NUMERIC(15,2) DEFAULT 0,
+    
+    -- Campos Asaas v2 (Migration 041)
+    asaas_payments_count INTEGER DEFAULT 0,
+    asaas_payments_total NUMERIC(15,2) DEFAULT 0,
 
     processado_em TIMESTAMP WITH TIME ZONE DEFAULT now(),
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT now(),

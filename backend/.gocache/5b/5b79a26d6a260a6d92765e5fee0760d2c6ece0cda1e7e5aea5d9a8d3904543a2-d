@@ -1,0 +1,5 @@
+./appointment_handler_integration_test.go
+./financial_handler_integration_test.go
+./metas_handler_integration_test.go
+./pricing_handler_integration_test.go
+./smoke_test.go

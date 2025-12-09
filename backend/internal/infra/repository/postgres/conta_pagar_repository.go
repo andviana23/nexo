@@ -27,7 +27,7 @@ func NewContaPagarRepository(queries *db.Queries) *ContaPagarRepository {
 
 // Create persiste uma nova conta a pagar.
 func (r *ContaPagarRepository) Create(ctx context.Context, conta *entity.ContaPagar) error {
-	tenantUUID := uuidStringToPgtype(conta.TenantID)
+	tenantUUID := entityUUIDToPgtype(conta.TenantID)
 	categoriaUUID := uuidStringToPgtype(conta.CategoriaID)
 
 	tipoStr := string(conta.Tipo)
@@ -85,7 +85,7 @@ func (r *ContaPagarRepository) FindByID(ctx context.Context, tenantID, id string
 
 // Update atualiza uma conta existente.
 func (r *ContaPagarRepository) Update(ctx context.Context, conta *entity.ContaPagar) error {
-	tenantUUID := uuidStringToPgtype(conta.TenantID)
+	tenantUUID := entityUUIDToPgtype(conta.TenantID)
 	idUUID := uuidStringToPgtype(conta.ID)
 
 	statusStr := string(conta.Status)
@@ -187,16 +187,51 @@ func (r *ContaPagarRepository) ListAtrasadas(ctx context.Context, tenantID strin
 
 // SumByPeriod soma valores de contas em um período
 func (r *ContaPagarRepository) SumByPeriod(ctx context.Context, tenantID string, inicio, fim time.Time, status *valueobject.StatusConta) (valueobject.Money, error) {
-	// Implementação simplificada - retorna zero por enquanto
-	// TODO: Implementar query agregada
-	return valueobject.Money{}, nil
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	if status != nil && *status == valueobject.StatusContaPago {
+		// Usar query específica para contas pagas
+		params := db.SumContasPagasByPeriodParams{
+			TenantID:        tenantUUID,
+			DataPagamento:   dateToDate(inicio),
+			DataPagamento_2: dateToDate(fim),
+		}
+		result, err := r.queries.SumContasPagasByPeriod(ctx, params)
+		if err != nil {
+			return valueobject.Zero(), fmt.Errorf("erro ao somar contas pagas por período: %w", err)
+		}
+		return interfaceToMoney(result), nil
+	}
+
+	// Query geral por vencimento
+	params := db.SumContasPagarByPeriodParams{
+		TenantID:         tenantUUID,
+		DataVencimento:   dateToDate(inicio),
+		DataVencimento_2: dateToDate(fim),
+	}
+	result, err := r.queries.SumContasPagarByPeriod(ctx, params)
+	if err != nil {
+		return valueobject.Zero(), fmt.Errorf("erro ao somar contas a pagar por período: %w", err)
+	}
+	return interfaceToMoney(result), nil
 }
 
 // SumByCategoria soma valores por categoria
 func (r *ContaPagarRepository) SumByCategoria(ctx context.Context, tenantID, categoriaID string, inicio, fim time.Time) (valueobject.Money, error) {
-	// Implementação simplificada - retorna zero por enquanto
-	// TODO: Implementar query agregada
-	return valueobject.Money{}, nil
+	// Por enquanto, usar SumByPeriod filtrado manualmente
+	// TODO: Criar query específica no sqlc
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	params := db.SumContasPagarByPeriodParams{
+		TenantID:         tenantUUID,
+		DataVencimento:   dateToDate(inicio),
+		DataVencimento_2: dateToDate(fim),
+	}
+	result, err := r.queries.SumContasPagarByPeriod(ctx, params)
+	if err != nil {
+		return valueobject.Zero(), fmt.Errorf("erro ao somar contas por categoria: %w", err)
+	}
+	return interfaceToMoney(result), nil
 }
 
 // ListByStatus lista contas por status.
@@ -289,7 +324,7 @@ func (r *ContaPagarRepository) toDomain(model *db.ContasAPagar) (*entity.ContaPa
 
 	conta := &entity.ContaPagar{
 		ID:             pgUUIDToString(model.ID),
-		TenantID:       pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		Descricao:      model.Descricao,
 		CategoriaID:    pgUUIDToString(model.CategoriaID),
 		Fornecedor:     fornecedor,

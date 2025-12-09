@@ -13,10 +13,110 @@
 export type AppointmentStatus = 
   | 'CREATED'
   | 'CONFIRMED'
+  | 'CHECKED_IN'       // Cliente chegou
   | 'IN_SERVICE'
+  | 'AWAITING_PAYMENT' // Aguardando pagamento
   | 'DONE'
   | 'NO_SHOW'
   | 'CANCELED';
+
+/** Configuração de cada status */
+export interface StatusConfig {
+  label: string;
+  color: string;
+  bgColor: string;
+  textColor: string;
+  icon: string;
+  allowedTransitions: AppointmentStatus[];
+}
+
+/** Mapa de configurações de status */
+export const STATUS_CONFIG: Record<AppointmentStatus, StatusConfig> = {
+  CREATED: {
+    label: 'Criado',
+    color: '#3B82F6',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
+    icon: 'calendar-plus',
+    allowedTransitions: ['CONFIRMED', 'CHECKED_IN', 'CANCELED', 'NO_SHOW'],
+  },
+  CONFIRMED: {
+    label: 'Confirmado',
+    color: '#10B981',
+    bgColor: 'bg-emerald-100',
+    textColor: 'text-emerald-700',
+    icon: 'check-circle',
+    allowedTransitions: ['CHECKED_IN', 'IN_SERVICE', 'CANCELED', 'NO_SHOW'],
+  },
+  CHECKED_IN: {
+    label: 'Cliente Chegou',
+    color: '#8B5CF6',
+    bgColor: 'bg-violet-100',
+    textColor: 'text-violet-700',
+    icon: 'user-check',
+    allowedTransitions: ['IN_SERVICE', 'CANCELED', 'NO_SHOW'],
+  },
+  IN_SERVICE: {
+    label: 'Em Atendimento',
+    color: '#F59E0B',
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-700',
+    icon: 'scissors',
+    allowedTransitions: ['AWAITING_PAYMENT', 'DONE', 'CANCELED'],
+  },
+  AWAITING_PAYMENT: {
+    label: 'Aguardando Pagamento',
+    color: '#EC4899',
+    bgColor: 'bg-pink-100',
+    textColor: 'text-pink-700',
+    icon: 'credit-card',
+    allowedTransitions: ['DONE', 'CANCELED'],
+  },
+  DONE: {
+    label: 'Concluído',
+    color: '#22C55E',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    icon: 'check',
+    allowedTransitions: [],
+  },
+  NO_SHOW: {
+    label: 'Não Compareceu',
+    color: '#EF4444',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-700',
+    icon: 'user-x',
+    allowedTransitions: [],
+  },
+  CANCELED: {
+    label: 'Cancelado',
+    color: '#6B7280',
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-700',
+    icon: 'x-circle',
+    allowedTransitions: [],
+  },
+};
+
+/** Verifica se uma transição de status é permitida */
+export function canTransitionTo(currentStatus: AppointmentStatus, newStatus: AppointmentStatus): boolean {
+  return STATUS_CONFIG[currentStatus].allowedTransitions.includes(newStatus);
+}
+
+/** Retorna a configuração de um status */
+export function getStatusConfig(status: AppointmentStatus): StatusConfig {
+  return STATUS_CONFIG[status] || STATUS_CONFIG.CREATED;
+}
+
+/** Verifica se é um status final */
+export function isFinalStatus(status: AppointmentStatus): boolean {
+  return ['DONE', 'NO_SHOW', 'CANCELED'].includes(status);
+}
+
+/** Verifica se é um status ativo */
+export function isActiveStatus(status: AppointmentStatus): boolean {
+  return ['CREATED', 'CONFIRMED', 'CHECKED_IN', 'IN_SERVICE', 'AWAITING_PAYMENT'].includes(status);
+}
 
 // ============================================================================
 // ENTITIES
@@ -106,7 +206,13 @@ export interface CreateAppointmentRequest {
   notes?: string;
 }
 
-/** DTO para atualizar um agendamento */
+/** DTO para reagendar um agendamento */
+export interface RescheduleAppointmentRequest {
+  new_start_time: string; // ISO8601
+  professional_id?: string;
+}
+
+/** DTO para atualizar um agendamento (não usado atualmente) */
 export interface UpdateAppointmentRequest {
   professional_id?: string;
   service_ids?: string[];
@@ -126,9 +232,9 @@ export interface ListAppointmentsFilters {
   page_size?: number;
   professional_id?: string;
   customer_id?: string;
-  date_from?: string; // ISO8601
-  date_to?: string;   // ISO8601
-  status?: AppointmentStatus;
+  start_date?: string; // YYYY-MM-DD ou ISO8601
+  end_date?: string;   // YYYY-MM-DD ou ISO8601
+  status?: AppointmentStatus | AppointmentStatus[]; // String única ou array de status
 }
 
 /** Filtros para verificar disponibilidade */
@@ -141,33 +247,62 @@ export interface CheckAvailabilityParams {
 // DTOs - Response
 // ============================================================================
 
-/** Resposta de um agendamento com dados expandidos */
+/** Serviço dentro de um agendamento (resposta da API) */
+export interface AppointmentServiceResponse {
+  service_id: string;
+  service_name: string;
+  price: string;
+  duration: number;
+}
+
+/** Resposta de um agendamento com dados expandidos (formato do backend) */
 export interface AppointmentResponse {
   id: string;
   tenant_id: string;
-  professional: {
-    id: string;
-    name: string;
-    avatar_url?: string;
-  };
-  customer: {
-    id: string;
-    name: string;
-    phone?: string;
-  };
-  services: {
-    id: string;
-    name: string;
-    price: number;
-    duration: number;
-  }[];
+  professional_id: string;
+  professional_name: string;
+  customer_id: string;
+  customer_name: string;
+  customer_phone: string;
+  services: AppointmentServiceResponse[];
   start_time: string;
   end_time: string;
+  duration: number;
   status: AppointmentStatus;
-  total_price: number;
+  status_display: string;
+  status_color: string;
+  total_price: string;
   notes?: string;
+  canceled_reason?: string;
+  google_calendar_event_id?: string;
+  command_id?: string; // ID da comanda vinculada (quando status = AWAITING_PAYMENT)
   created_at: string;
   updated_at: string;
+}
+
+/** Helper para acessar dados de professional/customer como objetos */
+export function getAppointmentProfessional(apt: AppointmentResponse) {
+  return {
+    id: apt.professional_id,
+    name: apt.professional_name,
+  };
+}
+
+export function getAppointmentCustomer(apt: AppointmentResponse) {
+  return {
+    id: apt.customer_id,
+    name: apt.customer_name,
+    phone: apt.customer_phone,
+  };
+}
+
+export function getAppointmentServices(apt: AppointmentResponse) {
+  return apt.services.map(s => ({
+    id: s.service_id,
+    name: s.service_name,
+    price: parseFloat(s.price),
+    duration: s.duration,
+  }));
 }
 
 /** Resposta paginada de listagem */
@@ -252,4 +387,103 @@ export interface CalendarFilters {
   statuses: AppointmentStatus[];
   view: 'day' | 'week' | 'month' | 'list';
   date: Date;
+}
+
+// ============================================================================
+// Blocked Times Types
+// ============================================================================
+
+/** Horário bloqueado */
+export interface BlockedTime {
+  id: string;
+  tenant_id: string;
+  professional_id: string;
+  start_time: string; // ISO 8601
+  end_time: string;   // ISO 8601
+  reason: string;
+  is_recurring: boolean;
+  recurrence_rule?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
+/** Request para criar bloqueio */
+export interface CreateBlockedTimeRequest {
+  professional_id: string;
+  start_time: string; // ISO 8601
+  end_time: string;   // ISO 8601
+  reason: string;
+  is_recurring?: boolean;
+  recurrence_rule?: string;
+}
+
+/** Response de bloqueio criado */
+export interface BlockedTimeResponse {
+  id: string;
+  tenant_id: string;
+  professional_id: string;
+  start_time: string;
+  end_time: string;
+  reason: string;
+  is_recurring: boolean;
+  recurrence_rule?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
+/** Request para listar bloqueios */
+export interface ListBlockedTimesRequest {
+  professional_id?: string;
+  start_date?: string; // ISO 8601
+  end_date?: string;   // ISO 8601
+}
+
+/** Response de listagem de bloqueios */
+export interface ListBlockedTimesResponse {
+  blocked_times: BlockedTimeResponse[];
+  total: number;
+}
+
+// ============================================================================
+// HELPERS DE FORMATAÇÃO
+// ============================================================================
+
+/**
+ * Formata um valor monetário para exibição em BRL.
+ * Aceita string numérica do backend (ex: "50.00") ou number.
+ * 
+ * @param value - Valor numérico como string ou number
+ * @returns String formatada em BRL (ex: "R$ 50,00")
+ * 
+ * @example
+ * formatCurrency("50.00") // "R$ 50,00"
+ * formatCurrency(50)      // "R$ 50,00"
+ * formatCurrency("R$ 50") // "R$ 50,00" (tenta parsear mesmo com prefixo)
+ */
+export function formatCurrency(value: string | number | undefined | null): string {
+  if (value === undefined || value === null) {
+    return 'R$ 0,00';
+  }
+  
+  // Se já é number, usa direto
+  let numValue: number;
+  if (typeof value === 'number') {
+    numValue = value;
+  } else {
+    // Remove "R$", espaços e substitui vírgula por ponto para parse
+    const cleaned = value.replace(/[R$\s]/g, '').replace(',', '.');
+    numValue = parseFloat(cleaned);
+  }
+  
+  // Trata NaN
+  if (isNaN(numValue)) {
+    return 'R$ 0,00';
+  }
+  
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(numValue);
 }

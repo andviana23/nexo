@@ -7,6 +7,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Clock, Lock } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useProfessionals } from '@/hooks/use-appointments';
+import { useCreateBlockedTime } from '@/hooks/use-blocked-times';
 
 // =============================================================================
 // SCHEMA
@@ -45,8 +47,11 @@ const blockScheduleSchema = z.object({
   date: z.string().min(1, 'Selecione uma data'),
   start_time: z.string().min(1, 'Informe o horário de início'),
   end_time: z.string().min(1, 'Informe o horário de término'),
-  reason: z.string().optional(),
+  reason: z.string().min(3, 'Motivo deve ter pelo menos 3 caracteres'),
   is_recurring: z.boolean().default(false),
+}).refine((data) => data.end_time > data.start_time, {
+  message: 'Horário de término deve ser maior que o de início',
+  path: ['end_time'],
 });
 
 type BlockScheduleFormData = z.infer<typeof blockScheduleSchema>;
@@ -77,6 +82,7 @@ export function BlockScheduleModal({
   initialEndTime,
 }: BlockScheduleModalProps) {
   const { data: professionals = [] } = useProfessionals();
+  const createBlockedTime = useCreateBlockedTime();
 
   const form = useForm<BlockScheduleFormData>({
     resolver: zodResolver(blockScheduleSchema),
@@ -90,11 +96,39 @@ export function BlockScheduleModal({
     },
   });
 
+  // Reset form when modal opens with new initial values
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        professional_id: initialProfessionalId || '',
+        date: initialDate?.toISOString().split('T')[0] || '',
+        start_time: initialStartTime || '08:00',
+        end_time: initialEndTime || '09:00',
+        reason: '',
+        is_recurring: false,
+      });
+    }
+  }, [isOpen, initialDate, initialProfessionalId, initialStartTime, initialEndTime, form]);
+
   const onSubmit = async (data: BlockScheduleFormData) => {
-    console.log('Bloqueio de horário:', data);
-    // TODO: Implementar API de bloqueio
-    // await createBlockedSlot(data);
-    onClose();
+    // Combinar data + horário em ISO 8601
+    const startDateTime = new Date(`${data.date}T${data.start_time}:00`);
+    const endDateTime = new Date(`${data.date}T${data.end_time}:00`);
+
+    try {
+      await createBlockedTime.mutateAsync({
+        professional_id: data.professional_id,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        reason: data.reason,
+        is_recurring: data.is_recurring,
+      });
+      
+      form.reset();
+      onClose();
+    } catch {
+      // error já tratado no hook
+    }
   };
 
   return (
@@ -197,7 +231,7 @@ export function BlockScheduleModal({
               name="reason"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Motivo (opcional)</FormLabel>
+                  <FormLabel>Motivo</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Ex: Almoço, Reunião, Folga..."
@@ -213,12 +247,21 @@ export function BlockScheduleModal({
 
             {/* Ações */}
             <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={createBlockedTime.isPending}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" variant="destructive">
+              <Button 
+                type="submit" 
+                variant="destructive"
+                disabled={createBlockedTime.isPending}
+              >
                 <Lock className="h-4 w-4 mr-2" />
-                Bloquear Horário
+                {createBlockedTime.isPending ? 'Bloqueando...' : 'Bloquear Horário'}
               </Button>
             </div>
           </form>

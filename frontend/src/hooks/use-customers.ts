@@ -176,7 +176,8 @@ export function useCreateCustomer() {
 
   return useMutation({
     mutationFn: (data: CreateCustomerRequest) => customerService.create(data),
-    onSuccess: (newCustomer) => {
+    onSuccess: (_newCustomer) => {
+      void _newCustomer;
       // Invalida caches relacionados para forçar refetch
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
       queryClient.invalidateQueries({ queryKey: customerKeys.active() });

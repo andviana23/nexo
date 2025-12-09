@@ -8,6 +8,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -21,18 +22,21 @@ type UpdateAppointmentStatusInput struct {
 
 // UpdateAppointmentStatusUseCase implementa a atualização de status
 type UpdateAppointmentStatusUseCase struct {
-	repo   port.AppointmentRepository
-	logger *zap.Logger
+	repo        port.AppointmentRepository
+	commandRepo port.CommandRepository // Adicionado para validar comanda fechada
+	logger      *zap.Logger
 }
 
 // NewUpdateAppointmentStatusUseCase cria nova instância do use case
 func NewUpdateAppointmentStatusUseCase(
 	repo port.AppointmentRepository,
+	commandRepo port.CommandRepository,
 	logger *zap.Logger,
 ) *UpdateAppointmentStatusUseCase {
 	return &UpdateAppointmentStatusUseCase{
-		repo:   repo,
-		logger: logger,
+		repo:        repo,
+		commandRepo: commandRepo,
+		logger:      logger,
 	}
 }
 
@@ -60,11 +64,45 @@ func (uc *UpdateAppointmentStatusUseCase) Execute(ctx context.Context, input Upd
 		if err := appointment.Confirm(); err != nil {
 			return nil, err
 		}
+	case valueobject.AppointmentStatusCheckedIn:
+		// Cliente chegou para o atendimento
+		if err := appointment.CheckIn(); err != nil {
+			return nil, err
+		}
 	case valueobject.AppointmentStatusInService:
 		if err := appointment.StartService(); err != nil {
 			return nil, err
 		}
+	case valueobject.AppointmentStatusAwaitingPayment:
+		// Serviços finalizados, aguardando pagamento
+		if err := appointment.FinishService(); err != nil {
+			return nil, err
+		}
 	case valueobject.AppointmentStatusDone:
+		// BLOQUEIO: Não permitir marcar como DONE sem comanda fechada
+		// Use FinalizarComandaIntegrada para finalizar com integração financeira
+		if appointment.CommandID == "" {
+			return nil, fmt.Errorf("agendamento não possui comanda vinculada: use a finalização via comanda")
+		}
+
+		// Verificar se comanda existe e está fechada
+		tenantUUID, err := uuid.Parse(input.TenantID)
+		if err != nil {
+			return nil, fmt.Errorf("tenant_id inválido: %w", err)
+		}
+		commandUUID, err := uuid.Parse(appointment.CommandID)
+		if err != nil {
+			return nil, fmt.Errorf("command_id inválido: %w", err)
+		}
+
+		command, err := uc.commandRepo.FindByID(ctx, commandUUID, tenantUUID)
+		if err != nil {
+			return nil, fmt.Errorf("comanda não encontrada: %w", err)
+		}
+		if command.Status != entity.CommandStatusClosed {
+			return nil, fmt.Errorf("comanda deve estar fechada para finalizar agendamento (status atual: %s)", command.Status)
+		}
+
 		if err := appointment.Complete(); err != nil {
 			return nil, err
 		}

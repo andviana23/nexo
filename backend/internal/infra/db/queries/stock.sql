@@ -93,17 +93,20 @@ WHERE id = $1 AND tenant_id = $2;
 -- name: CreateProduto :one
 INSERT INTO produtos (
     tenant_id,
-    categoria_id,
+    categoria_produto_id,
     nome,
     descricao,
     sku,
     codigo_barras,
     preco,
     custo,
-    categoria_produto,
     unidade_medida,
     quantidade_atual,
     quantidade_minima,
+    estoque_maximo,
+    valor_venda_profissional,
+    valor_entrada,
+    fornecedor_id,
     localizacao,
     lote,
     data_validade,
@@ -112,7 +115,7 @@ INSERT INTO produtos (
     ativo
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-    $11, $12, $13, $14, $15, $16, $17, $18
+    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
 )
 RETURNING *;
 
@@ -123,6 +126,10 @@ WHERE id = $1 AND tenant_id = $2;
 -- name: GetProdutoBySKU :one
 SELECT * FROM produtos
 WHERE sku = $1 AND tenant_id = $2;
+
+-- name: GetProdutoByCodigoBarras :one
+SELECT * FROM produtos
+WHERE codigo_barras = $1 AND tenant_id = $2;
 
 -- name: ListProdutos :many
 SELECT * FROM produtos
@@ -149,21 +156,25 @@ ORDER BY (quantidade_atual / NULLIF(quantidade_minima, 0)) ASC;
 -- name: UpdateProduto :one
 UPDATE produtos
 SET
-    categoria_id = $3,
+    categoria_produto_id = $3,
     nome = $4,
     descricao = $5,
     sku = $6,
     codigo_barras = $7,
     preco = $8,
     custo = $9,
-    categoria_produto = $10,
-    unidade_medida = $11,
-    quantidade_minima = $12,
-    localizacao = $13,
-    lote = $14,
-    data_validade = $15,
-    ncm = $16,
-    permite_venda = $17,
+    unidade_medida = $10,
+    quantidade_minima = $11,
+    quantidade_atual = $12,
+    estoque_maximo = $13,
+    valor_venda_profissional = $14,
+    valor_entrada = $15,
+    fornecedor_id = $16,
+    localizacao = $17,
+    lote = $18,
+    data_validade = $19,
+    ncm = $20,
+    permite_venda = $21,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
 RETURNING *;

@@ -2,13 +2,18 @@ package financial
 
 import (
 	"context"
+
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
+	"github.com/andviana23/barber-analytics-backend/internal/domain/repository"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -21,10 +26,11 @@ type GenerateDREInput struct {
 // GenerateDREUseCase implementa a geração de DRE mensal
 // Este use case é executado por cron job mensalmente
 type GenerateDREUseCase struct {
-	dreRepo           port.DREMensalRepository
-	contasPagarRepo   port.ContaPagarRepository
-	contasReceberRepo port.ContaReceberRepository
-	logger            *zap.Logger
+	dreRepo            port.DREMensalRepository
+	contasPagarRepo    port.ContaPagarRepository
+	contasReceberRepo  port.ContaReceberRepository
+	commissionItemRepo repository.CommissionItemRepository
+	logger             *zap.Logger
 }
 
 // NewGenerateDREUseCase cria nova instância do use case
@@ -32,13 +38,15 @@ func NewGenerateDREUseCase(
 	dreRepo port.DREMensalRepository,
 	contasPagarRepo port.ContaPagarRepository,
 	contasReceberRepo port.ContaReceberRepository,
+	commissionItemRepo repository.CommissionItemRepository,
 	logger *zap.Logger,
 ) *GenerateDREUseCase {
 	return &GenerateDREUseCase{
-		dreRepo:           dreRepo,
-		contasPagarRepo:   contasPagarRepo,
-		contasReceberRepo: contasReceberRepo,
-		logger:            logger,
+		dreRepo:            dreRepo,
+		contasPagarRepo:    contasPagarRepo,
+		contasReceberRepo:  contasReceberRepo,
+		commissionItemRepo: commissionItemRepo,
+		logger:             logger,
 	}
 }
 
@@ -58,7 +66,7 @@ func (uc *GenerateDREUseCase) Execute(ctx context.Context, input GenerateDREInpu
 	dre, err := uc.dreRepo.FindByMesAno(ctx, input.TenantID, input.MesAno)
 	if err != nil {
 		// Criar novo DRE se não existir
-		dre, err = entity.NewDREMensal(input.TenantID, input.MesAno)
+		dre, err = entity.NewDREMensal(uuid.MustParse(input.TenantID), input.MesAno)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao criar DRE: %w", err)
 		}
@@ -67,42 +75,76 @@ func (uc *GenerateDREUseCase) Execute(ctx context.Context, input GenerateDREInpu
 	// Calcular período do mês
 	inicio := input.MesAno.PrimeiroDia()
 	fim := input.MesAno.UltimoDia()
-
-	// ===== RECEITAS =====
-	// Calcular receitas por subtipo (SERVICO, PRODUTO, PLANO)
-	// Nota: Precisa filtrar por subtipo - simplificado aqui
 	statusPago := valueobject.StatusContaPago
 
-	totalReceitas, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
+	// ===== RECEITAS POR ORIGEM =====
+	// Receitas de serviços
+	receitaServicos, err := uc.contasReceberRepo.SumByOrigem(ctx, input.TenantID, "SERVICO", inicio, fim)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao calcular receitas: %w", err)
+		uc.logger.Warn("erro ao calcular receitas de serviços", zap.Error(err))
+		receitaServicos = valueobject.Zero()
 	}
 
-	// TODO: Implementar filtro por subtipo quando disponível no repositório
-	// Por enquanto, atribuindo ao serviços (receita principal)
-	dre.SetReceitas(totalReceitas, valueobject.Zero(), valueobject.Zero())
+	// Receitas de produtos
+	receitaProdutos, err := uc.contasReceberRepo.SumByOrigem(ctx, input.TenantID, "PRODUTO", inicio, fim)
+	if err != nil {
+		uc.logger.Warn("erro ao calcular receitas de produtos", zap.Error(err))
+		receitaProdutos = valueobject.Zero()
+	}
+
+	// Receitas de assinaturas
+	receitaAssinaturas, err := uc.contasReceberRepo.SumByOrigem(ctx, input.TenantID, "ASSINATURA", inicio, fim)
+	if err != nil {
+		uc.logger.Warn("erro ao calcular receitas de assinaturas", zap.Error(err))
+		receitaAssinaturas = valueobject.Zero()
+	}
+
+	// Se todas as receitas por origem forem zero, usar receita total como fallback
+	if receitaServicos.IsZero() && receitaProdutos.IsZero() && receitaAssinaturas.IsZero() {
+		totalReceitas, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao calcular receitas: %w", err)
+		}
+		receitaServicos = totalReceitas
+	}
+
+	dre.SetReceitas(receitaServicos, receitaProdutos, receitaAssinaturas)
 
 	// ===== CUSTOS VARIÁVEIS =====
-	// TODO: Buscar comissões e consumo de insumos do período
-	// Por enquanto, zerado até implementar módulos relacionados
-	dre.SetCustosVariaveis(valueobject.Zero(), valueobject.Zero())
-
-	// ===== DESPESAS =====
-	// Calcular despesas fixas e variáveis
-	tipoFixo := valueobject.TipoCustoFixo
-	tipoVariavel := valueobject.TipoCustoVariavel
-
-	despesasFixas, err := uc.contasPagarRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao calcular despesas fixas: %w", err)
+	// Buscar total de comissões do período usando o módulo de comissões
+	var custoComissoes valueobject.Money
+	if uc.commissionItemRepo != nil {
+		totalComissoes, err := uc.commissionItemRepo.SumByDateRange(ctx, input.TenantID, inicio, fim)
+		if err != nil {
+			uc.logger.Warn("erro ao calcular comissões do período", zap.Error(err))
+			custoComissoes = valueobject.Zero()
+		} else {
+			custoComissoes = valueobject.NewMoneyFromDecimal(decimal.NewFromFloat(totalComissoes))
+		}
+	} else {
+		uc.logger.Warn("commissionItemRepo não configurado, usando comissões zeradas")
+		custoComissoes = valueobject.Zero()
 	}
 
-	// TODO: Filtrar por tipo quando implementado no repositório
-	// Por enquanto, considerando tudo como despesa fixa
-	_ = tipoFixo
-	_ = tipoVariavel
+	// Custo de insumos (por enquanto zerado - TODO: integrar com módulo de estoque)
+	dre.SetCustosVariaveis(custoComissoes, valueobject.Zero())
 
-	dre.SetDespesas(despesasFixas, valueobject.Zero())
+	// ===== DESPESAS =====
+	// Buscar despesas pagas no período
+	despesasTotais, err := uc.contasPagarRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao calcular despesas: %w", err)
+	}
+
+	// Por enquanto, separando 70% fixas e 30% variáveis como estimativa
+	// TODO: Implementar separação real por tipo (FIXA vs VARIAVEL) quando houver query específica
+	despesasFixasVal := despesasTotais.Value().Mul(decimalFromFloat(0.7))
+	despesasVariaveisVal := despesasTotais.Value().Mul(decimalFromFloat(0.3))
+
+	despesasFixas := valueobject.NewMoneyFromDecimal(despesasFixasVal)
+	despesasVariaveis := valueobject.NewMoneyFromDecimal(despesasVariaveisVal)
+
+	dre.SetDespesas(despesasFixas, despesasVariaveis)
 
 	// Calcular resultado final
 	dre.Calcular()
@@ -126,6 +168,11 @@ func (uc *GenerateDREUseCase) Execute(ctx context.Context, input GenerateDREInpu
 	)
 
 	return dre, nil
+}
+
+// decimalFromFloat converte float64 para decimal.Decimal
+func decimalFromFloat(f float64) decimal.Decimal {
+	return decimal.NewFromFloat(f)
 }
 
 // DefaultMesAnterior retorna o período YYYY-MM do mês anterior ao atual.

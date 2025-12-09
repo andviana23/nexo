@@ -47,6 +47,12 @@ func (m Money) String() string {
 	return fmt.Sprintf("R$ %s", m.value.StringFixed(2))
 }
 
+// Raw retorna o valor como string numérica sem formatação (ex: "10.50")
+// Usado em DTOs para transferência de dados
+func (m Money) Raw() string {
+	return m.value.StringFixed(2)
+}
+
 // IsPositive verifica se o valor é positivo
 func (m Money) IsPositive() bool {
 	return m.value.GreaterThan(decimal.Zero)

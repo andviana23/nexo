@@ -9,8 +9,12 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+// Tenant de teste fixo para manter consistência
+var testTenantUUID = uuid.MustParse("11111111-1111-1111-1111-111111111111")
 
 func TestCancelAppointmentUseCase_Execute(t *testing.T) {
 	logger := zap.NewNop()
@@ -20,7 +24,7 @@ func TestCancelAppointmentUseCase_Execute(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 
 		mockRepo := &MockAppointmentRepository{
 			FindByIDFn: func(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
@@ -31,7 +35,7 @@ func TestCancelAppointmentUseCase_Execute(t *testing.T) {
 		uc := NewCancelAppointmentUseCase(mockRepo, logger)
 
 		input := CancelAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			Reason:        "Cliente solicitou cancelamento",
 		}
@@ -73,7 +77,7 @@ func TestCancelAppointmentUseCase_Execute(t *testing.T) {
 		uc := NewCancelAppointmentUseCase(mockRepo, logger)
 
 		input := CancelAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: "",
 		}
 
@@ -97,7 +101,7 @@ func TestCancelAppointmentUseCase_Execute(t *testing.T) {
 		uc := NewCancelAppointmentUseCase(mockRepo, logger)
 
 		input := CancelAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: "appt-not-exists",
 		}
 
@@ -112,7 +116,7 @@ func TestCancelAppointmentUseCase_Execute(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 		appointment.Confirm()
 		appointment.StartService()
 		appointment.Complete()
@@ -126,7 +130,7 @@ func TestCancelAppointmentUseCase_Execute(t *testing.T) {
 		uc := NewCancelAppointmentUseCase(mockRepo, logger)
 
 		input := CancelAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 		}
 
@@ -146,7 +150,7 @@ func TestRescheduleAppointmentUseCase_Execute(t *testing.T) {
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
 		originalTime := time.Now().Add(24 * time.Hour)
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", originalTime, services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", originalTime, services)
 
 		mockRepo := &MockAppointmentRepository{
 			FindByIDFn: func(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
@@ -157,11 +161,11 @@ func TestRescheduleAppointmentUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewRescheduleAppointmentUseCase(mockRepo, logger)
+		uc := NewRescheduleAppointmentUseCase(mockRepo, &MockProfessionalReader{}, logger)
 
 		newTime := time.Now().Add(48 * time.Hour)
 		input := RescheduleAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			NewStartTime:  newTime,
 		}
@@ -183,7 +187,7 @@ func TestRescheduleAppointmentUseCase_Execute(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 
 		mockRepo := &MockAppointmentRepository{
 			FindByIDFn: func(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
@@ -194,10 +198,10 @@ func TestRescheduleAppointmentUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewRescheduleAppointmentUseCase(mockRepo, logger)
+		uc := NewRescheduleAppointmentUseCase(mockRepo, &MockProfessionalReader{}, logger)
 
 		input := RescheduleAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			NewStartTime:  time.Now().Add(48 * time.Hour),
 		}
@@ -214,7 +218,7 @@ func TestRescheduleAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail without tenant_id", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{}
-		uc := NewRescheduleAppointmentUseCase(mockRepo, logger)
+		uc := NewRescheduleAppointmentUseCase(mockRepo, &MockProfessionalReader{}, logger)
 
 		input := RescheduleAppointmentInput{
 			TenantID:      "",
@@ -235,12 +239,13 @@ func TestRescheduleAppointmentUseCase_Execute(t *testing.T) {
 
 func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 	logger := zap.NewNop()
+	mockCommandRepo := &MockCommandRepository{}
 
 	t.Run("should confirm appointment", func(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 
 		mockRepo := &MockAppointmentRepository{
 			FindByIDFn: func(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
@@ -248,10 +253,10 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewUpdateAppointmentStatusUseCase(mockRepo, logger)
+		uc := NewUpdateAppointmentStatusUseCase(mockRepo, mockCommandRepo, logger)
 
 		input := UpdateAppointmentStatusInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			NewStatus:     valueobject.AppointmentStatusConfirmed,
 		}
@@ -270,7 +275,7 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 		appointment.Confirm()
 
 		mockRepo := &MockAppointmentRepository{
@@ -279,10 +284,10 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewUpdateAppointmentStatusUseCase(mockRepo, logger)
+		uc := NewUpdateAppointmentStatusUseCase(mockRepo, mockCommandRepo, logger)
 
 		input := UpdateAppointmentStatusInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			NewStatus:     valueobject.AppointmentStatusInService,
 		}
@@ -297,11 +302,11 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 		}
 	})
 
-	t.Run("should complete from in_service", func(t *testing.T) {
+	t.Run("should finish service to awaiting_payment", func(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 		appointment.Confirm()
 		appointment.StartService()
 
@@ -311,10 +316,56 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewUpdateAppointmentStatusUseCase(mockRepo, logger)
+		uc := NewUpdateAppointmentStatusUseCase(mockRepo, mockCommandRepo, logger)
 
 		input := UpdateAppointmentStatusInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
+			AppointmentID: appointment.ID,
+			NewStatus:     valueobject.AppointmentStatusAwaitingPayment,
+		}
+
+		result, err := uc.Execute(context.Background(), input)
+
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if result.Status != valueobject.AppointmentStatusAwaitingPayment {
+			t.Errorf("expected status AWAITING_PAYMENT, got %s", result.Status)
+		}
+	})
+
+	t.Run("should complete with closed command", func(t *testing.T) {
+		commandID := uuid.New()
+		services := []entity.AppointmentService{
+			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
+		}
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment.Confirm()
+		appointment.StartService()
+		appointment.FinishService()
+		appointment.CommandID = commandID.String()
+
+		mockRepo := &MockAppointmentRepository{
+			FindByIDFn: func(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
+				return appointment, nil
+			},
+		}
+
+		// Mock comanda fechada
+		localMockCommandRepo := &MockCommandRepository{
+			FindByIDFn: func(ctx context.Context, cmdID, tenantID uuid.UUID) (*entity.Command, error) {
+				return &entity.Command{
+					ID:       cmdID,
+					TenantID: tenantID,
+					Status:   entity.CommandStatusClosed,
+				}, nil
+			},
+		}
+
+		uc := NewUpdateAppointmentStatusUseCase(mockRepo, localMockCommandRepo, logger)
+
+		input := UpdateAppointmentStatusInput{
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			NewStatus:     valueobject.AppointmentStatusDone,
 		}
@@ -333,7 +384,7 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 		// Appointment is in CREATED status
 
 		mockRepo := &MockAppointmentRepository{
@@ -342,10 +393,10 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewUpdateAppointmentStatusUseCase(mockRepo, logger)
+		uc := NewUpdateAppointmentStatusUseCase(mockRepo, mockCommandRepo, logger)
 
 		input := UpdateAppointmentStatusInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			NewStatus:     valueobject.AppointmentStatusDone, // Can't go directly to DONE from CREATED
 		}
@@ -361,7 +412,7 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 		appointment.Confirm()
 
 		mockRepo := &MockAppointmentRepository{
@@ -370,10 +421,10 @@ func TestUpdateAppointmentStatusUseCase_Execute(t *testing.T) {
 			},
 		}
 
-		uc := NewUpdateAppointmentStatusUseCase(mockRepo, logger)
+		uc := NewUpdateAppointmentStatusUseCase(mockRepo, mockCommandRepo, logger)
 
 		input := UpdateAppointmentStatusInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 			NewStatus:     valueobject.AppointmentStatusNoShow,
 		}
@@ -396,7 +447,7 @@ func TestGetAppointmentUseCase_Execute(t *testing.T) {
 		services := []entity.AppointmentService{
 			{ServiceID: "svc-1", ServiceName: "Corte", PriceAtBooking: valueobject.NewMoneyFromFloat(50.0), DurationAtBooking: 30},
 		}
-		appointment, _ := entity.NewAppointment("tenant-123", "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
+		appointment, _ := entity.NewAppointment(testTenantUUID, "prof-123", "cust-123", time.Now().Add(24*time.Hour), services)
 
 		mockRepo := &MockAppointmentRepository{
 			FindByIDFn: func(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
@@ -407,7 +458,7 @@ func TestGetAppointmentUseCase_Execute(t *testing.T) {
 		uc := NewGetAppointmentUseCase(mockRepo, logger)
 
 		input := GetAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: appointment.ID,
 		}
 
@@ -445,7 +496,7 @@ func TestGetAppointmentUseCase_Execute(t *testing.T) {
 		uc := NewGetAppointmentUseCase(mockRepo, logger)
 
 		input := GetAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: "",
 		}
 
@@ -469,7 +520,7 @@ func TestGetAppointmentUseCase_Execute(t *testing.T) {
 		uc := NewGetAppointmentUseCase(mockRepo, logger)
 
 		input := GetAppointmentInput{
-			TenantID:      "tenant-123",
+			TenantID:      testTenantUUID.String(),
 			AppointmentID: "appt-not-exists",
 		}
 

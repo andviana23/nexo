@@ -1,0 +1,28 @@
+{
+    "strictMode": true,
+    "validateArchitecture": true,
+    "validateTenantFiltering": true,
+    "validateDesignSystem": true,
+    "validateDtoRules": true,
+    "validateRbca": true,
+    "blockedPatterns": [
+        "inline-style",
+        "css-hardcoded",
+        "sql-raw",
+        "tenant_id-in-payload",
+        "float-money",
+        "any-type"
+    ],
+    "allowedPatterns": [
+        "sqlc-query",
+        "usecase-layer",
+        "dto-snake-case",
+        "design-system-token",
+        "clean-architecture"
+    ],
+    "agent": {
+        "loadGlobalRules": true,
+        "interpretMarkdownRules": true,
+        "fallbackTo": ".github/copilot-instructions.md"
+    }
+}

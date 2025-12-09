@@ -6,14 +6,21 @@ import (
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/financial"
+	subscriptionUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/subscription"
 	"go.uber.org/zap"
 )
 
 // FinancialJobDeps agrega use cases necessários para os cron jobs financeiros.
 type FinancialJobDeps struct {
-	GenerateDRE         *financial.GenerateDREUseCase
-	GenerateFluxoDiario *financial.GenerateFluxoDiarioUseCase
-	MarcarCompensacoes  *financial.MarcarCompensacaoUseCase
+	GenerateDRE              *financial.GenerateDREUseCase
+	GenerateFluxoDiario      *financial.GenerateFluxoDiarioUseCase
+	MarcarCompensacoes       *financial.MarcarCompensacaoUseCase
+	GerarContasDespesasFixas *financial.GerarContasFromDespesasFixasUseCase
+}
+
+// SubscriptionJobDeps agrega use cases do módulo de assinaturas
+type SubscriptionJobDeps struct {
+	ProcessOverdue *subscriptionUC.ProcessOverdueSubscriptionsUseCase
 }
 
 // RegisterFinancialJobs registra os cron jobs financeiros com base nas envs.
@@ -81,6 +88,26 @@ func RegisterFinancialJobs(s *Scheduler, logger *zap.Logger, deps FinancialJobDe
 		logger.Warn("MarcarCompensacoesUseCase não configurado, job não registrado")
 	}
 
+	// Gerar Contas de Despesas Fixas (todo dia 1 às 01:00)
+	// Cria automaticamente ContasPagar com base nas despesas fixas ativas
+	if deps.GerarContasDespesasFixas != nil {
+		if err := s.AddJob(JobConfig{
+			Name:        "GerarContasDespesasFixas",
+			Schedule:    getEnvSchedule("CRON_DESPESAS_FIXAS_SCHEDULE", "0 0 1 1 * *"),
+			Enabled:     getEnvBool("CRON_DESPESAS_FIXAS_ENABLED", true),
+			FeatureFlag: "FF_CRON_DESPESAS_FIXAS",
+			Tenants:     tenants,
+			TenantRunner: func(ctx context.Context, tenantID string) error {
+				_, err := deps.GerarContasDespesasFixas.ExecuteForCurrentMonth(ctx, tenantID)
+				return err
+			},
+		}); err != nil {
+			return err
+		}
+	} else {
+		logger.Warn("GerarContasDespesasFixasUseCase não configurado, job não registrado")
+	}
+
 	// Jobs ainda não implementados em domínio: registrar placeholders para não quebrar build.
 	placeholderJobs := []JobConfig{
 		{
@@ -121,6 +148,29 @@ func RegisterFinancialJobs(s *Scheduler, logger *zap.Logger, deps FinancialJobDe
 		}
 	}
 
+	return nil
+}
+
+// RegisterSubscriptionJobs registra cron jobs do módulo de assinaturas
+func RegisterSubscriptionJobs(s *Scheduler, logger *zap.Logger, deps SubscriptionJobDeps, tenants []string) error {
+	// Verificar vencimentos (RN-VENC-003/RN-VENC-004)
+	if deps.ProcessOverdue != nil {
+		if err := s.AddJob(JobConfig{
+			Name:        "ProcessOverdueSubscriptions",
+			Schedule:    getEnvSchedule("CRON_SUBSCRIPTIONS_OVERDUE_SCHEDULE", "0 5 0 * * *"),
+			Enabled:     getEnvBool("CRON_SUBSCRIPTIONS_OVERDUE_ENABLED", true),
+			FeatureFlag: "FF_CRON_SUBSCRIPTIONS_OVERDUE",
+			Tenants:     tenants,
+			TenantRunner: func(ctx context.Context, tenantID string) error {
+				_, err := deps.ProcessOverdue.Execute(ctx, tenantID)
+				return err
+			},
+		}); err != nil {
+			return err
+		}
+	} else {
+		logger.Warn("ProcessOverdueSubscriptionsUseCase não configurado, job não registrado")
+	}
 	return nil
 }
 

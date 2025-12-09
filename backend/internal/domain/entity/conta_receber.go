@@ -11,10 +11,10 @@ import (
 // ContaReceber representa uma conta a receber (receita futura)
 type ContaReceber struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 
 	Origem          string  // ASSINATURA, SERVICO, OUTRO
-	AssinaturaID    *string // Apenas se origem = ASSINATURA
+	AssinaturaID    *string // Apenas se origem = ASSINATURA (tabela antiga assinaturas)
 	DescricaoOrigem string
 
 	Valor       valueobject.Money
@@ -29,17 +29,24 @@ type ContaReceber struct {
 
 	CriadoEm     time.Time
 	AtualizadoEm time.Time
+
+	// Campos de integração Asaas (Migration 041)
+	SubscriptionID *string    // FK para subscriptions (nova tabela)
+	AsaasPaymentID *string    // ID da cobrança no Asaas (idempotência)
+	CompetenciaMes *string    // Mês de competência YYYY-MM para DRE
+	ConfirmedAt    *time.Time // Timestamp de confirmação (CONFIRMED)
+	ReceivedAt     *time.Time // Timestamp de recebimento (RECEIVED)
 }
 
 // NewContaReceber cria uma nova conta a receber
 func NewContaReceber(
-	tenantID, origem string,
+	tenantID uuid.UUID, origem string,
 	assinaturaID *string,
 	descricaoOrigem string,
 	valor valueobject.Money,
 	dataVencimento time.Time,
 ) (*ContaReceber, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if origem == "" {
@@ -165,7 +172,7 @@ func (c *ContaReceber) PercentualRecebido() valueobject.Percentage {
 
 // Validate valida as regras de negócio
 func (c *ContaReceber) Validate() error {
-	if c.TenantID == "" {
+	if c.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if c.Origem == "" {

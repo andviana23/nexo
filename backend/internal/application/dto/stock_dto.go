@@ -4,44 +4,56 @@ package dto
 
 // CreateProdutoRequest representa a requisição para criar um produto
 type CreateProdutoRequest struct {
-	SKU              string  `json:"sku" validate:"required"`
-	Nome             string  `json:"nome" validate:"required"`
-	Descricao        string  `json:"descricao"`
-	Categoria        string  `json:"categoria" validate:"required,oneof=POMADA SHAMPOO CREME LAMINA TOALHA CONSUMIVEL REVENDA"`
-	UnidadeMedida    string  `json:"unidade_medida" validate:"required,oneof=UN KG G ML L"`
-	ValorUnitario    string  `json:"valor_unitario" validate:"required"` // String para receber do frontend
-	QuantidadeMinima int     `json:"quantidade_minima"`
-	FornecedorID     *string `json:"fornecedor_id,omitempty"`
+	Nome                   string  `json:"nome" validate:"required,min=2,max=100"`
+	Descricao              string  `json:"descricao,omitempty"`
+	CodigoBarras           *string `json:"codigo_barras,omitempty" validate:"omitempty,max=50"`
+	CategoriaProdutoID     string  `json:"categoria_produto_id" validate:"required,uuid"`
+	UnidadeMedida          string  `json:"unidade_medida" validate:"required,oneof=UNIDADE QUILOGRAMA GRAMA MILILITRO LITRO"`
+	ValorUnitario          string  `json:"valor_unitario" validate:"required"`
+	QuantidadeMinima       float64 `json:"quantidade_minima" validate:"gte=0"`
+	QuantidadeMaxima       *string `json:"quantidade_maxima,omitempty"`
+	ValorVendaProfissional *string `json:"valor_venda_profissional,omitempty"`
+	ValorEntrada           *string `json:"valor_entrada,omitempty"`
+	FornecedorID           *string `json:"fornecedor_id,omitempty" validate:"omitempty,uuid"`
 }
 
 // UpdateProdutoRequest representa a requisição para atualizar um produto
 type UpdateProdutoRequest struct {
-	Nome             string  `json:"nome"`
-	Descricao        string  `json:"descricao"`
-	Categoria        string  `json:"categoria" validate:"omitempty,oneof=POMADA SHAMPOO CREME LAMINA TOALHA CONSUMIVEL REVENDA"`
-	UnidadeMedida    string  `json:"unidade_medida" validate:"omitempty,oneof=UN KG G ML L"`
-	ValorUnitario    string  `json:"valor_unitario,omitempty"`
-	QuantidadeMinima int     `json:"quantidade_minima"`
-	FornecedorID     *string `json:"fornecedor_id,omitempty"`
+	Nome                   *string `json:"nome,omitempty" validate:"omitempty,min=2,max=100"`
+	Descricao              *string `json:"descricao,omitempty"`
+	CodigoBarras           *string `json:"codigo_barras,omitempty" validate:"omitempty,max=50"`
+	CategoriaProdutoID     *string `json:"categoria_produto_id,omitempty" validate:"omitempty,uuid"`
+	UnidadeMedida          *string `json:"unidade_medida,omitempty" validate:"omitempty,oneof=UNIDADE QUILOGRAMA GRAMA MILILITRO LITRO"`
+	ValorUnitario          *string `json:"valor_unitario,omitempty"`
+	QuantidadeMinima       *string `json:"quantidade_minima,omitempty"`
+	QuantidadeMaxima       *string `json:"quantidade_maxima,omitempty"`
+	ValorVendaProfissional *string `json:"valor_venda_profissional,omitempty"`
+	ValorEntrada           *string `json:"valor_entrada,omitempty"`
+	FornecedorID           *string `json:"fornecedor_id,omitempty" validate:"omitempty,uuid"`
 }
 
 // ProdutoResponse representa a resposta de um produto
 type ProdutoResponse struct {
-	ID               string  `json:"id"`
-	TenantID         string  `json:"tenant_id"`
-	SKU              string  `json:"sku"`
-	Nome             string  `json:"nome"`
-	Descricao        string  `json:"descricao"`
-	Categoria        string  `json:"categoria"`
-	UnidadeMedida    string  `json:"unidade_medida"`
-	ValorUnitario    string  `json:"valor_unitario"`
-	QuantidadeAtual  int     `json:"quantidade_atual"`
-	QuantidadeMinima int     `json:"quantidade_minima"`
-	FornecedorID     *string `json:"fornecedor_id,omitempty"`
-	EstaBaixo        bool    `json:"esta_baixo"`
-	Ativa            bool    `json:"ativa"`
-	CreatedAt        string  `json:"created_at"`
-	UpdatedAt        string  `json:"updated_at"`
+	ID                     string                    `json:"id"`
+	TenantID               string                    `json:"tenant_id"`
+	Nome                   string                    `json:"nome"`
+	Descricao              *string                   `json:"descricao,omitempty"`
+	CodigoBarras           *string                   `json:"codigo_barras,omitempty"`
+	CategoriaProdutoID     *string                   `json:"categoria_produto_id,omitempty"`
+	CategoriaProduto       *CategoriaProdutoResponse `json:"categoria_produto,omitempty"`
+	UnidadeMedida          string                    `json:"unidade_medida"`
+	ValorUnitario          string                    `json:"valor_unitario"`
+	QuantidadeAtual        string                    `json:"quantidade_atual"`
+	QuantidadeMinima       string                    `json:"quantidade_minima"`
+	QuantidadeMaxima       *string                   `json:"quantidade_maxima,omitempty"`
+	ValorVendaProfissional *string                   `json:"valor_venda_profissional,omitempty"`
+	ValorEntrada           *string                   `json:"valor_entrada,omitempty"`
+	FornecedorID           *string                   `json:"fornecedor_id,omitempty"`
+	Fornecedor             *FornecedorResponse       `json:"fornecedor,omitempty"`
+	EstaBaixo              bool                      `json:"esta_baixo"`
+	Ativo                  bool                      `json:"ativo"`
+	CreatedAt              string                    `json:"created_at"`
+	UpdatedAt              string                    `json:"updated_at"`
 }
 
 // === MOVIMENTAÇÃO DTOs ===
@@ -151,8 +163,10 @@ type FornecedorResponse struct {
 
 // ListProdutosResponse representa a resposta da listagem de produtos
 type ListProdutosResponse struct {
-	Data  []ProdutoResponse `json:"data"`
-	Total int               `json:"total"`
+	Data            []ProdutoResponse `json:"data"`
+	Total           int               `json:"total"`
+	LowStockCount   int               `json:"low_stock_count"`
+	OutOfStockCount int               `json:"out_of_stock_count"`
 }
 
 // ListFornecedoresResponse representa a resposta da listagem de fornecedores
@@ -179,15 +193,15 @@ type AlertaEstoqueBaixoResponse struct {
 
 // AlertaEstoqueBaixo representa um alerta de estoque baixo com detalhes
 type AlertaEstoqueBaixo struct {
-	ProdutoID        string `json:"produto_id"`
-	SKU              string `json:"sku"`
-	Nome             string `json:"nome"`
-	Categoria        string `json:"categoria"`
-	QuantidadeAtual  string `json:"quantidade_atual"`
-	QuantidadeMinima string `json:"quantidade_minima"`
-	UnidadeMedida    string `json:"unidade_medida"`
-	Percentual       string `json:"percentual"` // Percentual do estoque (atual/mínimo * 100)
-	Severidade       string `json:"severidade"` // crítico, alerta, baixo
+	ProdutoID        string  `json:"produto_id"`
+	SKU              *string `json:"sku,omitempty"`
+	Nome             string  `json:"nome"`
+	Categoria        string  `json:"categoria"`
+	QuantidadeAtual  string  `json:"quantidade_atual"`
+	QuantidadeMinima string  `json:"quantidade_minima"`
+	UnidadeMedida    string  `json:"unidade_medida"`
+	Percentual       string  `json:"percentual"` // Percentual do estoque (atual/mínimo * 100)
+	Severidade       string  `json:"severidade"` // crítico, alerta, baixo
 }
 
 // ListAlertasEstoqueBaixoResponse representa a resposta da listagem de alertas de estoque baixo

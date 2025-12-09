@@ -11,21 +11,31 @@ import (
 // Appointment representa um agendamento no sistema
 type Appointment struct {
 	ID             string
-	TenantID       string
+	TenantID       uuid.UUID
 	ProfessionalID string
 	CustomerID     string
 
 	StartTime time.Time
 	EndTime   time.Time
 
+	CheckedInAt *time.Time
+	StartedAt   *time.Time
+	FinishedAt  *time.Time
+
 	Status                valueobject.AppointmentStatus
 	TotalPrice            valueobject.Money
 	Notes                 string
 	CanceledReason        string
 	GoogleCalendarEventID string
+	CommandID             string // Comanda vinculada ao agendamento
 
 	// Relacionamentos (carregados via join)
 	Services []AppointmentService
+
+	// Dados denormalizados (read-only, vêm do JOIN)
+	ProfessionalName string
+	CustomerName     string
+	CustomerPhone    string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -45,13 +55,13 @@ type AppointmentService struct {
 
 // NewAppointment cria um novo agendamento validado
 func NewAppointment(
-	tenantID string,
+	tenantID uuid.UUID,
 	professionalID string,
 	customerID string,
 	startTime time.Time,
 	services []AppointmentService,
 ) (*Appointment, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if professionalID == "" {
@@ -103,17 +113,49 @@ func (a *Appointment) Confirm() error {
 	return nil
 }
 
+// CheckIn marca que o cliente chegou para o atendimento
+func (a *Appointment) CheckIn() error {
+	if !a.Status.CanTransitionTo(valueobject.AppointmentStatusCheckedIn) {
+		return domain.ErrAppointmentInvalidStatusTransition
+	}
+	a.Status = valueobject.AppointmentStatusCheckedIn
+	if a.CheckedInAt == nil {
+		now := time.Now()
+		a.CheckedInAt = &now
+	}
+	a.UpdatedAt = time.Now()
+	return nil
+}
+
 // StartService inicia o atendimento
 func (a *Appointment) StartService() error {
 	if !a.Status.CanTransitionTo(valueobject.AppointmentStatusInService) {
 		return domain.ErrAppointmentInvalidStatusTransition
 	}
 	a.Status = valueobject.AppointmentStatusInService
+	if a.StartedAt == nil {
+		now := time.Now()
+		a.StartedAt = &now
+	}
 	a.UpdatedAt = time.Now()
 	return nil
 }
 
-// Complete finaliza o atendimento
+// FinishService marca o atendimento como finalizado, aguardando pagamento
+func (a *Appointment) FinishService() error {
+	if !a.Status.CanTransitionTo(valueobject.AppointmentStatusAwaitingPayment) {
+		return domain.ErrAppointmentInvalidStatusTransition
+	}
+	a.Status = valueobject.AppointmentStatusAwaitingPayment
+	if a.FinishedAt == nil {
+		now := time.Now()
+		a.FinishedAt = &now
+	}
+	a.UpdatedAt = time.Now()
+	return nil
+}
+
+// Complete finaliza o atendimento (após pagamento confirmado)
 func (a *Appointment) Complete() error {
 	if !a.Status.CanTransitionTo(valueobject.AppointmentStatusDone) {
 		return domain.ErrAppointmentInvalidStatusTransition
@@ -181,7 +223,9 @@ func (a *Appointment) Duration() int {
 func (a *Appointment) IsActive() bool {
 	return a.Status == valueobject.AppointmentStatusCreated ||
 		a.Status == valueobject.AppointmentStatusConfirmed ||
-		a.Status == valueobject.AppointmentStatusInService
+		a.Status == valueobject.AppointmentStatusCheckedIn ||
+		a.Status == valueobject.AppointmentStatusInService ||
+		a.Status == valueobject.AppointmentStatusAwaitingPayment
 }
 
 // IsPast verifica se o agendamento é no passado
@@ -217,7 +261,7 @@ func (a *Appointment) ConflictsWith(other *Appointment) bool {
 
 // Validate valida as regras de negócio
 func (a *Appointment) Validate() error {
-	if a.TenantID == "" {
+	if a.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if a.ProfessionalID == "" {

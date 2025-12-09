@@ -21,18 +21,21 @@ type RescheduleAppointmentInput struct {
 
 // RescheduleAppointmentUseCase implementa o reagendamento
 type RescheduleAppointmentUseCase struct {
-	repo   port.AppointmentRepository
-	logger *zap.Logger
+	repo               port.AppointmentRepository
+	professionalReader port.ProfessionalReader
+	logger             *zap.Logger
 }
 
 // NewRescheduleAppointmentUseCase cria nova instância do use case
 func NewRescheduleAppointmentUseCase(
 	repo port.AppointmentRepository,
+	professionalReader port.ProfessionalReader,
 	logger *zap.Logger,
 ) *RescheduleAppointmentUseCase {
 	return &RescheduleAppointmentUseCase{
-		repo:   repo,
-		logger: logger,
+		repo:               repo,
+		professionalReader: professionalReader,
+		logger:             logger,
 	}
 }
 
@@ -57,7 +60,15 @@ func (uc *RescheduleAppointmentUseCase) Execute(ctx context.Context, input Resch
 	// Guardar dados para verificação de conflito
 	oldStartTime := appointment.StartTime
 	professionalID := appointment.ProfessionalID
-	if input.ProfessionalID != "" {
+
+	if input.ProfessionalID != "" && input.ProfessionalID != professionalID {
+		exists, err := uc.professionalReader.Exists(ctx, input.TenantID, input.ProfessionalID)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao verificar profissional: %w", err)
+		}
+		if !exists {
+			return nil, domain.ErrAppointmentProfessionalNotFound
+		}
 		professionalID = input.ProfessionalID
 	}
 
@@ -67,8 +78,8 @@ func (uc *RescheduleAppointmentUseCase) Execute(ctx context.Context, input Resch
 	}
 
 	// Se mudou de profissional, atualizar
-	if input.ProfessionalID != "" && input.ProfessionalID != appointment.ProfessionalID {
-		appointment.ProfessionalID = input.ProfessionalID
+	if professionalID != appointment.ProfessionalID {
+		appointment.ProfessionalID = professionalID
 	}
 
 	// Verificar conflito de horário
@@ -85,6 +96,39 @@ func (uc *RescheduleAppointmentUseCase) Execute(ctx context.Context, input Resch
 	}
 	if hasConflict {
 		return nil, domain.ErrAppointmentConflict
+	}
+
+	// Verificar conflito com horários bloqueados
+	hasBlockedConflict, err := uc.repo.CheckBlockedTimeConflict(
+		ctx,
+		input.TenantID,
+		professionalID,
+		appointment.StartTime,
+		appointment.EndTime,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao verificar bloqueio: %w", err)
+	}
+	if hasBlockedConflict {
+		return nil, domain.ErrAppointmentBlockedTimeConflict
+	}
+
+	// Verificar intervalo mínimo entre agendamentos (RN-AGE-003: 10 minutos)
+	const minimumIntervalMinutes = 10
+	hasIntervalConflict, err := uc.repo.CheckMinimumIntervalConflict(
+		ctx,
+		input.TenantID,
+		professionalID,
+		appointment.StartTime,
+		appointment.EndTime,
+		appointment.ID,
+		minimumIntervalMinutes,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao verificar intervalo mínimo: %w", err)
+	}
+	if hasIntervalConflict {
+		return nil, domain.ErrAppointmentMinimumInterval
 	}
 
 	// Persistir

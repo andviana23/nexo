@@ -13,6 +13,33 @@ import (
 // Baseado em FLUXO_LOGIN.md
 // =============================================================================
 
+// roleMapping mapeia roles do banco (português/minúsculo) para roles RBAC (inglês/maiúsculo)
+var roleMapping = map[string]string{
+	// Português (banco de dados)
+	"owner":         "OWNER",
+	"manager":       "MANAGER",
+	"barbeiro":      "BARBER",
+	"barber":        "BARBER",
+	"recepcionista": "RECEPTIONIST",
+	"receptionist":  "RECEPTIONIST",
+	"contador":      "ACCOUNTANT",
+	// Inglês (já normalizado)
+	"OWNER":        "OWNER",
+	"MANAGER":      "MANAGER",
+	"BARBER":       "BARBER",
+	"RECEPTIONIST": "RECEPTIONIST",
+	"ACCOUNTANT":   "ACCOUNTANT",
+}
+
+// normalizeRole converte role do banco para formato RBAC padronizado
+func normalizeRole(role string) string {
+	if normalized, ok := roleMapping[strings.ToLower(role)]; ok {
+		return normalized
+	}
+	// Se não encontrar mapeamento, retorna uppercase como fallback
+	return strings.ToUpper(role)
+}
+
 // JWTMiddleware valida access token e injeta dados no context
 func JWTMiddleware(jwtManager *auth.JWTManager, logger *zap.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -46,11 +73,22 @@ func JWTMiddleware(jwtManager *auth.JWTManager, logger *zap.Logger) echo.Middlew
 			c.Set("user_id", claims.UserID)
 			c.Set("tenant_id", claims.TenantID)
 			c.Set("email", claims.Email)
-			c.Set("role", claims.Role)
+			c.Set("role", normalizeRole(claims.Role)) // Normaliza role para RBAC
+
+			// Unidade atual (multi-unidade). Prioridade: claim → header X-Unit-ID → vazio
+			unitID := claims.UnitID
+			if unitID == "" {
+				unitID = c.Request().Header.Get("X-Unit-ID")
+			}
+			if unitID != "" {
+				c.Set("unit_id", unitID)
+			}
 
 			logger.Debug("Token validado com sucesso",
 				zap.String("user_id", claims.UserID),
 				zap.String("tenant_id", claims.TenantID),
+				zap.String("original_role", claims.Role),
+				zap.String("normalized_role", normalizeRole(claims.Role)),
 			)
 
 			return next(c)
@@ -74,6 +112,12 @@ func GetTenantID(c echo.Context) string {
 func GetUserRole(c echo.Context) string {
 	role, _ := c.Get("role").(string)
 	return role
+}
+
+// GetUnitID extrai unit_id do context (pode retornar vazio se não definido)
+func GetUnitID(c echo.Context) string {
+	unitID, _ := c.Get("unit_id").(string)
+	return unitID
 }
 
 // GetUserEmail extrai email do context

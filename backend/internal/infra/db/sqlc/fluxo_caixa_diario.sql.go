@@ -36,7 +36,7 @@ INSERT INTO fluxo_caixa_diario (
     processado_em
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9
-) RETURNING id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, processado_em, criado_em, atualizado_em
+) RETURNING id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, asaas_payments_count, asaas_payments_total, processado_em, criado_em, atualizado_em
 `
 
 type CreateFluxoCaixaDiarioParams struct {
@@ -74,6 +74,8 @@ func (q *Queries) CreateFluxoCaixaDiario(ctx context.Context, arg CreateFluxoCai
 		&i.EntradasPrevistas,
 		&i.SaidasPagas,
 		&i.SaidasPrevistas,
+		&i.AsaasPaymentsCount,
+		&i.AsaasPaymentsTotal,
 		&i.ProcessadoEm,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
@@ -97,7 +99,7 @@ func (q *Queries) DeleteFluxoCaixaDiario(ctx context.Context, arg DeleteFluxoCai
 }
 
 const getFluxoCaixaDiarioByData = `-- name: GetFluxoCaixaDiarioByData :one
-SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
+SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, asaas_payments_count, asaas_payments_total, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
 WHERE tenant_id = $1 AND data = $2
 `
 
@@ -119,6 +121,8 @@ func (q *Queries) GetFluxoCaixaDiarioByData(ctx context.Context, arg GetFluxoCai
 		&i.EntradasPrevistas,
 		&i.SaidasPagas,
 		&i.SaidasPrevistas,
+		&i.AsaasPaymentsCount,
+		&i.AsaasPaymentsTotal,
 		&i.ProcessadoEm,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
@@ -127,7 +131,7 @@ func (q *Queries) GetFluxoCaixaDiarioByData(ctx context.Context, arg GetFluxoCai
 }
 
 const getFluxoCaixaDiarioByID = `-- name: GetFluxoCaixaDiarioByID :one
-SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
+SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, asaas_payments_count, asaas_payments_total, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
 WHERE id = $1 AND tenant_id = $2
 `
 
@@ -149,6 +153,8 @@ func (q *Queries) GetFluxoCaixaDiarioByID(ctx context.Context, arg GetFluxoCaixa
 		&i.EntradasPrevistas,
 		&i.SaidasPagas,
 		&i.SaidasPrevistas,
+		&i.AsaasPaymentsCount,
+		&i.AsaasPaymentsTotal,
 		&i.ProcessadoEm,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
@@ -178,7 +184,7 @@ func (q *Queries) GetUltimoSaldo(ctx context.Context, arg GetUltimoSaldoParams) 
 }
 
 const listFluxoCaixaDiarioByPeriod = `-- name: ListFluxoCaixaDiarioByPeriod :many
-SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
+SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, asaas_payments_count, asaas_payments_total, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
 WHERE tenant_id = $1
   AND data >= $2
   AND data <= $3
@@ -210,6 +216,8 @@ func (q *Queries) ListFluxoCaixaDiarioByPeriod(ctx context.Context, arg ListFlux
 			&i.EntradasPrevistas,
 			&i.SaidasPagas,
 			&i.SaidasPrevistas,
+			&i.AsaasPaymentsCount,
+			&i.AsaasPaymentsTotal,
 			&i.ProcessadoEm,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
@@ -225,7 +233,7 @@ func (q *Queries) ListFluxoCaixaDiarioByPeriod(ctx context.Context, arg ListFlux
 }
 
 const listFluxoCaixaDiarioByTenant = `-- name: ListFluxoCaixaDiarioByTenant :many
-SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
+SELECT id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, asaas_payments_count, asaas_payments_total, processado_em, criado_em, atualizado_em FROM fluxo_caixa_diario
 WHERE tenant_id = $1
 ORDER BY data DESC
 LIMIT $2 OFFSET $3
@@ -256,6 +264,8 @@ func (q *Queries) ListFluxoCaixaDiarioByTenant(ctx context.Context, arg ListFlux
 			&i.EntradasPrevistas,
 			&i.SaidasPagas,
 			&i.SaidasPrevistas,
+			&i.AsaasPaymentsCount,
+			&i.AsaasPaymentsTotal,
 			&i.ProcessadoEm,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
@@ -326,7 +336,7 @@ SET
     processado_em = $9,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, processado_em, criado_em, atualizado_em
+RETURNING id, tenant_id, data, saldo_inicial, saldo_final, entradas_confirmadas, entradas_previstas, saidas_pagas, saidas_previstas, asaas_payments_count, asaas_payments_total, processado_em, criado_em, atualizado_em
 `
 
 type UpdateFluxoCaixaDiarioParams struct {
@@ -364,6 +374,8 @@ func (q *Queries) UpdateFluxoCaixaDiario(ctx context.Context, arg UpdateFluxoCai
 		&i.EntradasPrevistas,
 		&i.SaidasPagas,
 		&i.SaidasPrevistas,
+		&i.AsaasPaymentsCount,
+		&i.AsaasPaymentsTotal,
 		&i.ProcessadoEm,
 		&i.CriadoEm,
 		&i.AtualizadoEm,

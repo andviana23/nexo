@@ -39,13 +39,15 @@ func NewJWTManager() *JWTManager {
 }
 
 // GenerateAccessToken gera novo access token JWT (15 minutos)
-func (jm *JWTManager) GenerateAccessToken(userID, tenantID, email, role string) (string, error) {
+// unitID é opcional e representa a unidade atualmente selecionada pelo usuário.
+func (jm *JWTManager) GenerateAccessToken(userID, tenantID, unitID, email, role string) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(AccessTokenDuration)
 
 	claims := jwt.MapClaims{
 		"user_id":   userID,
 		"tenant_id": tenantID,
+		"unit_id":   unitID,
 		"email":     email,
 		"role":      role,
 		"iat":       now.Unix(),
@@ -93,12 +95,14 @@ func (jm *JWTManager) ValidateAccessToken(tokenString string) (*dto.JWTClaims, e
 	tenantID, _ := claims["tenant_id"].(string)
 	email, _ := claims["email"].(string)
 	role, _ := claims["role"].(string)
+	unitID, _ := claims["unit_id"].(string)
 	iat, _ := claims["iat"].(float64)
 	exp, _ := claims["exp"].(float64)
 
 	return &dto.JWTClaims{
 		UserID:    userID,
 		TenantID:  tenantID,
+		UnitID:    unitID,
 		Email:     email,
 		Role:      role,
 		IssuedAt:  int64(iat),

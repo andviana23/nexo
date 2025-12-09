@@ -4,12 +4,14 @@ package customer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -55,8 +57,14 @@ func (uc *CreateCustomerUseCase) Execute(ctx context.Context, tenantID string, r
 		}
 	}
 
+	// Converter tenant_id de string para uuid.UUID
+	tenantUUID, err := uuid.Parse(tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("tenant_id inválido: %w", err)
+	}
+
 	// Criar entidade
-	customer, err := entity.NewCustomer(tenantID, req.Nome, req.Telefone)
+	customer, err := entity.NewCustomer(tenantUUID, req.Nome, req.Telefone)
 	if err != nil {
 		return nil, err
 	}

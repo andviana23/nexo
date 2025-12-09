@@ -11,7 +11,6 @@
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { useAuthHydrated } from '@/store/auth-store';
-import { useEffect, useState } from 'react';
 
 export default function DashboardLayout({
   children,
@@ -19,14 +18,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const isHydrated = useAuthHydrated();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Aguarda hidratação e montagem antes de renderizar
-  if (!mounted || !isHydrated) {
+  if (!isHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">

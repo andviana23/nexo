@@ -6,6 +6,7 @@
  *
  * @component ServiceSelector
  * @description Multi-select para serviços com busca, preço e duração
+ * Conectado à API real via useServices hook
  */
 
 import { CheckIcon, Loader2Icon, SearchIcon, XIcon } from 'lucide-react';
@@ -13,6 +14,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { useServices } from '@/hooks/useServices';
 import { cn } from '@/lib/utils';
 
 // =============================================================================
@@ -37,21 +39,6 @@ interface ServiceSelectorProps {
   /** Classe CSS adicional */
   className?: string;
 }
-
-// =============================================================================
-// MOCK DATA (temporário até API estar pronta)
-// =============================================================================
-
-const MOCK_SERVICES: Service[] = [
-  { id: '1', name: 'Corte Masculino', default_price: 4500, default_duration: 30, category: 'Corte' },
-  { id: '2', name: 'Barba Completa', default_price: 3000, default_duration: 20, category: 'Barba' },
-  { id: '3', name: 'Corte + Barba', default_price: 7000, default_duration: 50, category: 'Combo' },
-  { id: '4', name: 'Pigmentação', default_price: 5000, default_duration: 45, category: 'Tratamento' },
-  { id: '5', name: 'Relaxamento', default_price: 8000, default_duration: 60, category: 'Tratamento' },
-  { id: '6', name: 'Hidratação', default_price: 4000, default_duration: 30, category: 'Tratamento' },
-  { id: '7', name: 'Sobrancelha', default_price: 1500, default_duration: 10, category: 'Acabamento' },
-  { id: '8', name: 'Pezinho', default_price: 1000, default_duration: 10, category: 'Acabamento' },
-];
 
 // =============================================================================
 // HELPERS
@@ -81,9 +68,20 @@ export function ServiceSelector({
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
-  // TODO: Substituir por useQuery quando a API de services estiver pronta
-  const services = MOCK_SERVICES;
-  const isLoading = false;
+  // Busca serviços ativos via API
+  const { data: servicesData, isLoading } = useServices({ apenas_ativos: true });
+  
+  // Mapeia resposta da API para o formato do componente
+  const services: Service[] = useMemo(() => {
+    if (!servicesData?.servicos) return [];
+    return servicesData.servicos.map((s) => ({
+      id: s.id,
+      name: s.nome,
+      default_price: s.preco_centavos,
+      default_duration: s.duracao,
+      category: s.categoria_nome,
+    }));
+  }, [servicesData]);
 
   // Filtrar serviços pela busca
   const filteredServices = useMemo(() => {

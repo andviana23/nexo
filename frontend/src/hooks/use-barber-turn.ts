@@ -350,9 +350,6 @@ export function useRemoveBarberFromTurn() {
         (old) => {
           if (!old) return old;
 
-          const removedBarber = old.barbers.find(
-            (b) => b.professional_id === professionalId
-          );
           const updatedBarbers = old.barbers.filter(
             (b) => b.professional_id !== professionalId
           );

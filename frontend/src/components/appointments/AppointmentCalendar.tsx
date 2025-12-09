@@ -14,6 +14,7 @@
 
 import type {
     DateSelectArg,
+    EventApi,
     EventClickArg,
     EventDropArg,
 } from '@fullcalendar/core';
@@ -82,8 +83,8 @@ export function AppointmentCalendar({
     end.setDate(end.getDate() + 6); // Domingo
     end.setHours(23, 59, 59, 999); // Final do dia
     return {
-      date_from: start.toISOString().split('T')[0], // Apenas YYYY-MM-DD
-      date_to: end.toISOString().split('T')[0],     // Apenas YYYY-MM-DD
+      start_date: start.toISOString().split('T')[0], // Apenas YYYY-MM-DD
+      end_date: end.toISOString().split('T')[0],     // Apenas YYYY-MM-DD
     };
   }, [stableDate]);
 
@@ -167,22 +168,46 @@ export function AppointmentCalendar({
 
   /**
    * Handler quando um evento é arrastado (reagendar)
+   * Suporta drag horizontal (horário) e vertical (profissional)
    */
   const handleEventDrop = useCallback(
     (info: EventDropArg) => {
       const event = info.event;
       const appointment = (event.extendedProps as CalendarEvent['extendedProps']).appointment;
+      
+      // Pegar novo profissional (pode ter mudado com drag vertical)
+      const newResource = event.getResources()[0];
+      const newProfessionalId = newResource?.id;
+      
+      // Validações
+      if (!newProfessionalId) {
+        console.error('[AppointmentCalendar] Profissional não encontrado após drop');
+        info.revert();
+        return;
+      }
 
+      // Detectar se mudou de profissional
+      const changedProfessional = newProfessionalId !== appointment.professional_id;
+      
       updateAppointment.mutate(
         {
           id: appointment.id,
           data: {
-            start_time: event.start?.toISOString(),
-            professional_id: event.getResources()[0]?.id,
+            new_start_time: event.start?.toISOString() || '',
+            professional_id: newProfessionalId,
           },
         },
         {
-          onError: () => {
+          onSuccess: () => {
+            if (changedProfessional) {
+              console.log('[AppointmentCalendar] Profissional alterado:', {
+                from: appointment.professional_id,
+                to: newProfessionalId,
+              });
+            }
+          },
+          onError: (error) => {
+            console.error('[AppointmentCalendar] Erro ao mover agendamento:', error);
             // Reverter se houver erro
             info.revert();
           },
@@ -211,6 +236,50 @@ export function AppointmentCalendar({
       });
     },
     [onEventClick]
+  );
+
+  /**
+   * Validação visual durante o arraste
+   * Permite mover apenas se não houver conflito de horário
+   */
+  const handleEventAllow = useCallback(
+    (dropInfo: { start: Date; end: Date; resourceId?: string }, draggedEvent: EventApi | null) => {
+      const calendarApi = calendarRef.current?.getApi();
+      if (!calendarApi || !draggedEvent) return true;
+
+      const draggedAppointment = draggedEvent.extendedProps?.appointment;
+      if (!draggedAppointment) return true;
+
+      // Pegar todos os eventos do profissional de destino
+      const targetResourceId = dropInfo.resourceId || draggedEvent.getResources()[0]?.id;
+      if (!targetResourceId) return false;
+
+      const allEvents = calendarApi.getEvents();
+      
+      // Verificar se há conflito com outros agendamentos
+      const hasConflict = allEvents.some((event) => {
+        // Ignorar o próprio evento sendo arrastado
+        if (event.id === draggedEvent.id) return false;
+
+        // Verificar se é do mesmo profissional
+        const eventResource = event.getResources()[0];
+        if (eventResource?.id !== targetResourceId) return false;
+
+        // Verificar sobreposição de horários
+        const eventStart = event.start;
+        const eventEnd = event.end;
+        if (!eventStart || !eventEnd) return false;
+
+        const overlapStart = dropInfo.start < eventEnd;
+        const overlapEnd = dropInfo.end > eventStart;
+
+        return overlapStart && overlapEnd;
+      });
+
+      // Feedback visual (CSS classe será adicionada automaticamente pelo FullCalendar)
+      return !hasConflict;
+    },
+    []
   );
 
   // ==========================================================================
@@ -265,6 +334,18 @@ export function AppointmentCalendar({
         select={handleDateSelect}
         eventDrop={handleEventDrop}
         eventResize={handleEventResize}
+        eventAllow={handleEventAllow}
+        
+        // Drag & Drop Configuration
+        dragRevertDuration={300}
+        dragScroll
+        snapDuration="00:15:00"
+        
+        // Visual feedback durante arraste
+        eventClassNames={(arg) => {
+          const status = arg.event.extendedProps?.appointment?.status;
+          return [`event-status-${status?.toLowerCase()}`];
+        }}
         
         // Layout
         height="auto"

@@ -212,6 +212,15 @@ export const queryKeys = {
       [...queryKeys.goals.all, 'list', filters] as const,
     detail: (id: string) => [...queryKeys.goals.all, 'detail', id] as const,
   },
+
+  // Unidades/Filiais
+  units: {
+    all: ['units'] as const,
+    userUnits: () => [...queryKeys.units.all, 'user-units'] as const,
+    detail: (id: string) => [...queryKeys.units.all, 'detail', id] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.units.all, 'list', filters] as const,
+  },
 } as const;
 
 /**

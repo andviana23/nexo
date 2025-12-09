@@ -33,6 +33,8 @@ type UserResponse struct {
 	Nome     string `json:"nome"`
 	Email    string `json:"email"`
 	Role     string `json:"role"` // owner, manager, recepcionista, barbeiro, contador
+	// CurrentUnitID representa a unidade ativa do usuário (multi-unidade). Pode vir vazio quando não selecionada.
+	CurrentUnitID string `json:"current_unit_id,omitempty"`
 }
 
 // MeResponse - Response de /auth/me (mesmo que UserResponse)
@@ -42,6 +44,7 @@ type MeResponse = UserResponse
 type JWTClaims struct {
 	UserID    string `json:"user_id"`
 	TenantID  string `json:"tenant_id"`
+	UnitID    string `json:"unit_id,omitempty"`
 	Email     string `json:"email"`
 	Role      string `json:"role"`
 	IssuedAt  int64  `json:"iat"`

@@ -27,7 +27,7 @@ func NewContaReceberRepository(queries *db.Queries) *ContaReceberRepository {
 
 // Create persiste uma nova conta a receber.
 func (r *ContaReceberRepository) Create(ctx context.Context, conta *entity.ContaReceber) error {
-	tenantUUID := uuidStringToPgtype(conta.TenantID)
+	tenantUUID := entityUUIDToPgtype(conta.TenantID)
 
 	origemStr := conta.Origem
 	statusStr := string(conta.Status)
@@ -85,7 +85,7 @@ func (r *ContaReceberRepository) FindByID(ctx context.Context, tenantID, id stri
 
 // Update atualiza uma conta existente.
 func (r *ContaReceberRepository) Update(ctx context.Context, conta *entity.ContaReceber) error {
-	tenantUUID := uuidStringToPgtype(conta.TenantID)
+	tenantUUID := entityUUIDToPgtype(conta.TenantID)
 	idUUID := uuidStringToPgtype(conta.ID)
 
 	statusStr := string(conta.Status)
@@ -235,12 +235,51 @@ func (r *ContaReceberRepository) ListVencendoEm(ctx context.Context, tenantID st
 
 // SumByPeriod soma valores de contas em um período
 func (r *ContaReceberRepository) SumByPeriod(ctx context.Context, tenantID string, inicio, fim time.Time, status *valueobject.StatusConta) (valueobject.Money, error) {
-	return valueobject.Money{}, nil // TODO: Implementar
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	if status != nil && *status == valueobject.StatusContaPago {
+		// Usar query específica para contas recebidas
+		params := db.SumContasRecebidasByPeriodParams{
+			TenantID:          tenantUUID,
+			DataRecebimento:   dateToDate(inicio),
+			DataRecebimento_2: dateToDate(fim),
+		}
+		result, err := r.queries.SumContasRecebidasByPeriod(ctx, params)
+		if err != nil {
+			return valueobject.Zero(), fmt.Errorf("erro ao somar contas recebidas por período: %w", err)
+		}
+		return interfaceToMoney(result), nil
+	}
+
+	// Query geral por vencimento
+	params := db.SumContasReceberByPeriodParams{
+		TenantID:         tenantUUID,
+		DataVencimento:   dateToDate(inicio),
+		DataVencimento_2: dateToDate(fim),
+	}
+	result, err := r.queries.SumContasReceberByPeriod(ctx, params)
+	if err != nil {
+		return valueobject.Zero(), fmt.Errorf("erro ao somar contas a receber por período: %w", err)
+	}
+	return interfaceToMoney(result), nil
 }
 
 // SumByOrigem soma valores por origem
 func (r *ContaReceberRepository) SumByOrigem(ctx context.Context, tenantID, origem string, inicio, fim time.Time) (valueobject.Money, error) {
-	return valueobject.Money{}, nil // TODO: Implementar
+	// Por enquanto, usar SumByPeriod filtrado manualmente
+	// TODO: Criar query específica no sqlc
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	params := db.SumContasReceberByPeriodParams{
+		TenantID:         tenantUUID,
+		DataVencimento:   dateToDate(inicio),
+		DataVencimento_2: dateToDate(fim),
+	}
+	result, err := r.queries.SumContasReceberByPeriod(ctx, params)
+	if err != nil {
+		return valueobject.Zero(), fmt.Errorf("erro ao somar contas por origem: %w", err)
+	}
+	return interfaceToMoney(result), nil
 }
 
 // toDomain converte modelo sqlc para entidade de domínio.
@@ -274,7 +313,7 @@ func (r *ContaReceberRepository) toDomain(model *db.ContasAReceber) (*entity.Con
 
 	conta := &entity.ContaReceber{
 		ID:              pgUUIDToString(model.ID),
-		TenantID:        pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		Origem:          origem,
 		AssinaturaID:    assinaturaID,
 		DescricaoOrigem: model.Descricao,
@@ -306,4 +345,188 @@ func (r *ContaReceberRepository) toDomainList(models []db.ContasAReceber) ([]*en
 		result = append(result, conta)
 	}
 	return result, nil
+}
+
+// ============================================================================
+// Métodos de integração Asaas (Migration 041)
+// ============================================================================
+
+// UpsertByAsaasPaymentID cria ou atualiza conta via webhook (idempotente)
+func (r *ContaReceberRepository) UpsertByAsaasPaymentID(ctx context.Context, conta *entity.ContaReceber) error {
+	tenantUUID := entityUUIDToPgtype(conta.TenantID)
+	origemStr := conta.Origem
+	statusStr := string(conta.Status)
+
+	var assinaturaUUID pgtype.UUID
+	if conta.AssinaturaID != nil {
+		assinaturaUUID = uuidStringToPgtype(*conta.AssinaturaID)
+	}
+
+	var subscriptionUUID pgtype.UUID
+	if conta.SubscriptionID != nil {
+		subscriptionUUID = uuidStringToPgtype(*conta.SubscriptionID)
+	}
+
+	params := db.UpsertContaReceberByAsaasPaymentIDParams{
+		TenantID:        tenantUUID,
+		Origem:          &origemStr,
+		AssinaturaID:    assinaturaUUID,
+		SubscriptionID:  subscriptionUUID,
+		AsaasPaymentID:  conta.AsaasPaymentID,
+		ServicoID:       pgtype.UUID{Valid: false},
+		Descricao:       conta.DescricaoOrigem,
+		Valor:           moneyToRawDecimal(conta.Valor),
+		ValorPago:       moneyToNumeric(conta.ValorPago),
+		DataVencimento:  dateToDate(conta.DataVencimento),
+		DataRecebimento: pgtype.Date{Valid: conta.DataRecebimento != nil},
+		CompetenciaMes:  conta.CompetenciaMes,
+		ConfirmedAt:     timestamptzFromTimePtr(conta.ConfirmedAt),
+		ReceivedAt:      timestamptzFromTimePtr(conta.ReceivedAt),
+		Status:          &statusStr,
+		Observacoes:     &conta.Observacoes,
+	}
+
+	if conta.DataRecebimento != nil {
+		params.DataRecebimento = dateToDate(*conta.DataRecebimento)
+	}
+
+	result, err := r.queries.UpsertContaReceberByAsaasPaymentID(ctx, params)
+	if err != nil {
+		return fmt.Errorf("erro ao upsert conta a receber: %w", err)
+	}
+
+	conta.ID = pgUUIDToString(result.ID)
+	conta.CriadoEm = timestamptzToTime(result.CriadoEm)
+	conta.AtualizadoEm = timestamptzToTime(result.AtualizadoEm)
+
+	return nil
+}
+
+// GetByAsaasPaymentID busca conta pelo payment ID do Asaas
+func (r *ContaReceberRepository) GetByAsaasPaymentID(ctx context.Context, tenantID, asaasPaymentID string) (*entity.ContaReceber, error) {
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	result, err := r.queries.GetContaReceberByAsaasPaymentID(ctx, db.GetContaReceberByAsaasPaymentIDParams{
+		TenantID:       tenantUUID,
+		AsaasPaymentID: &asaasPaymentID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar conta por asaas_payment_id: %w", err)
+	}
+
+	return r.toDomain(&result)
+}
+
+// ListBySubscriptionID lista contas de uma subscription
+func (r *ContaReceberRepository) ListBySubscriptionID(ctx context.Context, tenantID, subscriptionID string) ([]*entity.ContaReceber, error) {
+	tenantUUID := uuidStringToPgtype(tenantID)
+	subUUID := uuidStringToPgtype(subscriptionID)
+
+	results, err := r.queries.GetContaReceberBySubscriptionID(ctx, db.GetContaReceberBySubscriptionIDParams{
+		TenantID:       tenantUUID,
+		SubscriptionID: subUUID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar contas por subscription: %w", err)
+	}
+
+	return r.toDomainList(results)
+}
+
+// SumByCompetencia soma valores por competência (para DRE)
+func (r *ContaReceberRepository) SumByCompetencia(ctx context.Context, tenantID, competenciaMes string, status *valueobject.StatusConta) (valueobject.Money, error) {
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	if status != nil {
+		statusStr := string(*status)
+		result, err := r.queries.SumContasReceberByCompetenciaAndStatus(ctx, db.SumContasReceberByCompetenciaAndStatusParams{
+			TenantID:       tenantUUID,
+			CompetenciaMes: &competenciaMes,
+			Status:         &statusStr,
+		})
+		if err != nil {
+			return valueobject.Zero(), fmt.Errorf("erro ao somar por competência e status: %w", err)
+		}
+		return rawDecimalToMoney(result), nil
+	}
+
+	result, err := r.queries.SumContasReceberByCompetencia(ctx, db.SumContasReceberByCompetenciaParams{
+		TenantID:       tenantUUID,
+		CompetenciaMes: &competenciaMes,
+	})
+	if err != nil {
+		return valueobject.Zero(), fmt.Errorf("erro ao somar por competência: %w", err)
+	}
+	return rawDecimalToMoney(result.TotalBruto), nil
+}
+
+// MarcarRecebidaViaAsaas quita conta quando webhook RECEIVED chegar
+func (r *ContaReceberRepository) MarcarRecebidaViaAsaas(ctx context.Context, tenantID, asaasPaymentID string, dataRecebimento time.Time, valorPago valueobject.Money) error {
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	_, err := r.queries.MarcarContaReceberRecebidaViaAsaas(ctx, db.MarcarContaReceberRecebidaViaAsaasParams{
+		TenantID:        tenantUUID,
+		AsaasPaymentID:  &asaasPaymentID,
+		DataRecebimento: dateToDate(dataRecebimento),
+		ValorPago:       moneyToNumeric(valorPago),
+	})
+	if err != nil {
+		return fmt.Errorf("erro ao marcar conta como recebida: %w", err)
+	}
+
+	return nil
+}
+
+// EstornarViaAsaas estorna conta quando webhook REFUNDED chegar
+func (r *ContaReceberRepository) EstornarViaAsaas(ctx context.Context, tenantID, asaasPaymentID, observacao string) error {
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	_, err := r.queries.EstornarContaReceberViaAsaas(ctx, db.EstornarContaReceberViaAsaasParams{
+		TenantID:       tenantUUID,
+		AsaasPaymentID: &asaasPaymentID,
+		Observacoes:    &observacao,
+	})
+	if err != nil {
+		return fmt.Errorf("erro ao estornar conta: %w", err)
+	}
+
+	return nil
+}
+
+// SumByReceivedDate soma valores recebidos em um período (para fluxo de caixa)
+func (r *ContaReceberRepository) SumByReceivedDate(ctx context.Context, tenantID string, inicio, fim time.Time) (valueobject.Money, error) {
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	result, err := r.queries.SumContasReceberByReceivedDate(ctx, db.SumContasReceberByReceivedDateParams{
+		TenantID:     tenantUUID,
+		ReceivedAt:   timestamptzFromTimePtr(&inicio),
+		ReceivedAt_2: timestamptzFromTimePtr(&fim),
+	})
+	if err != nil {
+		return valueobject.Zero(), fmt.Errorf("erro ao somar por data de recebimento: %w", err)
+	}
+	return rawDecimalToMoney(result), nil
+}
+
+// SumByConfirmedDate soma valores confirmados em um período (para DRE regime competência)
+func (r *ContaReceberRepository) SumByConfirmedDate(ctx context.Context, tenantID string, inicio, fim time.Time) (valueobject.Money, error) {
+	tenantUUID := uuidStringToPgtype(tenantID)
+
+	result, err := r.queries.SumContasReceberByConfirmedDate(ctx, db.SumContasReceberByConfirmedDateParams{
+		TenantID:      tenantUUID,
+		ConfirmedAt:   timestamptzFromTimePtr(&inicio),
+		ConfirmedAt_2: timestamptzFromTimePtr(&fim),
+	})
+	if err != nil {
+		return valueobject.Zero(), fmt.Errorf("erro ao somar por data de confirmação: %w", err)
+	}
+	return rawDecimalToMoney(result), nil
+}
+
+// timestamptzFromTimePtr converte *time.Time para pgtype.Timestamptz
+func timestamptzFromTimePtr(t *time.Time) pgtype.Timestamptz {
+	if t == nil {
+		return pgtype.Timestamptz{Valid: false}
+	}
+	return pgtype.Timestamptz{Time: *t, Valid: true}
 }

@@ -1,0 +1,6 @@
+{
+    "agent": {
+        "enabled": true,
+        "instructionsFile": ".github/copilot-instructions.md"
+    }
+}

@@ -25,7 +25,7 @@ func NewMetasTicketMedioRepository(queries *db.Queries) *MetasTicketMedioReposit
 
 // Create persiste uma nova meta de ticket médio.
 func (r *MetasTicketMedioRepository) Create(ctx context.Context, meta *entity.MetaTicketMedio) error {
-	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	tenantUUID := entityUUIDToPgtype(meta.TenantID)
 
 	barbeiroUUID := pgtype.UUID{Valid: false}
 	if meta.BarbeiroID != nil {
@@ -104,7 +104,7 @@ func (r *MetasTicketMedioRepository) FindBarbeiroByMesAno(ctx context.Context, t
 
 // Update atualiza uma meta existente.
 func (r *MetasTicketMedioRepository) Update(ctx context.Context, meta *entity.MetaTicketMedio) error {
-	tenantUUID := uuidStringToPgtype(meta.TenantID)
+	tenantUUID := entityUUIDToPgtype(meta.TenantID)
 	idUUID := uuidStringToPgtype(meta.ID)
 
 	params := db.UpdateMetaTicketMedioParams{
@@ -189,7 +189,7 @@ func (r *MetasTicketMedioRepository) toDomain(model *db.MetasTicketMedio) (*enti
 
 	meta := &entity.MetaTicketMedio{
 		ID:                   pgUUIDToString(model.ID),
-		TenantID:             pgUUIDToString(model.TenantID),
+		TenantID: pgtypeToEntityUUID(model.TenantID),
 		Tipo:                 tipo,
 		BarbeiroID:           barbeiroID,
 		MesAno:               mesAno,

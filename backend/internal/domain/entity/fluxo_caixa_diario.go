@@ -11,7 +11,7 @@ import (
 // FluxoCaixaDiario representa o fluxo de caixa compensado de um dia
 type FluxoCaixaDiario struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 	Data     time.Time
 
 	SaldoInicial        valueobject.Money
@@ -27,8 +27,8 @@ type FluxoCaixaDiario struct {
 }
 
 // NewFluxoCaixaDiario cria um novo fluxo de caixa diário
-func NewFluxoCaixaDiario(tenantID string, data time.Time) (*FluxoCaixaDiario, error) {
-	if tenantID == "" {
+func NewFluxoCaixaDiario(tenantID uuid.UUID, data time.Time) (*FluxoCaixaDiario, error) {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 
@@ -62,7 +62,7 @@ func (f *FluxoCaixaDiario) Calcular() {
 
 // Validate valida as regras de negócio
 func (f *FluxoCaixaDiario) Validate() error {
-	if f.TenantID == "" {
+	if f.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if f.Data.IsZero() {

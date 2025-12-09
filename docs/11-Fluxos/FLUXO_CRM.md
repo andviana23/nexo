@@ -19,6 +19,11 @@ Módulo responsável pela **gestão completa de clientes**, centralizando dados,
 - Score de engajamento automático
 - Histórico de visitas/compras/avaliações
 - **Privacy by design:** Barbeiros não veem dados sensíveis
+- **🔥 Previsão automática de retorno** - Sistema aprende padrões (barbeiro preferido, serviço favorito, dia/horário de costume) e recomenda agendamento no melhor período
+- **📊 Relatórios de origem pré-prontos** - Análise completa de canais de aquisição
+- **🛒 Histórico de produtos usados** - Rastreia compras e permite envio de mensagens personalizadas ("Gostou do produto?")
+- **⭐ Barbeiro preferido + Blacklist** - Cliente pode bloquear profissional que não gostou
+- **⏰ Lembretes personalizados** - "Seu cabelo já está na hora de manutenção" baseado em histórico
 
 **Prioridade:** 🟡 MÉDIA (v1.0.0 - Milestone 3 - previsto para Dezembro/2025)
 
@@ -36,6 +41,11 @@ Módulo responsável pela **gestão completa de clientes**, centralizando dados,
 8. ✅ Calcular score de engajamento automático
 9. ✅ Controlar privacidade (LGPD/RBAC)
 10. ✅ Respeitar isolamento multi-tenant
+11. ✅ **Prever próximo retorno do cliente** (Machine Learning baseado em padrões)
+12. ✅ **Histórico de produtos comprados** (rastreamento + follow-up)
+13. ✅ **Blacklist de profissionais** (cliente pode bloquear barbeiro)
+14. ✅ **Lembretes automáticos personalizados** (baseado em ciclo de manutenção)
+15. ✅ **Relatórios de origem pré-prontos** (ROI de marketing)
 
 ---
 
@@ -130,6 +140,19 @@ Cálculo automático baseado em:
 - ✅ Atualizado automaticamente após 3+ atendimentos com mesmo barbeiro
 - ✅ Usado para sugestões no agendamento
 - ✅ Não obriga agendamento (cliente pode escolher outro)
+- ✅ **NOVO:** Cliente pode bloquear barbeiros indesejados (blacklist)
+- ✅ **NOVO:** Blacklist impede agendamento com profissional bloqueado
+- ✅ **NOVO:** Apenas cliente/recepcionista podem adicionar/remover da blacklist
+
+### RN-CRM-006-A: Blacklist de Profissionais
+
+**Regra:** Cliente pode bloquear profissionais que não gostou.
+
+- ✅ Blacklist armazenada em tabela `cliente_blacklist_profissionais`
+- ✅ Ao tentar agendar com barbeiro bloqueado → sistema impede + exibe mensagem
+- ✅ Recepcionista pode adicionar/remover bloqueio a pedido do cliente
+- ✅ Barbeiro **não vê** que foi bloqueado (privacidade)
+- ✅ Gerente pode visualizar estatísticas de bloqueios (insight de desempenho)
 
 ### RN-CRM-007: Histórico de Interações
 
@@ -143,6 +166,17 @@ Tipos de interação rastreados:
 - `CAMPANHA` - Interação com campanha de marketing
 
 **Regra:** Todas interações têm timestamp, user_id (quem registrou) e dados JSON (flexível)
+
+### RN-CRM-007-A: Histórico de Produtos Comprados
+
+**Regra:** Rastrear produtos comprados + permitir follow-up automatizado.
+
+- ✅ Ao registrar venda de produto → criar interação `COMPRA_PRODUTO`
+- ✅ Dados JSON contém: `produto_id`, `quantidade`, `valor`, `barbeiro_id`
+- ✅ Sistema agenda follow-up automático (7 dias após compra):
+  - Enviar mensagem: "Olá [nome], gostou do [produto]? Está conseguindo usar corretamente?"
+- ✅ Recepcionista pode visualizar histórico de produtos por cliente
+- ✅ Usado para recomendações futuras (cross-sell)
 
 ### RN-CRM-008: Controle de Privacidade (LGPD/RBAC)
 

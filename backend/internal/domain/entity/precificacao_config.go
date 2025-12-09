@@ -12,7 +12,7 @@ import (
 // PrecificacaoConfig representa a configuração de precificação do tenant
 type PrecificacaoConfig struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 
 	MargemDesejada            valueobject.Percentage // 5-100%
 	MarkupAlvo                decimal.Decimal        // >= 1.0
@@ -25,11 +25,11 @@ type PrecificacaoConfig struct {
 
 // NewPrecificacaoConfig cria uma nova configuração de precificação
 func NewPrecificacaoConfig(
-	tenantID string,
+	tenantID uuid.UUID,
 	margemDesejada, impostoPercentual, comissaoDefault valueobject.Percentage,
 	markupAlvo decimal.Decimal,
 ) (*PrecificacaoConfig, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 
@@ -59,7 +59,7 @@ func NewPrecificacaoConfig(
 
 // Validate valida as regras de negócio
 func (p *PrecificacaoConfig) Validate() error {
-	if p.TenantID == "" {
+	if p.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 

@@ -18,7 +18,7 @@ SET
     quantidade_atual = $3,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em
 `
 
 type AtualizarQuantidadeProdutoParams struct {
@@ -34,17 +34,23 @@ func (q *Queries) AtualizarQuantidadeProduto(ctx context.Context, arg AtualizarQ
 		&i.ID,
 		&i.TenantID,
 		&i.CategoriaID,
+		&i.CategoriaProdutoID,
+		&i.FornecedorID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Sku,
 		&i.CodigoBarras,
 		&i.Preco,
 		&i.Custo,
+		&i.ValorVendaProfissional,
+		&i.ValorEntrada,
 		&i.Estoque,
 		&i.EstoqueMinimo,
+		&i.EstoqueMaximo,
 		&i.Unidade,
 		&i.Fornecedor,
 		&i.CategoriaProduto,
+		&i.CentroCusto,
 		&i.UnidadeMedida,
 		&i.QuantidadeAtual,
 		&i.QuantidadeMinima,
@@ -53,9 +59,12 @@ func (q *Queries) AtualizarQuantidadeProduto(ctx context.Context, arg AtualizarQ
 		&i.DataValidade,
 		&i.Ncm,
 		&i.PermiteVenda,
+		&i.ControlaValidade,
+		&i.LeadTimeDias,
 		&i.Imagem,
 		&i.Observacoes,
 		&i.Ativo,
+		&i.UnitID,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -246,17 +255,20 @@ const createProduto = `-- name: CreateProduto :one
 
 INSERT INTO produtos (
     tenant_id,
-    categoria_id,
+    categoria_produto_id,
     nome,
     descricao,
     sku,
     codigo_barras,
     preco,
     custo,
-    categoria_produto,
     unidade_medida,
     quantidade_atual,
     quantidade_minima,
+    estoque_maximo,
+    valor_venda_profissional,
+    valor_entrada,
+    fornecedor_id,
     localizacao,
     lote,
     data_validade,
@@ -265,30 +277,33 @@ INSERT INTO produtos (
     ativo
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-    $11, $12, $13, $14, $15, $16, $17, $18
+    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
 )
-RETURNING id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em
 `
 
 type CreateProdutoParams struct {
-	TenantID         pgtype.UUID     `json:"tenant_id"`
-	CategoriaID      pgtype.UUID     `json:"categoria_id"`
-	Nome             string          `json:"nome"`
-	Descricao        *string         `json:"descricao"`
-	Sku              *string         `json:"sku"`
-	CodigoBarras     *string         `json:"codigo_barras"`
-	Preco            decimal.Decimal `json:"preco"`
-	Custo            pgtype.Numeric  `json:"custo"`
-	CategoriaProduto string          `json:"categoria_produto"`
-	UnidadeMedida    string          `json:"unidade_medida"`
-	QuantidadeAtual  decimal.Decimal `json:"quantidade_atual"`
-	QuantidadeMinima decimal.Decimal `json:"quantidade_minima"`
-	Localizacao      *string         `json:"localizacao"`
-	Lote             *string         `json:"lote"`
-	DataValidade     pgtype.Date     `json:"data_validade"`
-	Ncm              *string         `json:"ncm"`
-	PermiteVenda     bool            `json:"permite_venda"`
-	Ativo            *bool           `json:"ativo"`
+	TenantID               pgtype.UUID     `json:"tenant_id"`
+	CategoriaProdutoID     pgtype.UUID     `json:"categoria_produto_id"`
+	Nome                   string          `json:"nome"`
+	Descricao              *string         `json:"descricao"`
+	Sku                    *string         `json:"sku"`
+	CodigoBarras           *string         `json:"codigo_barras"`
+	Preco                  decimal.Decimal `json:"preco"`
+	Custo                  pgtype.Numeric  `json:"custo"`
+	UnidadeMedida          string          `json:"unidade_medida"`
+	QuantidadeAtual        decimal.Decimal `json:"quantidade_atual"`
+	QuantidadeMinima       decimal.Decimal `json:"quantidade_minima"`
+	EstoqueMaximo          *int32          `json:"estoque_maximo"`
+	ValorVendaProfissional pgtype.Numeric  `json:"valor_venda_profissional"`
+	ValorEntrada           pgtype.Numeric  `json:"valor_entrada"`
+	FornecedorID           pgtype.UUID     `json:"fornecedor_id"`
+	Localizacao            *string         `json:"localizacao"`
+	Lote                   *string         `json:"lote"`
+	DataValidade           pgtype.Date     `json:"data_validade"`
+	Ncm                    *string         `json:"ncm"`
+	PermiteVenda           bool            `json:"permite_venda"`
+	Ativo                  *bool           `json:"ativo"`
 }
 
 // ========================================
@@ -297,17 +312,20 @@ type CreateProdutoParams struct {
 func (q *Queries) CreateProduto(ctx context.Context, arg CreateProdutoParams) (Produto, error) {
 	row := q.db.QueryRow(ctx, createProduto,
 		arg.TenantID,
-		arg.CategoriaID,
+		arg.CategoriaProdutoID,
 		arg.Nome,
 		arg.Descricao,
 		arg.Sku,
 		arg.CodigoBarras,
 		arg.Preco,
 		arg.Custo,
-		arg.CategoriaProduto,
 		arg.UnidadeMedida,
 		arg.QuantidadeAtual,
 		arg.QuantidadeMinima,
+		arg.EstoqueMaximo,
+		arg.ValorVendaProfissional,
+		arg.ValorEntrada,
+		arg.FornecedorID,
 		arg.Localizacao,
 		arg.Lote,
 		arg.DataValidade,
@@ -320,17 +338,23 @@ func (q *Queries) CreateProduto(ctx context.Context, arg CreateProdutoParams) (P
 		&i.ID,
 		&i.TenantID,
 		&i.CategoriaID,
+		&i.CategoriaProdutoID,
+		&i.FornecedorID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Sku,
 		&i.CodigoBarras,
 		&i.Preco,
 		&i.Custo,
+		&i.ValorVendaProfissional,
+		&i.ValorEntrada,
 		&i.Estoque,
 		&i.EstoqueMinimo,
+		&i.EstoqueMaximo,
 		&i.Unidade,
 		&i.Fornecedor,
 		&i.CategoriaProduto,
+		&i.CentroCusto,
 		&i.UnidadeMedida,
 		&i.QuantidadeAtual,
 		&i.QuantidadeMinima,
@@ -339,9 +363,12 @@ func (q *Queries) CreateProduto(ctx context.Context, arg CreateProdutoParams) (P
 		&i.DataValidade,
 		&i.Ncm,
 		&i.PermiteVenda,
+		&i.ControlaValidade,
+		&i.LeadTimeDias,
 		&i.Imagem,
 		&i.Observacoes,
 		&i.Ativo,
+		&i.UnitID,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -712,8 +739,62 @@ func (q *Queries) GetMovimentacoesPorPeriodoComDetalhes(ctx context.Context, arg
 	return items, nil
 }
 
+const getProdutoByCodigoBarras = `-- name: GetProdutoByCodigoBarras :one
+SELECT id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em FROM produtos
+WHERE codigo_barras = $1 AND tenant_id = $2
+`
+
+type GetProdutoByCodigoBarrasParams struct {
+	CodigoBarras *string     `json:"codigo_barras"`
+	TenantID     pgtype.UUID `json:"tenant_id"`
+}
+
+func (q *Queries) GetProdutoByCodigoBarras(ctx context.Context, arg GetProdutoByCodigoBarrasParams) (Produto, error) {
+	row := q.db.QueryRow(ctx, getProdutoByCodigoBarras, arg.CodigoBarras, arg.TenantID)
+	var i Produto
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.CategoriaID,
+		&i.CategoriaProdutoID,
+		&i.FornecedorID,
+		&i.Nome,
+		&i.Descricao,
+		&i.Sku,
+		&i.CodigoBarras,
+		&i.Preco,
+		&i.Custo,
+		&i.ValorVendaProfissional,
+		&i.ValorEntrada,
+		&i.Estoque,
+		&i.EstoqueMinimo,
+		&i.EstoqueMaximo,
+		&i.Unidade,
+		&i.Fornecedor,
+		&i.CategoriaProduto,
+		&i.CentroCusto,
+		&i.UnidadeMedida,
+		&i.QuantidadeAtual,
+		&i.QuantidadeMinima,
+		&i.Localizacao,
+		&i.Lote,
+		&i.DataValidade,
+		&i.Ncm,
+		&i.PermiteVenda,
+		&i.ControlaValidade,
+		&i.LeadTimeDias,
+		&i.Imagem,
+		&i.Observacoes,
+		&i.Ativo,
+		&i.UnitID,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
 const getProdutoByID = `-- name: GetProdutoByID :one
-SELECT id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em FROM produtos
+SELECT id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em FROM produtos
 WHERE id = $1 AND tenant_id = $2
 `
 
@@ -729,17 +810,23 @@ func (q *Queries) GetProdutoByID(ctx context.Context, arg GetProdutoByIDParams) 
 		&i.ID,
 		&i.TenantID,
 		&i.CategoriaID,
+		&i.CategoriaProdutoID,
+		&i.FornecedorID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Sku,
 		&i.CodigoBarras,
 		&i.Preco,
 		&i.Custo,
+		&i.ValorVendaProfissional,
+		&i.ValorEntrada,
 		&i.Estoque,
 		&i.EstoqueMinimo,
+		&i.EstoqueMaximo,
 		&i.Unidade,
 		&i.Fornecedor,
 		&i.CategoriaProduto,
+		&i.CentroCusto,
 		&i.UnidadeMedida,
 		&i.QuantidadeAtual,
 		&i.QuantidadeMinima,
@@ -748,9 +835,12 @@ func (q *Queries) GetProdutoByID(ctx context.Context, arg GetProdutoByIDParams) 
 		&i.DataValidade,
 		&i.Ncm,
 		&i.PermiteVenda,
+		&i.ControlaValidade,
+		&i.LeadTimeDias,
 		&i.Imagem,
 		&i.Observacoes,
 		&i.Ativo,
+		&i.UnitID,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -758,7 +848,7 @@ func (q *Queries) GetProdutoByID(ctx context.Context, arg GetProdutoByIDParams) 
 }
 
 const getProdutoBySKU = `-- name: GetProdutoBySKU :one
-SELECT id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em FROM produtos
+SELECT id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em FROM produtos
 WHERE sku = $1 AND tenant_id = $2
 `
 
@@ -774,17 +864,23 @@ func (q *Queries) GetProdutoBySKU(ctx context.Context, arg GetProdutoBySKUParams
 		&i.ID,
 		&i.TenantID,
 		&i.CategoriaID,
+		&i.CategoriaProdutoID,
+		&i.FornecedorID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Sku,
 		&i.CodigoBarras,
 		&i.Preco,
 		&i.Custo,
+		&i.ValorVendaProfissional,
+		&i.ValorEntrada,
 		&i.Estoque,
 		&i.EstoqueMinimo,
+		&i.EstoqueMaximo,
 		&i.Unidade,
 		&i.Fornecedor,
 		&i.CategoriaProduto,
+		&i.CentroCusto,
 		&i.UnidadeMedida,
 		&i.QuantidadeAtual,
 		&i.QuantidadeMinima,
@@ -793,9 +889,12 @@ func (q *Queries) GetProdutoBySKU(ctx context.Context, arg GetProdutoBySKUParams
 		&i.DataValidade,
 		&i.Ncm,
 		&i.PermiteVenda,
+		&i.ControlaValidade,
+		&i.LeadTimeDias,
 		&i.Imagem,
 		&i.Observacoes,
 		&i.Ativo,
+		&i.UnitID,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -837,7 +936,7 @@ func (q *Queries) GetProdutoFornecedor(ctx context.Context, arg GetProdutoFornec
 const getProdutosComEstoqueBaixo = `-- name: GetProdutosComEstoqueBaixo :many
 
 SELECT
-    p.id, p.tenant_id, p.categoria_id, p.nome, p.descricao, p.sku, p.codigo_barras, p.preco, p.custo, p.estoque, p.estoque_minimo, p.unidade, p.fornecedor, p.categoria_produto, p.unidade_medida, p.quantidade_atual, p.quantidade_minima, p.localizacao, p.lote, p.data_validade, p.ncm, p.permite_venda, p.imagem, p.observacoes, p.ativo, p.criado_em, p.atualizado_em,
+    p.id, p.tenant_id, p.categoria_id, p.categoria_produto_id, p.fornecedor_id, p.nome, p.descricao, p.sku, p.codigo_barras, p.preco, p.custo, p.valor_venda_profissional, p.valor_entrada, p.estoque, p.estoque_minimo, p.estoque_maximo, p.unidade, p.fornecedor, p.categoria_produto, p.centro_custo, p.unidade_medida, p.quantidade_atual, p.quantidade_minima, p.localizacao, p.lote, p.data_validade, p.ncm, p.permite_venda, p.controla_validade, p.lead_time_dias, p.imagem, p.observacoes, p.ativo, p.unit_id, p.criado_em, p.atualizado_em,
     (p.quantidade_atual / NULLIF(p.quantidade_minima, 0)) * 100 as percentual_estoque
 FROM produtos p
 WHERE p.tenant_id = $1
@@ -847,34 +946,43 @@ ORDER BY percentual_estoque ASC
 `
 
 type GetProdutosComEstoqueBaixoRow struct {
-	ID                pgtype.UUID        `json:"id"`
-	TenantID          pgtype.UUID        `json:"tenant_id"`
-	CategoriaID       pgtype.UUID        `json:"categoria_id"`
-	Nome              string             `json:"nome"`
-	Descricao         *string            `json:"descricao"`
-	Sku               *string            `json:"sku"`
-	CodigoBarras      *string            `json:"codigo_barras"`
-	Preco             decimal.Decimal    `json:"preco"`
-	Custo             pgtype.Numeric     `json:"custo"`
-	Estoque           *int32             `json:"estoque"`
-	EstoqueMinimo     *int32             `json:"estoque_minimo"`
-	Unidade           *string            `json:"unidade"`
-	Fornecedor        *string            `json:"fornecedor"`
-	CategoriaProduto  string             `json:"categoria_produto"`
-	UnidadeMedida     string             `json:"unidade_medida"`
-	QuantidadeAtual   decimal.Decimal    `json:"quantidade_atual"`
-	QuantidadeMinima  decimal.Decimal    `json:"quantidade_minima"`
-	Localizacao       *string            `json:"localizacao"`
-	Lote              *string            `json:"lote"`
-	DataValidade      pgtype.Date        `json:"data_validade"`
-	Ncm               *string            `json:"ncm"`
-	PermiteVenda      bool               `json:"permite_venda"`
-	Imagem            *string            `json:"imagem"`
-	Observacoes       *string            `json:"observacoes"`
-	Ativo             *bool              `json:"ativo"`
-	CriadoEm          pgtype.Timestamptz `json:"criado_em"`
-	AtualizadoEm      pgtype.Timestamptz `json:"atualizado_em"`
-	PercentualEstoque int32              `json:"percentual_estoque"`
+	ID                     pgtype.UUID        `json:"id"`
+	TenantID               pgtype.UUID        `json:"tenant_id"`
+	CategoriaID            pgtype.UUID        `json:"categoria_id"`
+	CategoriaProdutoID     pgtype.UUID        `json:"categoria_produto_id"`
+	FornecedorID           pgtype.UUID        `json:"fornecedor_id"`
+	Nome                   string             `json:"nome"`
+	Descricao              *string            `json:"descricao"`
+	Sku                    *string            `json:"sku"`
+	CodigoBarras           *string            `json:"codigo_barras"`
+	Preco                  decimal.Decimal    `json:"preco"`
+	Custo                  pgtype.Numeric     `json:"custo"`
+	ValorVendaProfissional pgtype.Numeric     `json:"valor_venda_profissional"`
+	ValorEntrada           pgtype.Numeric     `json:"valor_entrada"`
+	Estoque                *int32             `json:"estoque"`
+	EstoqueMinimo          *int32             `json:"estoque_minimo"`
+	EstoqueMaximo          *int32             `json:"estoque_maximo"`
+	Unidade                *string            `json:"unidade"`
+	Fornecedor             *string            `json:"fornecedor"`
+	CategoriaProduto       string             `json:"categoria_produto"`
+	CentroCusto            *string            `json:"centro_custo"`
+	UnidadeMedida          string             `json:"unidade_medida"`
+	QuantidadeAtual        decimal.Decimal    `json:"quantidade_atual"`
+	QuantidadeMinima       decimal.Decimal    `json:"quantidade_minima"`
+	Localizacao            *string            `json:"localizacao"`
+	Lote                   *string            `json:"lote"`
+	DataValidade           pgtype.Date        `json:"data_validade"`
+	Ncm                    *string            `json:"ncm"`
+	PermiteVenda           bool               `json:"permite_venda"`
+	ControlaValidade       *bool              `json:"controla_validade"`
+	LeadTimeDias           *int32             `json:"lead_time_dias"`
+	Imagem                 *string            `json:"imagem"`
+	Observacoes            *string            `json:"observacoes"`
+	Ativo                  *bool              `json:"ativo"`
+	UnitID                 pgtype.UUID        `json:"unit_id"`
+	CriadoEm               pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm           pgtype.Timestamptz `json:"atualizado_em"`
+	PercentualEstoque      int32              `json:"percentual_estoque"`
 }
 
 // ========================================
@@ -893,17 +1001,23 @@ func (q *Queries) GetProdutosComEstoqueBaixo(ctx context.Context, tenantID pgtyp
 			&i.ID,
 			&i.TenantID,
 			&i.CategoriaID,
+			&i.CategoriaProdutoID,
+			&i.FornecedorID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Sku,
 			&i.CodigoBarras,
 			&i.Preco,
 			&i.Custo,
+			&i.ValorVendaProfissional,
+			&i.ValorEntrada,
 			&i.Estoque,
 			&i.EstoqueMinimo,
+			&i.EstoqueMaximo,
 			&i.Unidade,
 			&i.Fornecedor,
 			&i.CategoriaProduto,
+			&i.CentroCusto,
 			&i.UnidadeMedida,
 			&i.QuantidadeAtual,
 			&i.QuantidadeMinima,
@@ -912,9 +1026,12 @@ func (q *Queries) GetProdutosComEstoqueBaixo(ctx context.Context, tenantID pgtyp
 			&i.DataValidade,
 			&i.Ncm,
 			&i.PermiteVenda,
+			&i.ControlaValidade,
+			&i.LeadTimeDias,
 			&i.Imagem,
 			&i.Observacoes,
 			&i.Ativo,
+			&i.UnitID,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 			&i.PercentualEstoque,
@@ -1378,7 +1495,7 @@ func (q *Queries) ListMovimentacoesByTipo(ctx context.Context, arg ListMovimenta
 }
 
 const listProdutos = `-- name: ListProdutos :many
-SELECT id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em FROM produtos
+SELECT id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em FROM produtos
 WHERE tenant_id = $1
 ORDER BY nome
 `
@@ -1396,17 +1513,23 @@ func (q *Queries) ListProdutos(ctx context.Context, tenantID pgtype.UUID) ([]Pro
 			&i.ID,
 			&i.TenantID,
 			&i.CategoriaID,
+			&i.CategoriaProdutoID,
+			&i.FornecedorID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Sku,
 			&i.CodigoBarras,
 			&i.Preco,
 			&i.Custo,
+			&i.ValorVendaProfissional,
+			&i.ValorEntrada,
 			&i.Estoque,
 			&i.EstoqueMinimo,
+			&i.EstoqueMaximo,
 			&i.Unidade,
 			&i.Fornecedor,
 			&i.CategoriaProduto,
+			&i.CentroCusto,
 			&i.UnidadeMedida,
 			&i.QuantidadeAtual,
 			&i.QuantidadeMinima,
@@ -1415,9 +1538,12 @@ func (q *Queries) ListProdutos(ctx context.Context, tenantID pgtype.UUID) ([]Pro
 			&i.DataValidade,
 			&i.Ncm,
 			&i.PermiteVenda,
+			&i.ControlaValidade,
+			&i.LeadTimeDias,
 			&i.Imagem,
 			&i.Observacoes,
 			&i.Ativo,
+			&i.UnitID,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -1432,7 +1558,7 @@ func (q *Queries) ListProdutos(ctx context.Context, tenantID pgtype.UUID) ([]Pro
 }
 
 const listProdutosAbaixoDoMinimo = `-- name: ListProdutosAbaixoDoMinimo :many
-SELECT id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em FROM produtos
+SELECT id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em FROM produtos
 WHERE tenant_id = $1
   AND ativo = true
   AND quantidade_atual <= quantidade_minima
@@ -1452,17 +1578,23 @@ func (q *Queries) ListProdutosAbaixoDoMinimo(ctx context.Context, tenantID pgtyp
 			&i.ID,
 			&i.TenantID,
 			&i.CategoriaID,
+			&i.CategoriaProdutoID,
+			&i.FornecedorID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Sku,
 			&i.CodigoBarras,
 			&i.Preco,
 			&i.Custo,
+			&i.ValorVendaProfissional,
+			&i.ValorEntrada,
 			&i.Estoque,
 			&i.EstoqueMinimo,
+			&i.EstoqueMaximo,
 			&i.Unidade,
 			&i.Fornecedor,
 			&i.CategoriaProduto,
+			&i.CentroCusto,
 			&i.UnidadeMedida,
 			&i.QuantidadeAtual,
 			&i.QuantidadeMinima,
@@ -1471,9 +1603,12 @@ func (q *Queries) ListProdutosAbaixoDoMinimo(ctx context.Context, tenantID pgtyp
 			&i.DataValidade,
 			&i.Ncm,
 			&i.PermiteVenda,
+			&i.ControlaValidade,
+			&i.LeadTimeDias,
 			&i.Imagem,
 			&i.Observacoes,
 			&i.Ativo,
+			&i.UnitID,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -1488,7 +1623,7 @@ func (q *Queries) ListProdutosAbaixoDoMinimo(ctx context.Context, tenantID pgtyp
 }
 
 const listProdutosAtivos = `-- name: ListProdutosAtivos :many
-SELECT id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em FROM produtos
+SELECT id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em FROM produtos
 WHERE tenant_id = $1 AND ativo = true
 ORDER BY nome
 `
@@ -1506,17 +1641,23 @@ func (q *Queries) ListProdutosAtivos(ctx context.Context, tenantID pgtype.UUID) 
 			&i.ID,
 			&i.TenantID,
 			&i.CategoriaID,
+			&i.CategoriaProdutoID,
+			&i.FornecedorID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Sku,
 			&i.CodigoBarras,
 			&i.Preco,
 			&i.Custo,
+			&i.ValorVendaProfissional,
+			&i.ValorEntrada,
 			&i.Estoque,
 			&i.EstoqueMinimo,
+			&i.EstoqueMaximo,
 			&i.Unidade,
 			&i.Fornecedor,
 			&i.CategoriaProduto,
+			&i.CentroCusto,
 			&i.UnidadeMedida,
 			&i.QuantidadeAtual,
 			&i.QuantidadeMinima,
@@ -1525,9 +1666,12 @@ func (q *Queries) ListProdutosAtivos(ctx context.Context, tenantID pgtype.UUID) 
 			&i.DataValidade,
 			&i.Ncm,
 			&i.PermiteVenda,
+			&i.ControlaValidade,
+			&i.LeadTimeDias,
 			&i.Imagem,
 			&i.Observacoes,
 			&i.Ativo,
+			&i.UnitID,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -1542,7 +1686,7 @@ func (q *Queries) ListProdutosAtivos(ctx context.Context, tenantID pgtype.UUID) 
 }
 
 const listProdutosByCategoria = `-- name: ListProdutosByCategoria :many
-SELECT id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em FROM produtos
+SELECT id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em FROM produtos
 WHERE tenant_id = $1 AND categoria_produto = $2 AND ativo = true
 ORDER BY nome
 `
@@ -1565,17 +1709,23 @@ func (q *Queries) ListProdutosByCategoria(ctx context.Context, arg ListProdutosB
 			&i.ID,
 			&i.TenantID,
 			&i.CategoriaID,
+			&i.CategoriaProdutoID,
+			&i.FornecedorID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Sku,
 			&i.CodigoBarras,
 			&i.Preco,
 			&i.Custo,
+			&i.ValorVendaProfissional,
+			&i.ValorEntrada,
 			&i.Estoque,
 			&i.EstoqueMinimo,
+			&i.EstoqueMaximo,
 			&i.Unidade,
 			&i.Fornecedor,
 			&i.CategoriaProduto,
+			&i.CentroCusto,
 			&i.UnidadeMedida,
 			&i.QuantidadeAtual,
 			&i.QuantidadeMinima,
@@ -1584,9 +1734,12 @@ func (q *Queries) ListProdutosByCategoria(ctx context.Context, arg ListProdutosB
 			&i.DataValidade,
 			&i.Ncm,
 			&i.PermiteVenda,
+			&i.ControlaValidade,
+			&i.LeadTimeDias,
 			&i.Imagem,
 			&i.Observacoes,
 			&i.Ativo,
+			&i.UnitID,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -1787,60 +1940,72 @@ func (q *Queries) UpdateFornecedor(ctx context.Context, arg UpdateFornecedorPara
 const updateProduto = `-- name: UpdateProduto :one
 UPDATE produtos
 SET
-    categoria_id = $3,
+    categoria_produto_id = $3,
     nome = $4,
     descricao = $5,
     sku = $6,
     codigo_barras = $7,
     preco = $8,
     custo = $9,
-    categoria_produto = $10,
-    unidade_medida = $11,
-    quantidade_minima = $12,
-    localizacao = $13,
-    lote = $14,
-    data_validade = $15,
-    ncm = $16,
-    permite_venda = $17,
+    unidade_medida = $10,
+    quantidade_minima = $11,
+    quantidade_atual = $12,
+    estoque_maximo = $13,
+    valor_venda_profissional = $14,
+    valor_entrada = $15,
+    fornecedor_id = $16,
+    localizacao = $17,
+    lote = $18,
+    data_validade = $19,
+    ncm = $20,
+    permite_venda = $21,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, categoria_id, nome, descricao, sku, codigo_barras, preco, custo, estoque, estoque_minimo, unidade, fornecedor, categoria_produto, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, imagem, observacoes, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, categoria_id, categoria_produto_id, fornecedor_id, nome, descricao, sku, codigo_barras, preco, custo, valor_venda_profissional, valor_entrada, estoque, estoque_minimo, estoque_maximo, unidade, fornecedor, categoria_produto, centro_custo, unidade_medida, quantidade_atual, quantidade_minima, localizacao, lote, data_validade, ncm, permite_venda, controla_validade, lead_time_dias, imagem, observacoes, ativo, unit_id, criado_em, atualizado_em
 `
 
 type UpdateProdutoParams struct {
-	ID               pgtype.UUID     `json:"id"`
-	TenantID         pgtype.UUID     `json:"tenant_id"`
-	CategoriaID      pgtype.UUID     `json:"categoria_id"`
-	Nome             string          `json:"nome"`
-	Descricao        *string         `json:"descricao"`
-	Sku              *string         `json:"sku"`
-	CodigoBarras     *string         `json:"codigo_barras"`
-	Preco            decimal.Decimal `json:"preco"`
-	Custo            pgtype.Numeric  `json:"custo"`
-	CategoriaProduto string          `json:"categoria_produto"`
-	UnidadeMedida    string          `json:"unidade_medida"`
-	QuantidadeMinima decimal.Decimal `json:"quantidade_minima"`
-	Localizacao      *string         `json:"localizacao"`
-	Lote             *string         `json:"lote"`
-	DataValidade     pgtype.Date     `json:"data_validade"`
-	Ncm              *string         `json:"ncm"`
-	PermiteVenda     bool            `json:"permite_venda"`
+	ID                     pgtype.UUID     `json:"id"`
+	TenantID               pgtype.UUID     `json:"tenant_id"`
+	CategoriaProdutoID     pgtype.UUID     `json:"categoria_produto_id"`
+	Nome                   string          `json:"nome"`
+	Descricao              *string         `json:"descricao"`
+	Sku                    *string         `json:"sku"`
+	CodigoBarras           *string         `json:"codigo_barras"`
+	Preco                  decimal.Decimal `json:"preco"`
+	Custo                  pgtype.Numeric  `json:"custo"`
+	UnidadeMedida          string          `json:"unidade_medida"`
+	QuantidadeMinima       decimal.Decimal `json:"quantidade_minima"`
+	QuantidadeAtual        decimal.Decimal `json:"quantidade_atual"`
+	EstoqueMaximo          *int32          `json:"estoque_maximo"`
+	ValorVendaProfissional pgtype.Numeric  `json:"valor_venda_profissional"`
+	ValorEntrada           pgtype.Numeric  `json:"valor_entrada"`
+	FornecedorID           pgtype.UUID     `json:"fornecedor_id"`
+	Localizacao            *string         `json:"localizacao"`
+	Lote                   *string         `json:"lote"`
+	DataValidade           pgtype.Date     `json:"data_validade"`
+	Ncm                    *string         `json:"ncm"`
+	PermiteVenda           bool            `json:"permite_venda"`
 }
 
 func (q *Queries) UpdateProduto(ctx context.Context, arg UpdateProdutoParams) (Produto, error) {
 	row := q.db.QueryRow(ctx, updateProduto,
 		arg.ID,
 		arg.TenantID,
-		arg.CategoriaID,
+		arg.CategoriaProdutoID,
 		arg.Nome,
 		arg.Descricao,
 		arg.Sku,
 		arg.CodigoBarras,
 		arg.Preco,
 		arg.Custo,
-		arg.CategoriaProduto,
 		arg.UnidadeMedida,
 		arg.QuantidadeMinima,
+		arg.QuantidadeAtual,
+		arg.EstoqueMaximo,
+		arg.ValorVendaProfissional,
+		arg.ValorEntrada,
+		arg.FornecedorID,
 		arg.Localizacao,
 		arg.Lote,
 		arg.DataValidade,
@@ -1852,17 +2017,23 @@ func (q *Queries) UpdateProduto(ctx context.Context, arg UpdateProdutoParams) (P
 		&i.ID,
 		&i.TenantID,
 		&i.CategoriaID,
+		&i.CategoriaProdutoID,
+		&i.FornecedorID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Sku,
 		&i.CodigoBarras,
 		&i.Preco,
 		&i.Custo,
+		&i.ValorVendaProfissional,
+		&i.ValorEntrada,
 		&i.Estoque,
 		&i.EstoqueMinimo,
+		&i.EstoqueMaximo,
 		&i.Unidade,
 		&i.Fornecedor,
 		&i.CategoriaProduto,
+		&i.CentroCusto,
 		&i.UnidadeMedida,
 		&i.QuantidadeAtual,
 		&i.QuantidadeMinima,
@@ -1871,9 +2042,12 @@ func (q *Queries) UpdateProduto(ctx context.Context, arg UpdateProdutoParams) (P
 		&i.DataValidade,
 		&i.Ncm,
 		&i.PermiteVenda,
+		&i.ControlaValidade,
+		&i.LeadTimeDias,
 		&i.Imagem,
 		&i.Observacoes,
 		&i.Ativo,
+		&i.UnitID,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)

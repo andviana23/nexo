@@ -1,0 +1,5 @@
+./delete_account.go
+./delete_preferences.go
+./export_data.go
+./get_preferences.go
+./update_preferences.go

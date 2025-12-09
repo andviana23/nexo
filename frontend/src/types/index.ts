@@ -16,8 +16,10 @@ export {
     type CustomerExportResponse, type Customer as CustomerFull, type CustomerGender, type CustomerModalState, type CustomerResponse, type CustomerStatsResponse, type CustomerSummary,
     type CustomerWithHistory, type ListCustomersFilters, type ListCustomersResponse, type SearchCustomersParams, type UpdateCustomerRequest
 } from './customer';
+export * from './meio-pagamento';
 export * from './professional';
 export * from './stock';
+export * from './unit';
 
 // =============================================================================
 // TIPOS UTILITÁRIOS
@@ -168,6 +170,8 @@ export interface Tenant {
   email?: string;
   address?: TenantAddress;
   settings?: TenantSettings;
+  // Feature flags
+  multi_unit_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }

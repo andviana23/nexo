@@ -40,6 +40,9 @@ type CommissionItemRepository interface {
 	// GetByDateRange busca itens de comissão por intervalo de datas
 	GetByDateRange(ctx context.Context, tenantID string, startDate, endDate time.Time) ([]*entity.CommissionItem, error)
 
+	// SumByDateRange retorna o total de comissões em um intervalo de datas
+	SumByDateRange(ctx context.Context, tenantID string, startDate, endDate time.Time) (float64, error)
+
 	// GetTotalByPeriod retorna o total de comissão de um período
 	GetTotalByPeriod(ctx context.Context, tenantID, periodID string) (float64, error)
 

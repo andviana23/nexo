@@ -11,27 +11,41 @@
  * - Sidebar direita com mini-calendário e opções
  */
 
+import { format } from 'date-fns';
 import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  List,
-  Lock
+    Calendar,
+    CalendarDays,
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    List,
+    Lock
 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
-import { AgendaCalendar, AppointmentModal, BlockScheduleModal } from '@/components/appointments';
+import { CommandModal } from '@/components/agendamentos/CommandModal';
+import {
+    AgendaCalendar,
+    AppointmentCardWithCommand,
+    AppointmentContextMenu,
+    AppointmentModal,
+    BlockScheduleModal
+} from '@/components/appointments';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useProfessionals } from '@/hooks/use-appointments';
-import type { AppointmentModalState } from '@/types/appointment';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAppointments, useUpdateAppointmentStatus } from '@/hooks/use-appointments';
+import { useCreateCommandFromAppointment } from '@/hooks/use-commands';
+import type { AppointmentModalState, AppointmentResponse } from '@/types/appointment';
+import { toast } from 'sonner';
 
 // =============================================================================
 // TIPOS
 // =============================================================================
 
 type ViewType = 'day' | 'week' | 'month';
+type DisplayMode = 'calendar' | 'list';
 
 interface BlockModalState {
   isOpen: boolean;
@@ -39,6 +53,13 @@ interface BlockModalState {
   initialProfessionalId?: string;
   initialStartTime?: string;
   initialEndTime?: string;
+}
+
+interface ContextMenuState {
+  isOpen: boolean;
+  x: number;
+  y: number;
+  appointment: AppointmentResponse | null;
 }
 
 // =============================================================================
@@ -182,6 +203,7 @@ export default function AgendamentosPage() {
 
   // Estado da visualização
   const [viewType, setViewType] = useState<ViewType>('day');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('calendar');
 
   // Estado do modal
   const [modalState, setModalState] = useState<AppointmentModalState>({
@@ -189,16 +211,72 @@ export default function AgendamentosPage() {
     mode: 'create',
   });
 
+  // Estado do modal de comanda
+  const [commandModalState, setCommandModalState] = useState({
+    isOpen: false,
+    commandId: '',
+  });
+
+  // Estado do menu de contexto (botão direito)
+  const [contextMenuState, setContextMenuState] = useState<ContextMenuState>({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    appointment: null,
+  });
+
   // Estados para checkboxes da sidebar
   const [showBlockSchedule, setShowBlockSchedule] = useState(false);
+  const [showOnlyAwaitingPayment, setShowOnlyAwaitingPayment] = useState(false);
 
   // Estado do modal de bloqueio
   const [blockModalState, setBlockModalState] = useState<BlockModalState>({
     isOpen: false,
   });
 
-  // Buscar profissionais
-  const { data: professionals = [] } = useProfessionals();
+  // Hook para atualizar status do agendamento
+  const updateStatus = useUpdateAppointmentStatus();
+
+  // Hook para criar comanda a partir de agendamento
+  const createCommand = useCreateCommandFromAppointment();
+
+  // Buscar appointments para view de lista
+  // Formatar datas como YYYY-MM-DD conforme esperado pelo backend
+  const startDate = useMemo(() => {
+    return format(new Date(currentDate), 'yyyy-MM-dd');
+  }, [currentDate]);
+
+  const endDate = useMemo(() => {
+    return format(new Date(currentDate), 'yyyy-MM-dd');
+  }, [currentDate]);
+
+  const {data: appointmentsData, isLoading: isLoadingAppointments} = useAppointments({
+    start_date: displayMode === 'list' ? startDate : undefined,
+    end_date: displayMode === 'list' ? endDate : undefined,
+    status: showOnlyAwaitingPayment ? ['AWAITING_PAYMENT'] : undefined,
+  });
+
+  // Suporta tanto 'data' quanto 'appointments' para compatibilidade
+  const appointments = useMemo(
+    () => appointmentsData?.data || (appointmentsData as unknown as { appointments?: AppointmentResponse[] })?.appointments || [],
+    [appointmentsData]
+  );
+
+  // Filtrar appointments para lista
+  const filteredAppointments = useMemo(() => {
+    if (displayMode !== 'list') return [];
+    
+    let filtered = appointments;
+    
+    if (showOnlyAwaitingPayment) {
+      filtered = filtered.filter(apt => apt.status === 'AWAITING_PAYMENT');
+    }
+    
+    // Ordenar por horário
+    return filtered.sort((a, b) => 
+      new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    );
+  }, [appointments, displayMode, showOnlyAwaitingPayment]);
 
   // ==========================================================================
   // NAVEGAÇÃO DE DATAS
@@ -261,13 +339,40 @@ export default function AgendamentosPage() {
   // HANDLERS DO CALENDÁRIO
   // ==========================================================================
 
-  const handleEventClick = useCallback((state: AppointmentModalState) => {
-    setModalState(state);
-  }, []);
+  // Handler para abrir comanda a partir de um agendamento
+  const handleOpenCommand = useCallback((appointment: AppointmentResponse) => {
+    if (appointment.command_id) {
+      // Se já tem comanda, abrir direto
+      setCommandModalState({
+        isOpen: true,
+        commandId: appointment.command_id,
+      });
+    } else {
+      // Criar comanda a partir do agendamento
+      createCommand.mutate(appointment.id, {
+        onSuccess: (data) => {
+          setCommandModalState({
+            isOpen: true,
+            commandId: data.id,
+          });
+        },
+        onError: () => {
+          toast.error('Erro ao criar comanda');
+        },
+      });
+    }
+  }, [createCommand]);
 
-  const handleDateSelect = useCallback((state: AppointmentModalState) => {
-    setModalState(state);
-  }, []);
+  const handleEventClick = useCallback((state: AppointmentModalState) => {
+    // Se recebeu appointment completo (do FullCalendar)
+    if (state.appointment) {
+      // SEMPRE abrir a comanda ao clicar em um agendamento
+      handleOpenCommand(state.appointment);
+    } else {
+      // Sem appointment, apenas abrir modal normal
+      setModalState(state);
+    }
+  }, [handleOpenCommand]);
 
   const handleNewAppointment = useCallback(() => {
     setModalState({
@@ -283,6 +388,18 @@ export default function AgendamentosPage() {
 
   const handleMiniCalendarDateSelect = useCallback((date: Date) => {
     setCurrentDate(date);
+  }, []);
+
+  // Handler para menu de contexto (botão direito)
+  const handleEventContextMenu = useCallback((state: AppointmentModalState, event: React.MouseEvent) => {
+    if (state.appointment) {
+      setContextMenuState({
+        isOpen: true,
+        x: event.clientX,
+        y: event.clientY,
+        appointment: state.appointment,
+      });
+    }
   }, []);
 
   // Handler para abrir modal de bloqueio
@@ -360,34 +477,51 @@ export default function AgendamentosPage() {
 
         {/* Lado Direito - Ações e Views */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center rounded-md border bg-muted p-1">
-            <Button
-              variant={viewType === 'day' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewType('day')}
-              className="h-7 px-3 text-xs"
-            >
-              Dia
-            </Button>
-            <Button
-              variant={viewType === 'week' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewType('week')}
-              className="h-7 px-3 text-xs"
-            >
-              Semana
-            </Button>
-            <Button
-              variant={viewType === 'month' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewType('month')}
-              className="h-7 px-3 text-xs"
-            >
-              Mês
-            </Button>
-          </div>
+          {/* Toggle Calendário/Lista */}
+          <Tabs value={displayMode} onValueChange={(value) => setDisplayMode(value as DisplayMode)}>
+            <TabsList className="grid w-[200px] grid-cols-2">
+              <TabsTrigger value="calendar" className="gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Calendário
+              </TabsTrigger>
+              <TabsTrigger value="list" className="gap-2">
+                <List className="h-4 w-4" />
+                Lista
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-          <Button onClick={handleNewAppointment} size="sm">
+          {/* Seleção de Período (apenas para calendário) */}
+          {displayMode === 'calendar' && (
+            <div className="flex items-center rounded-md border bg-muted p-1">
+              <Button
+                variant={viewType === 'day' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewType('day')}
+                className="h-7 px-3 text-xs"
+              >
+                Dia
+              </Button>
+              <Button
+                variant={viewType === 'week' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewType('week')}
+                className="h-7 px-3 text-xs"
+              >
+                Semana
+              </Button>
+              <Button
+                variant={viewType === 'month' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewType('month')}
+                className="h-7 px-3 text-xs"
+              >
+                Mês
+              </Button>
+            </div>
+          )}
+
+          <Button onClick={handleNewAppointment} size="sm" data-testid="btn-new-appointment">
             <Calendar className="mr-2 h-4 w-4" />
             Novo Agendamento
           </Button>
@@ -398,19 +532,76 @@ export default function AgendamentosPage() {
       {/* ÁREA PRINCIPAL - Grid Layout */}
       {/* ================================================================== */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Calendário Principal */}
+        {/* Conteúdo Principal - Calendário ou Lista */}
         <main className="flex-1 overflow-hidden bg-background p-4">
-          <div className="h-full w-full overflow-hidden rounded-lg border bg-card shadow-sm">
-            <AgendaCalendar
-              currentDate={currentDate}
-              viewType={viewType}
-              professionalIds={[]}
-              onEventClick={handleEventClick}
-              onDateSelect={handleSlotSelect}
-              editable={true}
-              isBlockMode={showBlockSchedule}
-            />
-          </div>
+          {displayMode === 'calendar' ? (
+            <div className="h-full w-full overflow-hidden rounded-lg border bg-card shadow-sm">
+              <AgendaCalendar
+                currentDate={currentDate}
+                viewType={viewType}
+                professionalIds={[]}
+                onEventClick={handleEventClick}
+                onDateSelect={handleSlotSelect}
+                onEventContextMenu={handleEventContextMenu}
+                editable={true}
+                isBlockMode={showBlockSchedule}
+              />
+            </div>
+          ) : (
+            <div className="h-full w-full overflow-y-auto rounded-lg border bg-card shadow-sm">
+              <div className="p-6">
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">
+                    {showOnlyAwaitingPayment ? 'Aguardando Pagamento' : 'Agendamentos do Dia'}
+                  </h2>
+                  <span className="text-sm text-muted-foreground">
+                    {filteredAppointments.length} {filteredAppointments.length === 1 ? 'agendamento' : 'agendamentos'}
+                  </span>
+                </div>
+
+                {isLoadingAppointments ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-32 w-full" />
+                    ))}
+                  </div>
+                ) : filteredAppointments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground">
+                      {showOnlyAwaitingPayment 
+                        ? 'Nenhum agendamento aguardando pagamento'
+                        : 'Nenhum agendamento para este dia'
+                      }
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {showOnlyAwaitingPayment
+                        ? 'Desmarque o filtro para ver todos os agendamentos'
+                        : 'Selecione outra data ou crie um novo agendamento'
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredAppointments.map((appointment) => (
+                      <AppointmentCardWithCommand
+                        key={appointment.id}
+                        appointment={appointment}
+                        onClick={() => {
+                          // Sempre abrir a comanda ao clicar em um agendamento
+                          handleOpenCommand(appointment);
+                        }}
+                        onCloseCommand={() => {
+                          handleOpenCommand(appointment);
+                        }}
+                        variant="default"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </main>
 
         {/* Sidebar Direita */}
@@ -458,24 +649,46 @@ export default function AgendamentosPage() {
                 Visualização
               </h3>
               
-              <div className="flex items-center space-x-2 rounded-lg border bg-card p-3 shadow-sm">
-                <Checkbox
-                  id="block-schedule"
-                  checked={showBlockSchedule}
-                  onCheckedChange={(checked) => setShowBlockSchedule(!!checked)}
-                />
-                <label
-                  htmlFor="block-schedule"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Modo de Bloqueio
-                </label>
-              </div>
-              
-              {showBlockSchedule && (
-                <div className="rounded-md bg-destructive/10 p-3 text-xs text-destructive">
-                  <p className="font-semibold">Modo Bloqueio Ativo</p>
-                  <p>Clique na agenda para bloquear um horário.</p>
+              {/* Modo de Bloqueio (apenas para calendário) */}
+              {displayMode === 'calendar' && (
+                <>
+                  <div className="flex items-center space-x-2 rounded-lg border bg-card p-3 shadow-sm">
+                    <Checkbox
+                      id="block-schedule"
+                      checked={showBlockSchedule}
+                      onCheckedChange={(checked) => setShowBlockSchedule(!!checked)}
+                    />
+                    <label
+                      htmlFor="block-schedule"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Modo de Bloqueio
+                    </label>
+                  </div>
+                  
+                  {showBlockSchedule && (
+                    <div className="rounded-md bg-destructive/10 p-3 text-xs text-destructive">
+                      <p className="font-semibold">Modo Bloqueio Ativo</p>
+                      <p>Clique na agenda para bloquear um horário.</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Filtro Aguardando Pagamento (apenas para lista) */}
+              {displayMode === 'list' && (
+                <div className="flex items-center space-x-2 rounded-lg border bg-card p-3 shadow-sm">
+                  <Checkbox
+                    id="awaiting-payment"
+                    checked={showOnlyAwaitingPayment}
+                    onCheckedChange={(checked) => setShowOnlyAwaitingPayment(!!checked)}
+                  />
+                  <label
+                    htmlFor="awaiting-payment"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Apenas Aguardando Pagamento
+                  </label>
                 </div>
               )}
             </div>
@@ -485,6 +698,11 @@ export default function AgendamentosPage() {
 
       {/* Modais */}
       <AppointmentModal state={modalState} onClose={handleCloseModal} />
+      <CommandModal
+        commandId={commandModalState.commandId}
+        open={commandModalState.isOpen}
+        onOpenChange={(open) => setCommandModalState(prev => ({ ...prev, isOpen: open }))}
+      />
       <BlockScheduleModal
         isOpen={blockModalState.isOpen}
         onClose={handleCloseBlockModal}
@@ -492,6 +710,145 @@ export default function AgendamentosPage() {
         initialProfessionalId={blockModalState.initialProfessionalId}
         initialStartTime={blockModalState.initialStartTime}
         initialEndTime={blockModalState.initialEndTime}
+      />
+
+      {/* Menu de Contexto (Botão Direito) */}
+      <AppointmentContextMenu
+        isOpen={contextMenuState.isOpen}
+        x={contextMenuState.x}
+        y={contextMenuState.y}
+        appointment={contextMenuState.appointment}
+        onClose={() => setContextMenuState({ isOpen: false, x: 0, y: 0, appointment: null })}
+        onView={() => {
+          if (contextMenuState.appointment) {
+            setModalState({
+              isOpen: true,
+              mode: 'view',
+              appointment: contextMenuState.appointment,
+            });
+          }
+        }}
+        onEdit={() => {
+          if (contextMenuState.appointment) {
+            setModalState({
+              isOpen: true,
+              mode: 'edit',
+              appointment: contextMenuState.appointment,
+            });
+          }
+        }}
+        onOpenCommand={() => {
+          if (contextMenuState.appointment) {
+            const apt = contextMenuState.appointment;
+            // Se já tem comanda, abrir direto
+            if (apt.command_id) {
+              setCommandModalState({
+                isOpen: true,
+                commandId: apt.command_id,
+              });
+            } else {
+              // Criar comanda a partir do agendamento
+              createCommand.mutate(apt.id, {
+                onSuccess: (data) => {
+                  setCommandModalState({
+                    isOpen: true,
+                    commandId: data.id,
+                  });
+                },
+                onError: () => {
+                  toast.error('Erro ao criar comanda');
+                },
+              });
+            }
+          }
+        }}
+        onConfirm={() => {
+          if (contextMenuState.appointment) {
+            updateStatus.mutate(
+              { id: contextMenuState.appointment.id, data: { status: 'CONFIRMED' }, currentStatus: contextMenuState.appointment.status },
+              {
+                onSuccess: () => toast.success('Agendamento confirmado!'),
+                onError: () => toast.error('Erro ao confirmar'),
+              }
+            );
+          }
+        }}
+        onCheckIn={() => {
+          if (contextMenuState.appointment) {
+            updateStatus.mutate(
+              { id: contextMenuState.appointment.id, data: { status: 'CHECKED_IN' }, currentStatus: contextMenuState.appointment.status },
+              {
+                onSuccess: () => toast.success('Check-in realizado!'),
+                onError: () => toast.error('Erro ao fazer check-in'),
+              }
+            );
+          }
+        }}
+        onStartService={() => {
+          if (contextMenuState.appointment) {
+            updateStatus.mutate(
+              { id: contextMenuState.appointment.id, data: { status: 'IN_SERVICE' }, currentStatus: contextMenuState.appointment.status },
+              {
+                onSuccess: () => toast.success('Atendimento iniciado!'),
+                onError: () => toast.error('Erro ao iniciar atendimento'),
+              }
+            );
+          }
+        }}
+        onFinishService={() => {
+          if (contextMenuState.appointment) {
+            updateStatus.mutate(
+              { id: contextMenuState.appointment.id, data: { status: 'AWAITING_PAYMENT' }, currentStatus: contextMenuState.appointment.status },
+              {
+                onSuccess: () => toast.success('Atendimento finalizado! Aguardando pagamento.'),
+                onError: () => toast.error('Erro ao finalizar atendimento'),
+              }
+            );
+          }
+        }}
+        onCloseCommand={() => {
+          if (contextMenuState.appointment?.command_id) {
+            setCommandModalState({
+              isOpen: true,
+              commandId: contextMenuState.appointment.command_id,
+            });
+          } else {
+            toast.error('Nenhuma comanda vinculada a este agendamento');
+          }
+        }}
+        onComplete={() => {
+          if (contextMenuState.appointment) {
+            updateStatus.mutate(
+              { id: contextMenuState.appointment.id, data: { status: 'DONE' }, currentStatus: contextMenuState.appointment.status },
+              {
+                onSuccess: () => toast.success('Agendamento concluído!'),
+                onError: () => toast.error('Erro ao concluir'),
+              }
+            );
+          }
+        }}
+        onNoShow={() => {
+          if (contextMenuState.appointment) {
+            updateStatus.mutate(
+              { id: contextMenuState.appointment.id, data: { status: 'NO_SHOW' }, currentStatus: contextMenuState.appointment.status },
+              {
+                onSuccess: () => toast.success('Marcado como não compareceu'),
+                onError: () => toast.error('Erro ao marcar no-show'),
+              }
+            );
+          }
+        }}
+        onCancel={() => {
+          if (contextMenuState.appointment) {
+            updateStatus.mutate(
+              { id: contextMenuState.appointment.id, data: { status: 'CANCELED' }, currentStatus: contextMenuState.appointment.status },
+              {
+                onSuccess: () => toast.success('Agendamento cancelado'),
+                onError: () => toast.error('Erro ao cancelar'),
+              }
+            );
+          }
+        }}
       />
     </div>
   );

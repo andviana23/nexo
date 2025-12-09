@@ -1,0 +1,5 @@
+./ajustar_estoque.go
+./criar_produto.go
+./listar_alertas.go
+./registrar_entrada.go
+./registrar_saida.go

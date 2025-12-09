@@ -9,6 +9,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -22,9 +23,16 @@ type CreateAppointmentInput struct {
 	Notes          string
 }
 
+// CreateAppointmentOutput dados de saída da criação de agendamento
+type CreateAppointmentOutput struct {
+	Appointment *entity.Appointment
+	Command     *entity.Command // G-001: Comanda criada automaticamente
+}
+
 // CreateAppointmentUseCase implementa a criação de agendamentos
 type CreateAppointmentUseCase struct {
 	appointmentRepo    port.AppointmentRepository
+	commandRepo        port.CommandRepository // G-001: Para criar comanda automaticamente
 	serviceReader      port.ServiceReader
 	professionalReader port.ProfessionalReader
 	customerReader     port.CustomerReader
@@ -34,6 +42,7 @@ type CreateAppointmentUseCase struct {
 // NewCreateAppointmentUseCase cria nova instância do use case
 func NewCreateAppointmentUseCase(
 	appointmentRepo port.AppointmentRepository,
+	commandRepo port.CommandRepository, // G-001: Adicionado CommandRepository
 	serviceReader port.ServiceReader,
 	professionalReader port.ProfessionalReader,
 	customerReader port.CustomerReader,
@@ -41,6 +50,7 @@ func NewCreateAppointmentUseCase(
 ) *CreateAppointmentUseCase {
 	return &CreateAppointmentUseCase{
 		appointmentRepo:    appointmentRepo,
+		commandRepo:        commandRepo,
 		serviceReader:      serviceReader,
 		professionalReader: professionalReader,
 		customerReader:     customerReader,
@@ -109,8 +119,13 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 	}
 
 	// 6. Criar entidade de agendamento (calcula end_time e total_price automaticamente)
+	tenantUUID, err := uuid.Parse(input.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("tenant_id inválido: %w", err)
+	}
+
 	appointment, err := entity.NewAppointment(
-		input.TenantID,
+		tenantUUID,
 		input.ProfessionalID,
 		input.CustomerID,
 		input.StartTime,
@@ -120,7 +135,7 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 		return nil, fmt.Errorf("erro ao criar agendamento: %w", err)
 	}
 
-	// 7. Verificar conflito de horário
+	// 7. Verificar conflito de horário com outros agendamentos
 	hasConflict, err := uc.appointmentRepo.CheckConflict(
 		ctx,
 		input.TenantID,
@@ -136,14 +151,95 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 		return nil, domain.ErrAppointmentConflict
 	}
 
-	// 8. Definir observações
+	// 8. Verificar conflito com horários bloqueados (blocked_times)
+	hasBlockedConflict, err := uc.appointmentRepo.CheckBlockedTimeConflict(
+		ctx,
+		input.TenantID,
+		input.ProfessionalID,
+		appointment.StartTime,
+		appointment.EndTime,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao verificar bloqueio: %w", err)
+	}
+	if hasBlockedConflict {
+		return nil, domain.ErrAppointmentBlockedTimeConflict
+	}
+
+	// 9. Verificar intervalo mínimo entre agendamentos (RN-AGE-003: 10 minutos)
+	const minimumIntervalMinutes = 10
+	hasIntervalConflict, err := uc.appointmentRepo.CheckMinimumIntervalConflict(
+		ctx,
+		input.TenantID,
+		input.ProfessionalID,
+		appointment.StartTime,
+		appointment.EndTime,
+		"",
+		minimumIntervalMinutes,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao verificar intervalo mínimo: %w", err)
+	}
+	if hasIntervalConflict {
+		return nil, domain.ErrAppointmentMinimumInterval
+	}
+
+	// 10. Definir observações
 	if input.Notes != "" {
 		appointment.SetNotes(input.Notes)
 	}
 
-	// 9. Persistir
+	// 11. Persistir agendamento
 	if err := uc.appointmentRepo.Create(ctx, appointment); err != nil {
 		return nil, fmt.Errorf("erro ao salvar agendamento: %w", err)
+	}
+
+	// 12. G-001: Criar comanda automaticamente vinculada ao agendamento
+	appointmentUUID, _ := uuid.Parse(appointment.ID)
+	customerUUID, _ := uuid.Parse(input.CustomerID)
+
+	command, err := entity.NewCommand(tenantUUID, customerUUID, &appointmentUUID)
+	if err != nil {
+		uc.logger.Warn("Falha ao criar entidade de comanda",
+			zap.String("appointment_id", appointment.ID),
+			zap.Error(err))
+		// Não bloqueia criação do agendamento - comanda pode ser criada depois
+	} else {
+		// Adicionar os serviços como itens da comanda
+		for _, svc := range services {
+			item := entity.CommandItem{
+				ID:            uuid.New(),
+				CommandID:     command.ID,
+				Tipo:          entity.CommandItemTypeServico,
+				ItemID:        uuid.MustParse(svc.ID),
+				Descricao:     svc.Name,
+				PrecoUnitario: svc.Price.Value().InexactFloat64(),
+				Quantidade:    1,
+				PrecoFinal:    svc.Price.Value().InexactFloat64(),
+				CriadoEm:      time.Now(),
+			}
+			if err := command.AddItem(item); err != nil {
+				uc.logger.Warn("Falha ao adicionar item à comanda",
+					zap.String("service_id", svc.ID),
+					zap.Error(err))
+			}
+		}
+
+		// Persistir comanda (o número será gerado automaticamente pelo repositório)
+		if err := uc.commandRepo.Create(ctx, command); err != nil {
+			uc.logger.Warn("Falha ao salvar comanda",
+				zap.String("appointment_id", appointment.ID),
+				zap.Error(err))
+			// Não bloqueia - comanda pode ser criada manualmente depois
+			command = nil
+		} else {
+			uc.logger.Info("Comanda criada automaticamente",
+				zap.String("appointment_id", appointment.ID),
+				zap.String("command_id", command.ID.String()),
+				zap.String("numero", *command.Numero),
+				zap.Int("itens", len(command.Items)),
+			)
+		}
 	}
 
 	uc.logger.Info("Agendamento criado",
@@ -163,7 +259,7 @@ type ListAppointmentsInput struct {
 	TenantID       string
 	ProfessionalID string
 	CustomerID     string
-	Status         valueobject.AppointmentStatus
+	Statuses       []valueobject.AppointmentStatus // Array de status
 	StartDate      time.Time
 	EndDate        time.Time
 	Page           int
@@ -212,7 +308,7 @@ func (uc *ListAppointmentsUseCase) Execute(ctx context.Context, input ListAppoin
 	filter := port.AppointmentFilter{
 		ProfessionalID: input.ProfessionalID,
 		CustomerID:     input.CustomerID,
-		Status:         input.Status,
+		Statuses:       input.Statuses,
 		StartDate:      input.StartDate,
 		EndDate:        input.EndDate,
 		Page:           input.Page,

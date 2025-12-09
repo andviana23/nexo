@@ -12,7 +12,7 @@ import (
 type AppointmentFilter struct {
 	ProfessionalID string
 	CustomerID     string
-	Status         valueobject.AppointmentStatus
+	Statuses       []valueobject.AppointmentStatus // Array de status para filtrar (OR)
 	StartDate      time.Time
 	EndDate        time.Time
 	Page           int
@@ -57,6 +57,26 @@ type AppointmentRepository interface {
 		excludeAppointmentID string, // Para ignorar o próprio agendamento ao reagendar
 	) (bool, error)
 
+	// CheckBlockedTimeConflict verifica se há conflito com horários bloqueados
+	// Retorna true se houver conflito com blocked_times
+	CheckBlockedTimeConflict(
+		ctx context.Context,
+		tenantID string,
+		professionalID string,
+		startTime, endTime time.Time,
+	) (bool, error)
+
+	// CheckMinimumIntervalConflict verifica se há conflito de intervalo mínimo
+	// Retorna true se o agendamento estiver muito próximo de outro (menos de intervalMinutes)
+	CheckMinimumIntervalConflict(
+		ctx context.Context,
+		tenantID string,
+		professionalID string,
+		startTime, endTime time.Time,
+		excludeAppointmentID string,
+		intervalMinutes int,
+	) (bool, error)
+
 	// CountByStatus conta agendamentos por status (para dashboard)
 	CountByStatus(ctx context.Context, tenantID string, status valueobject.AppointmentStatus) (int64, error)
 
@@ -88,10 +108,12 @@ type ProfessionalReader interface {
 
 // ProfessionalInfo dados básicos de um profissional
 type ProfessionalInfo struct {
-	ID     string
-	Name   string
-	Status string
-	Color  string // Cor para exibição no calendário
+	ID           string
+	Name         string
+	Status       string
+	Color        string  // Cor para exibição no calendário
+	Comissao     *string // Taxa de comissão (decimal como string)
+	TipoComissao *string // PERCENTUAL ou FIXO
 }
 
 // CustomerReader define operações para consulta de clientes (leitura)
@@ -130,4 +152,5 @@ type ServiceInfo struct {
 	Price    valueobject.Money
 	Duration int // minutos
 	Active   bool
+	Comissao *string // Taxa de comissão específica do serviço (decimal como string)
 }

@@ -17,7 +17,7 @@ type CreateAppointmentRequest struct {
 
 // UpdateAppointmentStatusRequest requisição para atualizar status
 type UpdateAppointmentStatusRequest struct {
-	Status string `json:"status" validate:"required,oneof=CREATED CONFIRMED IN_SERVICE DONE NO_SHOW CANCELED"`
+	Status string `json:"status" validate:"required,oneof=CREATED CONFIRMED CHECKED_IN IN_SERVICE AWAITING_PAYMENT DONE NO_SHOW CANCELED"`
 	Reason string `json:"reason,omitempty"`
 }
 
@@ -33,14 +33,16 @@ type CancelAppointmentRequest struct {
 }
 
 // ListAppointmentsRequest query params para listagem
+// Aceita datas em formato YYYY-MM-DD ou ISO8601 (com timezone)
+// Status pode ser string única ou array (query param repetido: ?status=CREATED&status=CONFIRMED)
 type ListAppointmentsRequest struct {
-	ProfessionalID string `query:"professional_id" validate:"omitempty,uuid"`
-	CustomerID     string `query:"customer_id" validate:"omitempty,uuid"`
-	Status         string `query:"status" validate:"omitempty,oneof=CREATED CONFIRMED IN_SERVICE DONE NO_SHOW CANCELED"`
-	StartDate      string `query:"start_date" validate:"omitempty"`
-	EndDate        string `query:"end_date" validate:"omitempty"`
-	Page           int    `query:"page" validate:"omitempty,min=1"`
-	PageSize       int    `query:"page_size" validate:"omitempty,min=1,max=100"`
+	ProfessionalID string   `query:"professional_id" validate:"omitempty,uuid"`
+	CustomerID     string   `query:"customer_id" validate:"omitempty,uuid"`
+	Status         []string `query:"status" validate:"omitempty,dive,oneof=CREATED CONFIRMED CHECKED_IN IN_SERVICE AWAITING_PAYMENT DONE NO_SHOW CANCELED"`
+	StartDate      string   `query:"start_date" validate:"omitempty"`
+	EndDate        string   `query:"end_date" validate:"omitempty"`
+	Page           int      `query:"page" validate:"omitempty,min=1"`
+	PageSize       int      `query:"page_size" validate:"omitempty,min=1,max=100"`
 }
 
 // =============================================================================
@@ -59,6 +61,9 @@ type AppointmentResponse struct {
 	StartTime             time.Time                    `json:"start_time"`
 	EndTime               time.Time                    `json:"end_time"`
 	Duration              int                          `json:"duration"`
+	CheckedInAt           *time.Time                   `json:"checked_in_at,omitempty"`
+	StartedAt             *time.Time                   `json:"started_at,omitempty"`
+	FinishedAt            *time.Time                   `json:"finished_at,omitempty"`
 	Status                string                       `json:"status"`
 	StatusDisplay         string                       `json:"status_display"`
 	StatusColor           string                       `json:"status_color"`
@@ -66,6 +71,7 @@ type AppointmentResponse struct {
 	Notes                 string                       `json:"notes,omitempty"`
 	CanceledReason        string                       `json:"canceled_reason,omitempty"`
 	GoogleCalendarEventID string                       `json:"google_calendar_event_id,omitempty"`
+	CommandID             string                       `json:"command_id,omitempty"` // Comanda vinculada (quando status = AWAITING_PAYMENT)
 	Services              []AppointmentServiceResponse `json:"services,omitempty"`
 	CreatedAt             time.Time                    `json:"created_at"`
 	UpdatedAt             time.Time                    `json:"updated_at"`

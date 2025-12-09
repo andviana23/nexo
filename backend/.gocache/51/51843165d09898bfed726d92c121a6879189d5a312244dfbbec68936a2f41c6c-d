@@ -1,0 +1,9 @@
+./delete_config.go
+./delete_simulacao.go
+./get_config.go
+./get_simulacao.go
+./list_simulacoes.go
+./save_config.go
+./save_simulacao.go
+./simular_preco.go
+./update_config.go

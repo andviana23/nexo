@@ -27,11 +27,6 @@ func NewCommissionItemRepository(queries *db.Queries) repository.CommissionItemR
 
 // Create cria um novo item de comissão
 func (r *commissionItemRepository) Create(ctx context.Context, item *entity.CommissionItem) (*entity.CommissionItem, error) {
-	tenantID, err := uuid.Parse(item.TenantID)
-	if err != nil {
-		return nil, err
-	}
-
 	professionalID, err := uuid.Parse(item.ProfessionalID)
 	if err != nil {
 		return nil, err
@@ -92,7 +87,7 @@ func (r *commissionItemRepository) Create(ctx context.Context, item *entity.Comm
 	}
 
 	result, err := r.queries.CreateCommissionItem(ctx, db.CreateCommissionItemParams{
-		TenantID:         pgtype.UUID{Bytes: tenantID, Valid: true},
+		TenantID:         entityUUIDToPgtype(item.TenantID),
 		UnitID:           unitID,
 		ProfessionalID:   pgtype.UUID{Bytes: professionalID, Valid: true},
 		CommandID:        commandID,
@@ -393,6 +388,27 @@ func (r *commissionItemRepository) GetByDateRange(ctx context.Context, tenantID 
 	return items, nil
 }
 
+// SumByDateRange retorna o total de comissões em um intervalo de datas
+// Usa a query SumCommissionsByDateRange do sqlc
+func (r *commissionItemRepository) SumByDateRange(ctx context.Context, tenantID string, startDate, endDate time.Time) (float64, error) {
+	tid, err := uuid.Parse(tenantID)
+	if err != nil {
+		return 0, err
+	}
+
+	result, err := r.queries.SumCommissionsByDateRange(ctx, db.SumCommissionsByDateRangeParams{
+		TenantID:        pgtype.UUID{Bytes: tid, Valid: true},
+		ReferenceDate:   pgtype.Date{Time: startDate, Valid: true},
+		ReferenceDate_2: pgtype.Date{Time: endDate, Valid: true},
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	total, _ := result.TotalCommission.Float64()
+	return total, nil
+}
+
 // GetTotalByPeriod retorna o total de comissão de um período
 func (r *commissionItemRepository) GetTotalByPeriod(ctx context.Context, tenantID, periodID string) (float64, error) {
 	// Busca itens do período e soma
@@ -574,14 +590,9 @@ func (r *commissionItemRepository) Update(ctx context.Context, item *entity.Comm
 		return nil, err
 	}
 
-	tenantID, err := uuid.Parse(item.TenantID)
-	if err != nil {
-		return nil, err
-	}
-
 	result, err := r.queries.UpdateCommissionItem(ctx, db.UpdateCommissionItemParams{
 		ID:               pgtype.UUID{Bytes: id, Valid: true},
-		TenantID:         pgtype.UUID{Bytes: tenantID, Valid: true},
+		TenantID:         entityUUIDToPgtype(item.TenantID),
 		CommissionRate:   item.CommissionRate,
 		CommissionType:   item.CommissionType,
 		CommissionValue:  item.CommissionValue,
@@ -635,7 +646,7 @@ func (r *commissionItemRepository) DeleteByCommandItem(ctx context.Context, tena
 // commissionItemToDomain converte de db.CommissionItem para entity
 func commissionItemToDomain(ci db.CommissionItem) *entity.CommissionItem {
 	id := uuid.UUID(ci.ID.Bytes).String()
-	tenantID := uuid.UUID(ci.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(ci.TenantID)
 	professionalID := uuid.UUID(ci.ProfessionalID.Bytes).String()
 
 	var unitID *string
@@ -714,7 +725,7 @@ func commissionItemToDomain(ci db.CommissionItem) *entity.CommissionItem {
 // commissionItemWithNamesToDomain converte GetCommissionItemByIDRow para entity
 func commissionItemWithNamesToDomain(row db.GetCommissionItemByIDRow) *entity.CommissionItem {
 	id := uuid.UUID(row.ID.Bytes).String()
-	tenantID := uuid.UUID(row.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(row.TenantID)
 	professionalID := uuid.UUID(row.ProfessionalID.Bytes).String()
 
 	var unitID *string
@@ -793,7 +804,7 @@ func commissionItemWithNamesToDomain(row db.GetCommissionItemByIDRow) *entity.Co
 // commissionItemByStatusRowToDomain converte ListCommissionItemsByStatusRow para entity
 func commissionItemByStatusRowToDomain(row db.ListCommissionItemsByStatusRow) *entity.CommissionItem {
 	id := uuid.UUID(row.ID.Bytes).String()
-	tenantID := uuid.UUID(row.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(row.TenantID)
 	professionalID := uuid.UUID(row.ProfessionalID.Bytes).String()
 
 	var unitID *string
@@ -872,7 +883,7 @@ func commissionItemByStatusRowToDomain(row db.ListCommissionItemsByStatusRow) *e
 // commissionItemByPeriodRowToDomain converte ListCommissionItemsByPeriodRow para entity
 func commissionItemByPeriodRowToDomain(row db.ListCommissionItemsByPeriodRow) *entity.CommissionItem {
 	id := uuid.UUID(row.ID.Bytes).String()
-	tenantID := uuid.UUID(row.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(row.TenantID)
 	professionalID := uuid.UUID(row.ProfessionalID.Bytes).String()
 
 	var unitID *string
@@ -951,7 +962,7 @@ func commissionItemByPeriodRowToDomain(row db.ListCommissionItemsByPeriodRow) *e
 // commissionItemByProfessionalRowToDomain converte ListCommissionItemsByProfessionalRow para entity
 func commissionItemByProfessionalRowToDomain(row db.ListCommissionItemsByProfessionalRow) *entity.CommissionItem {
 	id := uuid.UUID(row.ID.Bytes).String()
-	tenantID := uuid.UUID(row.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(row.TenantID)
 	professionalID := uuid.UUID(row.ProfessionalID.Bytes).String()
 
 	var unitID *string
@@ -1030,7 +1041,7 @@ func commissionItemByProfessionalRowToDomain(row db.ListCommissionItemsByProfess
 // commissionItemByTenantRowToDomain converte ListCommissionItemsByTenantRow para entity
 func commissionItemByTenantRowToDomain(row db.ListCommissionItemsByTenantRow) *entity.CommissionItem {
 	id := uuid.UUID(row.ID.Bytes).String()
-	tenantID := uuid.UUID(row.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(row.TenantID)
 	professionalID := uuid.UUID(row.ProfessionalID.Bytes).String()
 
 	var unitID *string
@@ -1109,7 +1120,7 @@ func commissionItemByTenantRowToDomain(row db.ListCommissionItemsByTenantRow) *e
 // commissionItemPendingByProfRowToDomain converte ListPendingCommissionItemsByProfessionalRow para entity
 func commissionItemPendingByProfRowToDomain(row db.ListPendingCommissionItemsByProfessionalRow) *entity.CommissionItem {
 	id := uuid.UUID(row.ID.Bytes).String()
-	tenantID := uuid.UUID(row.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(row.TenantID)
 	professionalID := uuid.UUID(row.ProfessionalID.Bytes).String()
 
 	var unitID *string
@@ -1188,7 +1199,7 @@ func commissionItemPendingByProfRowToDomain(row db.ListPendingCommissionItemsByP
 // commissionItemByDateRangeRowToDomain converte ListCommissionItemsByDateRangeRow para entity
 func commissionItemByDateRangeRowToDomain(row db.ListCommissionItemsByDateRangeRow) *entity.CommissionItem {
 	id := uuid.UUID(row.ID.Bytes).String()
-	tenantID := uuid.UUID(row.TenantID.Bytes).String()
+	tenantID := pgtypeToEntityUUID(row.TenantID)
 	professionalID := uuid.UUID(row.ProfessionalID.Bytes).String()
 
 	var unitID *string

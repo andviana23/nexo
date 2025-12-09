@@ -12,7 +12,7 @@ import (
 // Customer representa um cliente no sistema
 type Customer struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 
 	// Dados Básicos (obrigatórios)
 	Nome     string
@@ -46,11 +46,11 @@ type Customer struct {
 
 // NewCustomer cria um novo cliente validado
 func NewCustomer(
-	tenantID string,
+	tenantID uuid.UUID,
 	nome string,
 	telefone string,
 ) (*Customer, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if nome == "" {
@@ -275,7 +275,7 @@ func (c *Customer) UpdateTelefone(telefone string) error {
 
 // Validate valida as regras de negócio do cliente
 func (c *Customer) Validate() error {
-	if c.TenantID == "" {
+	if c.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if c.Nome == "" {

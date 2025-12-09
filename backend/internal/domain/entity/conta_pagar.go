@@ -11,7 +11,7 @@ import (
 // ContaPagar representa uma conta a pagar (despesa)
 type ContaPagar struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 
 	Descricao   string
 	CategoriaID string
@@ -36,14 +36,14 @@ type ContaPagar struct {
 
 // NewContaPagar cria uma nova conta a pagar
 func NewContaPagar(
-	tenantID, descricao, categoriaID, fornecedor string,
+	tenantID uuid.UUID, descricao, categoriaID, fornecedor string,
 	valor valueobject.Money,
 	tipo valueobject.TipoCusto,
 	dataVencimento time.Time,
 	recorrente bool,
 	periodicidade string,
 ) (*ContaPagar, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if descricao == "" {
@@ -134,7 +134,7 @@ func (c *ContaPagar) VenceEmBreve(dias int) bool {
 
 // Validate valida as regras de negócio
 func (c *ContaPagar) Validate() error {
-	if c.TenantID == "" {
+	if c.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if c.Descricao == "" {

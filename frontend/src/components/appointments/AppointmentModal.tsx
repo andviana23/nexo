@@ -19,9 +19,10 @@ import {
     UserIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -46,9 +47,11 @@ import {
     useCreateAppointment,
     useUpdateAppointment,
 } from '@/hooks/use-appointments';
-import type {
-    AppointmentModalState,
-    AppointmentResponse,
+import { useServices } from '@/hooks/useServices';
+import {
+    formatCurrency,
+    type AppointmentModalState,
+    type AppointmentResponse,
 } from '@/types/appointment';
 
 import { CustomerSelector } from './CustomerSelector';
@@ -66,6 +69,12 @@ const appointmentFormSchema = z.object({
   start_date: z.string().min(1, 'Selecione a data'),
   start_time: z.string().min(1, 'Selecione o horário'),
   notes: z.string().optional(),
+}).refine(() => {
+  // Validação adicional: duração será calculada automaticamente
+  // baseada nos serviços selecionados
+  return true;
+}, {
+  message: 'Configuração de agendamento inválida',
 });
 
 type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
@@ -119,6 +128,9 @@ export function AppointmentModal({
   const isLoading = createAppointment.isPending || updateAppointment.isPending;
   const isViewMode = mode === 'view';
 
+  // Buscar serviços para calcular duração total
+  const { data: servicesData } = useServices({ apenas_ativos: true });
+
   // Form
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentFormSchema),
@@ -132,13 +144,25 @@ export function AppointmentModal({
     },
   });
 
+  // Watch dos serviços selecionados para calcular duração
+  const selectedServiceIds = useWatch({ control: form.control, name: 'service_ids' });
+
+  // Calcular duração total dos serviços selecionados
+  const totalDuration = useMemo(() => {
+    if (!servicesData?.servicos || selectedServiceIds.length === 0) return 0;
+
+    return servicesData.servicos
+      .filter((s) => selectedServiceIds.includes(s.id))
+      .reduce((sum, service) => sum + service.duracao, 0);
+  }, [selectedServiceIds, servicesData]);
+
   // Preencher formulário quando abrir para editar
   useEffect(() => {
     if (mode === 'edit' && appointment) {
       form.reset({
-        professional_id: appointment.professional.id,
-        customer_id: appointment.customer.id,
-        service_ids: appointment.services.map((s) => s.id),
+        professional_id: appointment.professional_id,
+        customer_id: appointment.customer_id,
+        service_ids: (appointment.services || []).map((s) => s.service_id),
         start_date: formatDateFromISO(appointment.start_time),
         start_time: formatTimeFromISO(appointment.start_time),
         notes: appointment.notes || '',
@@ -181,10 +205,8 @@ export function AppointmentModal({
           {
             id: appointment.id,
             data: {
+              new_start_time: startTime,
               professional_id: values.professional_id,
-              service_ids: values.service_ids,
-              start_time: startTime,
-              notes: values.notes,
             },
           },
           {
@@ -236,10 +258,10 @@ export function AppointmentModal({
             <div className="flex items-start gap-3">
               <UserIcon className="size-5 text-muted-foreground mt-0.5" />
               <div>
-                <p className="font-medium">{appointment.customer.name}</p>
-                {appointment.customer.phone && (
+                <p className="font-medium">{appointment.customer_name}</p>
+                {appointment.customer_phone && (
                   <p className="text-sm text-muted-foreground">
-                    {appointment.customer.phone}
+                    {appointment.customer_phone}
                   </p>
                 )}
               </div>
@@ -249,7 +271,7 @@ export function AppointmentModal({
             <div className="flex items-start gap-3">
               <ScissorsIcon className="size-5 text-muted-foreground mt-0.5" />
               <div>
-                <p className="font-medium">{appointment.professional.name}</p>
+                <p className="font-medium">{appointment.professional_name}</p>
                 <p className="text-sm text-muted-foreground">Barbeiro</p>
               </div>
             </div>
@@ -274,20 +296,20 @@ export function AppointmentModal({
             <div className="border-t pt-4">
               <p className="text-sm font-medium mb-2">Serviços</p>
               <div className="space-y-2">
-                {appointment.services.map((service) => (
+                {(appointment.services || []).map((service) => (
                   <div
-                    key={service.id}
+                    key={service.service_id}
                     className="flex items-center justify-between text-sm"
                   >
-                    <span>{service.name}</span>
+                    <span>{service.service_name}</span>
                     <span className="text-muted-foreground">
-                      R$ {(service.price / 100).toFixed(2)}
+                      {formatCurrency(service.price)}
                     </span>
                   </div>
                 ))}
                 <div className="flex items-center justify-between font-medium pt-2 border-t">
                   <span>Total</span>
-                  <span>R$ {(appointment.total_price / 100).toFixed(2)}</span>
+                  <span>{formatCurrency(appointment.total_price)}</span>
                 </div>
               </div>
             </div>
@@ -404,6 +426,27 @@ export function AppointmentModal({
                 </FormItem>
               )}
             />
+
+            {/* Exibir duração total calculada */}
+            {totalDuration > 0 && (
+              <div className="flex items-center gap-2 rounded-md border border-muted bg-muted/50 p-3">
+                <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    Duração total dos serviços
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {totalDuration < 60 
+                      ? `${totalDuration} minutos`
+                      : `${Math.floor(totalDuration / 60)}h ${totalDuration % 60 > 0 ? `${totalDuration % 60}min` : ''}`
+                    }
+                  </p>
+                </div>
+                <Badge variant="secondary" className="font-mono">
+                  {totalDuration}min
+                </Badge>
+              </div>
+            )}
 
             {/* Data e Hora */}
             <div className="grid grid-cols-2 gap-4">

@@ -12,8 +12,16 @@ import (
 type CategoriaProduto string
 
 const (
-	CategoriaInsumo         CategoriaProduto = "INSUMO"
+	CategoriaPomada         CategoriaProduto = "POMADA"
+	CategoriaShampoo        CategoriaProduto = "SHAMPOO"
+	CategoriaCreme          CategoriaProduto = "CREME"
+	CategoriaLamina         CategoriaProduto = "LAMINA"
+	CategoriaToalha         CategoriaProduto = "TOALHA"
+	CategoriaLimpeza        CategoriaProduto = "LIMPEZA"
+	CategoriaEscritorio     CategoriaProduto = "ESCRITORIO"
+	CategoriaBebida         CategoriaProduto = "BEBIDA"
 	CategoriaRevenda        CategoriaProduto = "REVENDA"
+	CategoriaInsumo         CategoriaProduto = "INSUMO" // Mantido por compatibilidade ou genérico
 	CategoriaUsoInterno     CategoriaProduto = "USO_INTERNO"
 	CategoriaPermanente     CategoriaProduto = "PERMANENTE"
 	CategoriaPromocional    CategoriaProduto = "PROMOCIONAL"
@@ -21,7 +29,26 @@ const (
 	CategoriaProdutoServico CategoriaProduto = "SERVICO"
 )
 
+// CentroCusto representa o centro de custo do produto
+type CentroCusto string
+
+const (
+	CentroCustoServico     CentroCusto = "CUSTO_SERVICO"       // Insumos, Lâminas, Shampoos
+	CentroCustoOperacional CentroCusto = "DESPESA_OPERACIONAL" // Limpeza, Escritório
+	CentroCustoCMV         CentroCusto = "CMV"                 // Revenda, Bebidas
+)
+
+// IsValid verifica se o centro de custo é válido
+func (c CentroCusto) IsValid() bool {
+	switch c {
+	case CentroCustoServico, CentroCustoOperacional, CentroCustoCMV:
+		return true
+	}
+	return false
+}
+
 // UnidadeMedida representa as unidades de medida
+// Valores conforme constraint do banco: CHECK (unidade_medida IN ('UNIDADE', 'LITRO', 'MILILITRO', 'GRAMA', 'QUILOGRAMA'))
 type UnidadeMedida string
 
 const (
@@ -35,7 +62,6 @@ const (
 // Erros do domínio
 var (
 	ErrProdutoNomeVazio           = errors.New("nome do produto não pode ser vazio")
-	ErrProdutoSKUVazio            = errors.New("SKU do produto não pode ser vazio")
 	ErrProdutoValorInvalido       = errors.New("valor unitário deve ser maior que zero")
 	ErrProdutoEstoqueNegativo     = errors.New("estoque não pode ser negativo")
 	ErrProdutoEstoqueInsuficiente = errors.New("estoque insuficiente para a operação")
@@ -44,44 +70,50 @@ var (
 
 // Produto representa um produto/insumo do estoque
 type Produto struct {
-	ID               uuid.UUID
-	TenantID         uuid.UUID
-	CategoriaID      *uuid.UUID // Categoria financeira (receita/despesa)
-	Nome             string
-	Descricao        string
-	SKU              string
-	CodigoBarras     *string
-	Preco            decimal.Decimal
-	Custo            *decimal.Decimal
-	Categoria        CategoriaProduto
-	UnidadeMedida    UnidadeMedida
-	QuantidadeAtual  decimal.Decimal
-	QuantidadeMinima decimal.Decimal
-	Localizacao      *string
-	Lote             *string
-	DataValidade     *time.Time
-	NCM              *string
-	PermiteVenda     bool
-	Ativo            bool
-	CriadoEm         time.Time
-	AtualizadoEm     time.Time
+	ID                     uuid.UUID
+	TenantID               uuid.UUID
+	CategoriaID            *uuid.UUID // Categoria financeira (receita/despesa)
+	CategoriaProdutoID     *uuid.UUID // FK para categorias_produtos customizadas
+	FornecedorID           *uuid.UUID // FK para fornecedores
+	Nome                   string
+	Descricao              *string
+	SKU                    *string
+	CodigoBarras           *string
+	Preco                  decimal.Decimal
+	Custo                  *decimal.Decimal
+	ValorVendaProfissional *decimal.Decimal // Preço de venda para profissionais
+	ValorEntrada           *decimal.Decimal // Custo de aquisição/entrada
+	Categoria              CategoriaProduto
+	CentroCusto            CentroCusto
+	UnidadeMedida          UnidadeMedida
+	QuantidadeAtual        decimal.Decimal
+	QuantidadeMinima       decimal.Decimal
+	EstoqueMaximo          int32 // Quantidade máxima em estoque
+	Localizacao            *string
+	Lote                   *string
+	DataValidade           *time.Time
+	NCM                    *string
+	PermiteVenda           bool
+	ControlaValidade       bool
+	LeadTimeDias           int
+	Ativo                  bool
+	CriadoEm               time.Time
+	AtualizadoEm           time.Time
 }
 
 // NewProduto cria um novo produto com validações
+// SKU agora é opcional (substituído por código de barras)
 func NewProduto(
 	tenantID uuid.UUID,
-	sku string,
 	nome string,
 	categoria CategoriaProduto,
+	centroCusto CentroCusto,
 	unidadeMedida UnidadeMedida,
 	preco decimal.Decimal,
 ) (*Produto, error) {
 	// Validações
 	if nome == "" {
 		return nil, ErrProdutoNomeVazio
-	}
-	if sku == "" {
-		return nil, ErrProdutoSKUVazio
 	}
 	if preco.LessThanOrEqual(decimal.Zero) {
 		return nil, ErrProdutoValorInvalido
@@ -91,14 +123,16 @@ func NewProduto(
 	return &Produto{
 		ID:               uuid.New(),
 		TenantID:         tenantID,
-		SKU:              sku,
 		Nome:             nome,
 		Categoria:        categoria,
+		CentroCusto:      centroCusto,
 		UnidadeMedida:    unidadeMedida,
 		Preco:            preco,
 		QuantidadeAtual:  decimal.Zero,
 		QuantidadeMinima: decimal.Zero,
 		PermiteVenda:     true,
+		ControlaValidade: false,
+		LeadTimeDias:     7, // Default
 		Ativo:            true,
 		CriadoEm:         now,
 		AtualizadoEm:     now,

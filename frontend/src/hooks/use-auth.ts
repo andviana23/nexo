@@ -85,8 +85,9 @@ export function useAuth(): UseAuthReturn {
       // Salva no Zustand (usando access_token do backend)
       setAuth(data.access_token, data.user, data.tenant);
 
-      // Invalida queries de auth para refetch
+      // Invalida queries de auth e units para refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
 
       // Aguarda um tick para garantir persistência antes de redirecionar
       setTimeout(() => {
@@ -116,8 +117,14 @@ export function useAuth(): UseAuthReturn {
     mutationFn: () => authService.logout(),
 
     onSettled: () => {
-      // Limpa estado local
+      // Limpa estado local de auth
       storeLogout();
+
+      // Limpa estado de unit store
+      // Importado dinamicamente para evitar dependência circular
+      import('@/store/unit-store').then(({ useUnitStore }) => {
+        useUnitStore.getState().reset();
+      });
 
       // Limpa todas as queries em cache
       queryClient.clear();

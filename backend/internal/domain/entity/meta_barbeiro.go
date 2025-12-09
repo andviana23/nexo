@@ -12,7 +12,7 @@ import (
 // MetaBarbeiro representa metas individuais de um barbeiro
 type MetaBarbeiro struct {
 	ID         string
-	TenantID   string
+	TenantID   uuid.UUID
 	BarbeiroID string
 	MesAno     valueobject.MesAno
 
@@ -36,11 +36,11 @@ type MetaBarbeiro struct {
 
 // NewMetaBarbeiro cria uma nova meta para barbeiro
 func NewMetaBarbeiro(
-	tenantID, barbeiroID string,
+	tenantID uuid.UUID, barbeiroID string,
 	mesAno valueobject.MesAno,
 	metaServicosGerais, metaServicosExtras, metaProdutos valueobject.Money,
 ) (*MetaBarbeiro, error) {
-	if tenantID == "" {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if barbeiroID == "" {
@@ -117,7 +117,7 @@ func (m *MetaBarbeiro) CalcularProgresso(realizadoGerais, realizadoExtras, reali
 
 // Validate valida as regras de negócio
 func (m *MetaBarbeiro) Validate() error {
-	if m.TenantID == "" {
+	if m.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if m.BarbeiroID == "" {

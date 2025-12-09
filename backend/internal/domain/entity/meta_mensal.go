@@ -12,12 +12,12 @@ import (
 // MetaMensal representa a meta de faturamento mensal da barbearia
 type MetaMensal struct {
 	ID       string
-	TenantID string
+	TenantID uuid.UUID
 	MesAno   valueobject.MesAno
 
 	MetaFaturamento valueobject.Money
 	Origem          valueobject.OrigemMeta // MANUAL ou AUTOMATICA
-	Status          string                 // ATIVA, DESATIVADA
+	Status          string                 // PENDENTE, ACEITA, REJEITADA
 
 	// Campos de progresso (calculados)
 	Realizado  valueobject.Money
@@ -28,8 +28,8 @@ type MetaMensal struct {
 }
 
 // NewMetaMensal cria uma nova meta mensal
-func NewMetaMensal(tenantID string, mesAno valueobject.MesAno, metaFaturamento valueobject.Money, origem valueobject.OrigemMeta) (*MetaMensal, error) {
-	if tenantID == "" {
+func NewMetaMensal(tenantID uuid.UUID, mesAno valueobject.MesAno, metaFaturamento valueobject.Money, origem valueobject.OrigemMeta) (*MetaMensal, error) {
+	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
 	}
 	if metaFaturamento.IsNegative() {
@@ -46,7 +46,7 @@ func NewMetaMensal(tenantID string, mesAno valueobject.MesAno, metaFaturamento v
 		MesAno:          mesAno,
 		MetaFaturamento: metaFaturamento,
 		Origem:          origem,
-		Status:          "ATIVA",
+		Status:          "PENDENTE", // Status inicial: PENDENTE, ACEITA ou REJEITADA
 		Realizado:       valueobject.Zero(),
 		Percentual:      valueobject.ZeroPercent(),
 		CriadoEm:        now,
@@ -71,15 +71,15 @@ func (m *MetaMensal) CalcularProgresso(realizado valueobject.Money) {
 	m.AtualizadoEm = time.Now()
 }
 
-// Desativar desativa a meta
-func (m *MetaMensal) Desativar() {
-	m.Status = "DESATIVADA"
+// Rejeitar rejeita a meta
+func (m *MetaMensal) Rejeitar() {
+	m.Status = "REJEITADA"
 	m.AtualizadoEm = time.Now()
 }
 
-// Ativar ativa a meta
-func (m *MetaMensal) Ativar() {
-	m.Status = "ATIVA"
+// Aceitar aceita/ativa a meta
+func (m *MetaMensal) Aceitar() {
+	m.Status = "ACEITA"
 	m.AtualizadoEm = time.Now()
 }
 
@@ -96,7 +96,7 @@ func (m *MetaMensal) AtualizarMeta(novaMeta valueobject.Money) error {
 
 // Validate valida as regras de negócio
 func (m *MetaMensal) Validate() error {
-	if m.TenantID == "" {
+	if m.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
 	}
 	if m.MesAno.String() == "" {

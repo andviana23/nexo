@@ -56,7 +56,7 @@ INSERT INTO contas_a_receber (
     observacoes
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-) RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em
+) RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type CreateContaReceberParams struct {
@@ -101,6 +101,11 @@ func (q *Queries) CreateContaReceber(ctx context.Context, arg CreateContaReceber
 		&i.DataRecebimento,
 		&i.Status,
 		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
@@ -122,8 +127,90 @@ func (q *Queries) DeleteContaReceber(ctx context.Context, arg DeleteContaReceber
 	return err
 }
 
+const estornarContaReceberViaAsaas = `-- name: EstornarContaReceberViaAsaas :one
+UPDATE contas_a_receber
+SET
+    status = 'ESTORNADO',
+    observacoes = COALESCE(observacoes || ' | ', '') || $3,
+    atualizado_em = NOW()
+WHERE tenant_id = $1 AND asaas_payment_id = $2
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+`
+
+type EstornarContaReceberViaAsaasParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	AsaasPaymentID *string     `json:"asaas_payment_id"`
+	Observacoes    *string     `json:"observacoes"`
+}
+
+// Estornar conta quando webhook REFUNDED chegar
+func (q *Queries) EstornarContaReceberViaAsaas(ctx context.Context, arg EstornarContaReceberViaAsaasParams) (ContasAReceber, error) {
+	row := q.db.QueryRow(ctx, estornarContaReceberViaAsaas, arg.TenantID, arg.AsaasPaymentID, arg.Observacoes)
+	var i ContasAReceber
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Origem,
+		&i.AssinaturaID,
+		&i.ServicoID,
+		&i.Descricao,
+		&i.Valor,
+		&i.ValorPago,
+		&i.DataVencimento,
+		&i.DataRecebimento,
+		&i.Status,
+		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
+const getContaReceberByAsaasPaymentID = `-- name: GetContaReceberByAsaasPaymentID :one
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+WHERE tenant_id = $1 AND asaas_payment_id = $2
+`
+
+type GetContaReceberByAsaasPaymentIDParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	AsaasPaymentID *string     `json:"asaas_payment_id"`
+}
+
+// Buscar conta pelo payment ID do Asaas
+func (q *Queries) GetContaReceberByAsaasPaymentID(ctx context.Context, arg GetContaReceberByAsaasPaymentIDParams) (ContasAReceber, error) {
+	row := q.db.QueryRow(ctx, getContaReceberByAsaasPaymentID, arg.TenantID, arg.AsaasPaymentID)
+	var i ContasAReceber
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Origem,
+		&i.AssinaturaID,
+		&i.ServicoID,
+		&i.Descricao,
+		&i.Valor,
+		&i.ValorPago,
+		&i.DataVencimento,
+		&i.DataRecebimento,
+		&i.Status,
+		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
 const getContaReceberByID = `-- name: GetContaReceberByID :one
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE id = $1 AND tenant_id = $2
 `
 
@@ -148,14 +235,116 @@ func (q *Queries) GetContaReceberByID(ctx context.Context, arg GetContaReceberBy
 		&i.DataRecebimento,
 		&i.Status,
 		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
 	return i, err
 }
 
+const getContaReceberBySubscriptionID = `-- name: GetContaReceberBySubscriptionID :many
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+WHERE tenant_id = $1 AND subscription_id = $2
+ORDER BY data_vencimento DESC
+`
+
+type GetContaReceberBySubscriptionIDParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	SubscriptionID pgtype.UUID `json:"subscription_id"`
+}
+
+// Listar contas por subscription
+func (q *Queries) GetContaReceberBySubscriptionID(ctx context.Context, arg GetContaReceberBySubscriptionIDParams) ([]ContasAReceber, error) {
+	rows, err := q.db.Query(ctx, getContaReceberBySubscriptionID, arg.TenantID, arg.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContasAReceber{}
+	for rows.Next() {
+		var i ContasAReceber
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Origem,
+			&i.AssinaturaID,
+			&i.ServicoID,
+			&i.Descricao,
+			&i.Valor,
+			&i.ValorPago,
+			&i.DataVencimento,
+			&i.DataRecebimento,
+			&i.Status,
+			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getContasReceberResumoMensal = `-- name: GetContasReceberResumoMensal :one
+SELECT 
+    COUNT(*) FILTER (WHERE status = 'PENDENTE')::int as pendentes,
+    COUNT(*) FILTER (WHERE status = 'CONFIRMADO')::int as confirmados,
+    COUNT(*) FILTER (WHERE status = 'RECEBIDO')::int as recebidos,
+    COUNT(*) FILTER (WHERE status = 'ATRASADO')::int as atrasados,
+    COUNT(*) FILTER (WHERE status = 'ESTORNADO')::int as estornados,
+    COALESCE(SUM(valor) FILTER (WHERE status IN ('PENDENTE', 'CONFIRMADO', 'ATRASADO')), 0)::decimal(15,2) as valor_a_receber,
+    COALESCE(SUM(valor_pago) FILTER (WHERE status = 'RECEBIDO'), 0)::decimal(15,2) as valor_recebido
+FROM contas_a_receber
+WHERE tenant_id = $1 
+  AND competencia_mes = $2
+`
+
+type GetContasReceberResumoMensalParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	CompetenciaMes *string     `json:"competencia_mes"`
+}
+
+type GetContasReceberResumoMensalRow struct {
+	Pendentes     int32           `json:"pendentes"`
+	Confirmados   int32           `json:"confirmados"`
+	Recebidos     int32           `json:"recebidos"`
+	Atrasados     int32           `json:"atrasados"`
+	Estornados    int32           `json:"estornados"`
+	ValorAReceber decimal.Decimal `json:"valor_a_receber"`
+	ValorRecebido decimal.Decimal `json:"valor_recebido"`
+}
+
+// Resumo mensal para DRE
+func (q *Queries) GetContasReceberResumoMensal(ctx context.Context, arg GetContasReceberResumoMensalParams) (GetContasReceberResumoMensalRow, error) {
+	row := q.db.QueryRow(ctx, getContasReceberResumoMensal, arg.TenantID, arg.CompetenciaMes)
+	var i GetContasReceberResumoMensalRow
+	err := row.Scan(
+		&i.Pendentes,
+		&i.Confirmados,
+		&i.Recebidos,
+		&i.Atrasados,
+		&i.Estornados,
+		&i.ValorAReceber,
+		&i.ValorRecebido,
+	)
+	return i, err
+}
+
 const listContasReceberByAssinatura = `-- name: ListContasReceberByAssinatura :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND assinatura_id = $2
 ORDER BY data_vencimento DESC
 `
@@ -187,6 +376,63 @@ func (q *Queries) ListContasReceberByAssinatura(ctx context.Context, arg ListCon
 			&i.DataRecebimento,
 			&i.Status,
 			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContasReceberByCompetencia = `-- name: ListContasReceberByCompetencia :many
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+WHERE tenant_id = $1 AND competencia_mes = $2
+ORDER BY data_vencimento ASC
+`
+
+type ListContasReceberByCompetenciaParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	CompetenciaMes *string     `json:"competencia_mes"`
+}
+
+// Listar contas por competência
+func (q *Queries) ListContasReceberByCompetencia(ctx context.Context, arg ListContasReceberByCompetenciaParams) ([]ContasAReceber, error) {
+	rows, err := q.db.Query(ctx, listContasReceberByCompetencia, arg.TenantID, arg.CompetenciaMes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContasAReceber{}
+	for rows.Next() {
+		var i ContasAReceber
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Origem,
+			&i.AssinaturaID,
+			&i.ServicoID,
+			&i.Descricao,
+			&i.Valor,
+			&i.ValorPago,
+			&i.DataVencimento,
+			&i.DataRecebimento,
+			&i.Status,
+			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -201,7 +447,7 @@ func (q *Queries) ListContasReceberByAssinatura(ctx context.Context, arg ListCon
 }
 
 const listContasReceberByOrigem = `-- name: ListContasReceberByOrigem :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND origem = $2
 ORDER BY data_vencimento DESC
 LIMIT $3 OFFSET $4
@@ -241,6 +487,11 @@ func (q *Queries) ListContasReceberByOrigem(ctx context.Context, arg ListContasR
 			&i.DataRecebimento,
 			&i.Status,
 			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -255,7 +506,7 @@ func (q *Queries) ListContasReceberByOrigem(ctx context.Context, arg ListContasR
 }
 
 const listContasReceberByPeriod = `-- name: ListContasReceberByPeriod :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1
   AND data_vencimento >= $2
   AND data_vencimento <= $3
@@ -290,6 +541,11 @@ func (q *Queries) ListContasReceberByPeriod(ctx context.Context, arg ListContasR
 			&i.DataRecebimento,
 			&i.Status,
 			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -304,7 +560,7 @@ func (q *Queries) ListContasReceberByPeriod(ctx context.Context, arg ListContasR
 }
 
 const listContasReceberByStatus = `-- name: ListContasReceberByStatus :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND status = $2
 ORDER BY data_vencimento ASC
 LIMIT $3 OFFSET $4
@@ -344,6 +600,11 @@ func (q *Queries) ListContasReceberByStatus(ctx context.Context, arg ListContasR
 			&i.DataRecebimento,
 			&i.Status,
 			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -358,7 +619,7 @@ func (q *Queries) ListContasReceberByStatus(ctx context.Context, arg ListContasR
 }
 
 const listContasReceberByTenant = `-- name: ListContasReceberByTenant :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1
 ORDER BY data_vencimento DESC
 LIMIT $2 OFFSET $3
@@ -392,6 +653,11 @@ func (q *Queries) ListContasReceberByTenant(ctx context.Context, arg ListContasR
 			&i.DataRecebimento,
 			&i.Status,
 			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -405,8 +671,83 @@ func (q *Queries) ListContasReceberByTenant(ctx context.Context, arg ListContasR
 	return items, nil
 }
 
+const listContasReceberPendentesAsaas = `-- name: ListContasReceberPendentesAsaas :many
+SELECT cr.id, cr.tenant_id, cr.origem, cr.assinatura_id, cr.servico_id, cr.descricao, cr.valor, cr.valor_pago, cr.data_vencimento, cr.data_recebimento, cr.status, cr.observacoes, cr.subscription_id, cr.asaas_payment_id, cr.competencia_mes, cr.confirmed_at, cr.received_at, cr.criado_em, cr.atualizado_em, s.asaas_subscription_id
+FROM contas_a_receber cr
+LEFT JOIN subscriptions s ON cr.subscription_id = s.id
+WHERE cr.tenant_id = $1 
+  AND cr.origem = 'ASSINATURA'
+  AND cr.status IN ('PENDENTE', 'CONFIRMADO')
+ORDER BY cr.data_vencimento ASC
+`
+
+type ListContasReceberPendentesAsaasRow struct {
+	ID                  pgtype.UUID        `json:"id"`
+	TenantID            pgtype.UUID        `json:"tenant_id"`
+	Origem              *string            `json:"origem"`
+	AssinaturaID        pgtype.UUID        `json:"assinatura_id"`
+	ServicoID           pgtype.UUID        `json:"servico_id"`
+	Descricao           string             `json:"descricao"`
+	Valor               decimal.Decimal    `json:"valor"`
+	ValorPago           pgtype.Numeric     `json:"valor_pago"`
+	DataVencimento      pgtype.Date        `json:"data_vencimento"`
+	DataRecebimento     pgtype.Date        `json:"data_recebimento"`
+	Status              *string            `json:"status"`
+	Observacoes         *string            `json:"observacoes"`
+	SubscriptionID      pgtype.UUID        `json:"subscription_id"`
+	AsaasPaymentID      *string            `json:"asaas_payment_id"`
+	CompetenciaMes      *string            `json:"competencia_mes"`
+	ConfirmedAt         pgtype.Timestamptz `json:"confirmed_at"`
+	ReceivedAt          pgtype.Timestamptz `json:"received_at"`
+	CriadoEm            pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm        pgtype.Timestamptz `json:"atualizado_em"`
+	AsaasSubscriptionID *string            `json:"asaas_subscription_id"`
+}
+
+// Listar contas pendentes de assinaturas (para conciliação)
+func (q *Queries) ListContasReceberPendentesAsaas(ctx context.Context, tenantID pgtype.UUID) ([]ListContasReceberPendentesAsaasRow, error) {
+	rows, err := q.db.Query(ctx, listContasReceberPendentesAsaas, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListContasReceberPendentesAsaasRow{}
+	for rows.Next() {
+		var i ListContasReceberPendentesAsaasRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Origem,
+			&i.AssinaturaID,
+			&i.ServicoID,
+			&i.Descricao,
+			&i.Valor,
+			&i.ValorPago,
+			&i.DataVencimento,
+			&i.DataRecebimento,
+			&i.Status,
+			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+			&i.AsaasSubscriptionID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContasReceberVencidas = `-- name: ListContasReceberVencidas :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1
   AND status IN ('PENDENTE', 'ATRASADO')
   AND data_vencimento < $2
@@ -440,6 +781,11 @@ func (q *Queries) ListContasReceberVencidas(ctx context.Context, arg ListContasR
 			&i.DataRecebimento,
 			&i.Status,
 			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 		); err != nil {
@@ -481,7 +827,7 @@ SET
     valor_pago = $4,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type MarcarContaReceberComoRecebidaParams struct {
@@ -512,10 +858,144 @@ func (q *Queries) MarcarContaReceberComoRecebida(ctx context.Context, arg Marcar
 		&i.DataRecebimento,
 		&i.Status,
 		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)
 	return i, err
+}
+
+const marcarContaReceberRecebidaViaAsaas = `-- name: MarcarContaReceberRecebidaViaAsaas :one
+UPDATE contas_a_receber
+SET
+    status = 'RECEBIDO',
+    data_recebimento = $3,
+    received_at = $3,
+    valor_pago = $4,
+    atualizado_em = NOW()
+WHERE tenant_id = $1 AND asaas_payment_id = $2
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+`
+
+type MarcarContaReceberRecebidaViaAsaasParams struct {
+	TenantID        pgtype.UUID    `json:"tenant_id"`
+	AsaasPaymentID  *string        `json:"asaas_payment_id"`
+	DataRecebimento pgtype.Date    `json:"data_recebimento"`
+	ValorPago       pgtype.Numeric `json:"valor_pago"`
+}
+
+// Quitar conta quando webhook RECEIVED chegar
+func (q *Queries) MarcarContaReceberRecebidaViaAsaas(ctx context.Context, arg MarcarContaReceberRecebidaViaAsaasParams) (ContasAReceber, error) {
+	row := q.db.QueryRow(ctx, marcarContaReceberRecebidaViaAsaas,
+		arg.TenantID,
+		arg.AsaasPaymentID,
+		arg.DataRecebimento,
+		arg.ValorPago,
+	)
+	var i ContasAReceber
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Origem,
+		&i.AssinaturaID,
+		&i.ServicoID,
+		&i.Descricao,
+		&i.Valor,
+		&i.ValorPago,
+		&i.DataVencimento,
+		&i.DataRecebimento,
+		&i.Status,
+		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
+const sumContasReceberByCompetencia = `-- name: SumContasReceberByCompetencia :one
+SELECT 
+    COALESCE(SUM(valor), 0)::decimal(15,2) as total_bruto,
+    COALESCE(SUM(valor_pago), 0)::decimal(15,2) as total_pago,
+    COUNT(*)::int as quantidade
+FROM contas_a_receber
+WHERE tenant_id = $1 
+  AND competencia_mes = $2
+  AND status != 'CANCELADO'
+`
+
+type SumContasReceberByCompetenciaParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	CompetenciaMes *string     `json:"competencia_mes"`
+}
+
+type SumContasReceberByCompetenciaRow struct {
+	TotalBruto decimal.Decimal `json:"total_bruto"`
+	TotalPago  decimal.Decimal `json:"total_pago"`
+	Quantidade int32           `json:"quantidade"`
+}
+
+// Somar contas por competência (para DRE por competência)
+func (q *Queries) SumContasReceberByCompetencia(ctx context.Context, arg SumContasReceberByCompetenciaParams) (SumContasReceberByCompetenciaRow, error) {
+	row := q.db.QueryRow(ctx, sumContasReceberByCompetencia, arg.TenantID, arg.CompetenciaMes)
+	var i SumContasReceberByCompetenciaRow
+	err := row.Scan(&i.TotalBruto, &i.TotalPago, &i.Quantidade)
+	return i, err
+}
+
+const sumContasReceberByCompetenciaAndStatus = `-- name: SumContasReceberByCompetenciaAndStatus :one
+SELECT 
+    COALESCE(SUM(valor), 0)::decimal(15,2) as total
+FROM contas_a_receber
+WHERE tenant_id = $1 
+  AND competencia_mes = $2
+  AND status = $3
+`
+
+type SumContasReceberByCompetenciaAndStatusParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	CompetenciaMes *string     `json:"competencia_mes"`
+	Status         *string     `json:"status"`
+}
+
+// Somar por competência e status específico
+func (q *Queries) SumContasReceberByCompetenciaAndStatus(ctx context.Context, arg SumContasReceberByCompetenciaAndStatusParams) (decimal.Decimal, error) {
+	row := q.db.QueryRow(ctx, sumContasReceberByCompetenciaAndStatus, arg.TenantID, arg.CompetenciaMes, arg.Status)
+	var total decimal.Decimal
+	err := row.Scan(&total)
+	return total, err
+}
+
+const sumContasReceberByConfirmedDate = `-- name: SumContasReceberByConfirmedDate :one
+SELECT 
+    COALESCE(SUM(valor), 0)::decimal(15,2) as total
+FROM contas_a_receber
+WHERE tenant_id = $1 
+  AND confirmed_at >= $2
+  AND confirmed_at < $3
+  AND status IN ('CONFIRMADO', 'RECEBIDO')
+`
+
+type SumContasReceberByConfirmedDateParams struct {
+	TenantID      pgtype.UUID        `json:"tenant_id"`
+	ConfirmedAt   pgtype.Timestamptz `json:"confirmed_at"`
+	ConfirmedAt_2 pgtype.Timestamptz `json:"confirmed_at_2"`
+}
+
+// Somar por data de confirmação (para DRE regime competência)
+func (q *Queries) SumContasReceberByConfirmedDate(ctx context.Context, arg SumContasReceberByConfirmedDateParams) (decimal.Decimal, error) {
+	row := q.db.QueryRow(ctx, sumContasReceberByConfirmedDate, arg.TenantID, arg.ConfirmedAt, arg.ConfirmedAt_2)
+	var total decimal.Decimal
+	err := row.Scan(&total)
+	return total, err
 }
 
 const sumContasReceberByPeriod = `-- name: SumContasReceberByPeriod :one
@@ -539,6 +1019,30 @@ func (q *Queries) SumContasReceberByPeriod(ctx context.Context, arg SumContasRec
 	var total_a_receber interface{}
 	err := row.Scan(&total_a_receber)
 	return total_a_receber, err
+}
+
+const sumContasReceberByReceivedDate = `-- name: SumContasReceberByReceivedDate :one
+SELECT 
+    COALESCE(SUM(valor_pago), 0)::decimal(15,2) as total
+FROM contas_a_receber
+WHERE tenant_id = $1 
+  AND received_at >= $2
+  AND received_at < $3
+  AND status = 'RECEBIDO'
+`
+
+type SumContasReceberByReceivedDateParams struct {
+	TenantID     pgtype.UUID        `json:"tenant_id"`
+	ReceivedAt   pgtype.Timestamptz `json:"received_at"`
+	ReceivedAt_2 pgtype.Timestamptz `json:"received_at_2"`
+}
+
+// Somar por data de recebimento (para fluxo de caixa)
+func (q *Queries) SumContasReceberByReceivedDate(ctx context.Context, arg SumContasReceberByReceivedDateParams) (decimal.Decimal, error) {
+	row := q.db.QueryRow(ctx, sumContasReceberByReceivedDate, arg.TenantID, arg.ReceivedAt, arg.ReceivedAt_2)
+	var total decimal.Decimal
+	err := row.Scan(&total)
+	return total, err
 }
 
 const sumContasRecebidasByPeriod = `-- name: SumContasRecebidasByPeriod :one
@@ -576,7 +1080,7 @@ SET
     observacoes = $9,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, criado_em, atualizado_em
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type UpdateContaReceberParams struct {
@@ -617,6 +1121,113 @@ func (q *Queries) UpdateContaReceber(ctx context.Context, arg UpdateContaReceber
 		&i.DataRecebimento,
 		&i.Status,
 		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
+const upsertContaReceberByAsaasPaymentID = `-- name: UpsertContaReceberByAsaasPaymentID :one
+
+INSERT INTO contas_a_receber (
+    tenant_id,
+    origem,
+    assinatura_id,
+    subscription_id,
+    asaas_payment_id,
+    servico_id,
+    descricao,
+    valor,
+    valor_pago,
+    data_vencimento,
+    data_recebimento,
+    competencia_mes,
+    confirmed_at,
+    received_at,
+    status,
+    observacoes
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+ON CONFLICT (tenant_id, asaas_payment_id) WHERE asaas_payment_id IS NOT NULL
+DO UPDATE SET
+    valor = EXCLUDED.valor,
+    valor_pago = COALESCE(EXCLUDED.valor_pago, contas_a_receber.valor_pago),
+    data_vencimento = COALESCE(EXCLUDED.data_vencimento, contas_a_receber.data_vencimento),
+    data_recebimento = COALESCE(EXCLUDED.data_recebimento, contas_a_receber.data_recebimento),
+    confirmed_at = COALESCE(EXCLUDED.confirmed_at, contas_a_receber.confirmed_at),
+    received_at = COALESCE(EXCLUDED.received_at, contas_a_receber.received_at),
+    status = EXCLUDED.status,
+    observacoes = COALESCE(EXCLUDED.observacoes, contas_a_receber.observacoes),
+    atualizado_em = NOW()
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+`
+
+type UpsertContaReceberByAsaasPaymentIDParams struct {
+	TenantID        pgtype.UUID        `json:"tenant_id"`
+	Origem          *string            `json:"origem"`
+	AssinaturaID    pgtype.UUID        `json:"assinatura_id"`
+	SubscriptionID  pgtype.UUID        `json:"subscription_id"`
+	AsaasPaymentID  *string            `json:"asaas_payment_id"`
+	ServicoID       pgtype.UUID        `json:"servico_id"`
+	Descricao       string             `json:"descricao"`
+	Valor           decimal.Decimal    `json:"valor"`
+	ValorPago       pgtype.Numeric     `json:"valor_pago"`
+	DataVencimento  pgtype.Date        `json:"data_vencimento"`
+	DataRecebimento pgtype.Date        `json:"data_recebimento"`
+	CompetenciaMes  *string            `json:"competencia_mes"`
+	ConfirmedAt     pgtype.Timestamptz `json:"confirmed_at"`
+	ReceivedAt      pgtype.Timestamptz `json:"received_at"`
+	Status          *string            `json:"status"`
+	Observacoes     *string            `json:"observacoes"`
+}
+
+// ============================================================
+// CONTAS_A_RECEBER - Queries v2 (Integração Asaas)
+// ============================================================
+// Criar ou atualizar conta a receber via webhook (idempotente)
+// Nota: índice único é (tenant_id, asaas_payment_id)
+func (q *Queries) UpsertContaReceberByAsaasPaymentID(ctx context.Context, arg UpsertContaReceberByAsaasPaymentIDParams) (ContasAReceber, error) {
+	row := q.db.QueryRow(ctx, upsertContaReceberByAsaasPaymentID,
+		arg.TenantID,
+		arg.Origem,
+		arg.AssinaturaID,
+		arg.SubscriptionID,
+		arg.AsaasPaymentID,
+		arg.ServicoID,
+		arg.Descricao,
+		arg.Valor,
+		arg.ValorPago,
+		arg.DataVencimento,
+		arg.DataRecebimento,
+		arg.CompetenciaMes,
+		arg.ConfirmedAt,
+		arg.ReceivedAt,
+		arg.Status,
+		arg.Observacoes,
+	)
+	var i ContasAReceber
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Origem,
+		&i.AssinaturaID,
+		&i.ServicoID,
+		&i.Descricao,
+		&i.Valor,
+		&i.ValorPago,
+		&i.DataVencimento,
+		&i.DataRecebimento,
+		&i.Status,
+		&i.Observacoes,
+		&i.SubscriptionID,
+		&i.AsaasPaymentID,
+		&i.CompetenciaMes,
+		&i.ConfirmedAt,
+		&i.ReceivedAt,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 	)

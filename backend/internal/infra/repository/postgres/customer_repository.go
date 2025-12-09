@@ -32,7 +32,7 @@ func NewCustomerRepository(queries *db.Queries) *CustomerRepository {
 func (r *CustomerRepository) Create(ctx context.Context, customer *entity.Customer) error {
 	params := db.CreateCustomerParams{
 		ID:                  stringToUUID(customer.ID),
-		TenantID:            stringToUUID(customer.TenantID),
+		TenantID:            uuidToPgUUID(customer.TenantID),
 		Nome:                customer.Nome,
 		Telefone:            customer.Telefone,
 		Email:               customer.Email,
@@ -111,7 +111,7 @@ func (r *CustomerRepository) FindByCPF(ctx context.Context, tenantID, cpf string
 func (r *CustomerRepository) Update(ctx context.Context, customer *entity.Customer) error {
 	params := db.UpdateCustomerParams{
 		ID:                  stringToUUID(customer.ID),
-		TenantID:            stringToUUID(customer.TenantID),
+		TenantID:            uuidToPgUUID(customer.TenantID),
 		Nome:                customer.Nome,
 		Telefone:            customer.Telefone,
 		Email:               customer.Email,
@@ -509,7 +509,7 @@ func mapClienteToCustomer(row db.Cliente) *entity.Customer {
 
 	return &entity.Customer{
 		ID:                  uuidToString(row.ID),
-		TenantID:            uuidToString(row.TenantID),
+		TenantID: pgtypeToEntityUUID(row.TenantID),
 		Nome:                row.Nome,
 		Telefone:            row.Telefone,
 		Email:               row.Email,
@@ -539,7 +539,7 @@ func mapHistoryRowToCustomer(row db.GetCustomerWithHistoryRow) *entity.Customer 
 
 	return &entity.Customer{
 		ID:                  uuidToString(row.ID),
-		TenantID:            uuidToString(row.TenantID),
+		TenantID: pgtypeToEntityUUID(row.TenantID),
 		Nome:                row.Nome,
 		Telefone:            row.Telefone,
 		Email:               row.Email,
@@ -569,7 +569,7 @@ func mapExportRowToCustomer(row db.GetCustomerDataForExportRow) *entity.Customer
 
 	return &entity.Customer{
 		ID:                  uuidToString(row.ID),
-		TenantID:            uuidToString(row.TenantID),
+		TenantID: pgtypeToEntityUUID(row.TenantID),
 		Nome:                row.Nome,
 		Telefone:            row.Telefone,
 		Email:               row.Email,

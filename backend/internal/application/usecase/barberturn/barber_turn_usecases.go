@@ -4,8 +4,11 @@ package barberturn
 
 import (
 	"context"
+
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
@@ -135,7 +138,7 @@ func (uc *AddBarberToTurnListUseCase) Execute(ctx context.Context, tenantID stri
 	}
 
 	// Criar entidade
-	barberTurn, err := entity.NewBarberTurn(tenantID, req.ProfessionalID)
+	barberTurn, err := entity.NewBarberTurn(uuid.MustParse(tenantID), req.ProfessionalID)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +422,7 @@ func (uc *GetTurnHistoryUseCase) Execute(ctx context.Context, tenantID string, m
 	for _, h := range history {
 		response.History = append(response.History, dto.TurnHistoryResponse{
 			ID:               h.ID,
-			TenantID:         h.TenantID,
+			TenantID:         h.TenantID.String(),
 			ProfessionalID:   h.ProfessionalID,
 			ProfessionalName: h.ProfessionalName,
 			MonthYear:        h.MonthYear,
@@ -524,7 +527,7 @@ func (uc *GetAvailableBarbersUseCase) Execute(ctx context.Context, tenantID stri
 func mapBarberTurnToResponse(b *entity.BarberTurn) dto.BarberTurnResponse {
 	return dto.BarberTurnResponse{
 		ID:                b.ID,
-		TenantID:          b.TenantID,
+		TenantID:          b.TenantID.String(),
 		ProfessionalID:    b.ProfessionalID,
 		ProfessionalName:  b.ProfessionalName,
 		ProfessionalType:  b.ProfessionalType,

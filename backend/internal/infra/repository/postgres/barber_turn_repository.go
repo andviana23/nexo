@@ -9,7 +9,6 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	db "github.com/andviana23/barber-analytics-backend/internal/infra/db/sqlc"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // BarberTurnRepository implementa BarberTurnRepository usando PostgreSQL
@@ -30,7 +29,7 @@ func NewBarberTurnRepository(queries *db.Queries) *BarberTurnRepository {
 func (r *BarberTurnRepository) Add(ctx context.Context, barberTurn *entity.BarberTurn) error {
 	params := db.AddBarberToTurnListParams{
 		ID:             stringToUUID(barberTurn.ID),
-		TenantID:       stringToUUID(barberTurn.TenantID),
+		TenantID:       uuidToPgUUID(barberTurn.TenantID),
 		ProfessionalID: stringToUUID(barberTurn.ProfessionalID),
 	}
 
@@ -403,7 +402,7 @@ func mapBarberTurnByIDRowToEntity(row db.GetBarberTurnByIDRow) *entity.BarberTur
 
 	return &entity.BarberTurn{
 		ID:                 uuidToString(row.ID),
-		TenantID:           uuidToString(row.TenantID),
+		TenantID:           pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:     uuidToString(row.ProfessionalID),
 		CurrentPoints:      int(row.CurrentPoints),
 		LastTurnAt:         pgTimestamptzToTimePtr(row.LastTurnAt),
@@ -424,7 +423,7 @@ func mapBarberTurnByProfessionalIDRowToEntity(row db.GetBarberTurnByProfessional
 
 	return &entity.BarberTurn{
 		ID:                 uuidToString(row.ID),
-		TenantID:           uuidToString(row.TenantID),
+		TenantID:           pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:     uuidToString(row.ProfessionalID),
 		CurrentPoints:      int(row.CurrentPoints),
 		LastTurnAt:         pgTimestamptzToTimePtr(row.LastTurnAt),
@@ -445,7 +444,7 @@ func mapBarberTurnListRowToEntity(row db.ListBarbersTurnListRow) *entity.BarberT
 
 	return &entity.BarberTurn{
 		ID:                 uuidToString(row.ID),
-		TenantID:           uuidToString(row.TenantID),
+		TenantID:           pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:     uuidToString(row.ProfessionalID),
 		CurrentPoints:      int(row.CurrentPoints),
 		LastTurnAt:         pgTimestamptzToTimePtr(row.LastTurnAt),
@@ -468,7 +467,7 @@ func mapBarberTurnActiveRowToEntity(row db.ListActiveBarbersTurnListRow) *entity
 
 	return &entity.BarberTurn{
 		ID:                 uuidToString(row.ID),
-		TenantID:           uuidToString(row.TenantID),
+		TenantID:           pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:     uuidToString(row.ProfessionalID),
 		CurrentPoints:      int(row.CurrentPoints),
 		LastTurnAt:         pgTimestamptzToTimePtr(row.LastTurnAt),
@@ -491,7 +490,7 @@ func mapNextBarberRowToEntity(row db.GetNextBarberRow) *entity.BarberTurn {
 
 	return &entity.BarberTurn{
 		ID:                 uuidToString(row.ID),
-		TenantID:           uuidToString(row.TenantID),
+		TenantID:           pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:     uuidToString(row.ProfessionalID),
 		CurrentPoints:      int(row.CurrentPoints),
 		LastTurnAt:         pgTimestamptzToTimePtr(row.LastTurnAt),
@@ -509,7 +508,7 @@ func mapNextBarberRowToEntity(row db.GetNextBarberRow) *entity.BarberTurn {
 func mapTurnHistoryRowToEntity(row db.ListTurnHistoryRow) *entity.BarberTurnHistory {
 	return &entity.BarberTurnHistory{
 		ID:               uuidToString(row.ID),
-		TenantID:         uuidToString(row.TenantID),
+		TenantID:         pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:   uuidToString(row.ProfessionalID),
 		MonthYear:        row.MonthYear,
 		TotalTurns:       int(row.TotalTurns),
@@ -522,7 +521,7 @@ func mapTurnHistoryRowToEntity(row db.ListTurnHistoryRow) *entity.BarberTurnHist
 func mapTurnHistoryByMonthRowToEntity(row db.GetTurnHistoryByMonthRow) *entity.BarberTurnHistory {
 	return &entity.BarberTurnHistory{
 		ID:               uuidToString(row.ID),
-		TenantID:         uuidToString(row.TenantID),
+		TenantID:         pgtypeToEntityUUID(row.TenantID),
 		ProfessionalID:   uuidToString(row.ProfessionalID),
 		MonthYear:        row.MonthYear,
 		TotalTurns:       int(row.TotalTurns),
@@ -530,14 +529,6 @@ func mapTurnHistoryByMonthRowToEntity(row db.GetTurnHistoryByMonthRow) *entity.B
 		CreatedAt:        pgTimestamptzToTime(row.CreatedAt),
 		ProfessionalName: row.ProfessionalName,
 	}
-}
-
-// Helper para converter pgtype.Timestamptz para *time.Time
-func pgTimestamptzToTimePtr(t pgtype.Timestamptz) *time.Time {
-	if !t.Valid {
-		return nil
-	}
-	return &t.Time
 }
 
 // Verifica se BarberTurnRepository implementa a interface

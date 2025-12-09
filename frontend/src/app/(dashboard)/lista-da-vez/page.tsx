@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
  * NEXO - Sistema de Gestão para Barbearias
@@ -658,20 +659,25 @@ function DistributionChart({ barbers }: DistributionChartProps) {
   ];
 
   // Calcular ângulos para cada fatia do gráfico
-  let currentAngle = 0;
-  const slices = barbers.map((barber, index) => {
+  const slices = barbers.reduce<Array<{
+    barber: BarberTurnResponse;
+    percentage: number;
+    startAngle: number;
+    endAngle: number;
+    color: { bg: string; name: string };
+  }>>((acc, barber, index) => {
     const percentage = totalPoints > 0 ? (barber.current_points / totalPoints) * 100 : 0;
     const angle = (percentage / 100) * 360;
-    const slice = {
+    const startAngle = acc.length === 0 ? 0 : acc[acc.length - 1].endAngle;
+    acc.push({
       barber,
       percentage,
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
+      startAngle,
+      endAngle: startAngle + angle,
       color: COLORS[index % COLORS.length],
-    };
-    currentAngle += angle;
-    return slice;
-  });
+    });
+    return acc;
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -888,20 +894,25 @@ function MinimalChart({ barbers }: DistributionChartProps) {
     { bg: '#A855F7', name: 'purple' },
   ];
 
-  let currentAngle = 0;
-  const slices = barbers.map((barber, index) => {
+  const slices = barbers.reduce<Array<{
+    barber: BarberTurnResponse;
+    percentage: number;
+    startAngle: number;
+    endAngle: number;
+    color: { bg: string; name: string };
+  }>>((acc, barber, index) => {
     const percentage = totalPoints > 0 ? (barber.current_points / totalPoints) * 100 : 0;
     const angle = (percentage / 100) * 360;
-    const slice = {
+    const startAngle = acc.length === 0 ? 0 : acc[acc.length - 1].endAngle;
+    acc.push({
       barber,
       percentage,
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
+      startAngle,
+      endAngle: startAngle + angle,
       color: COLORS[index % COLORS.length],
-    };
-    currentAngle += angle;
-    return slice;
-  });
+    });
+    return acc;
+  }, []);
 
   return (
     <div className="space-y-6">

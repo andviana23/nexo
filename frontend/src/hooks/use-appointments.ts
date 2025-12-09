@@ -7,22 +7,20 @@
  */
 
 import {
-  appointmentService,
-  appointmentsToCalendarEvents,
-  CustomerNotFoundError,
-  ProfessionalInactiveError,
-  professionalsToCalendarResources,
-  TimeSlotConflictError,
+    appointmentService,
+    appointmentsToCalendarEvents,
+    CustomerNotFoundError,
+    professionalsToCalendarResources,
+    TimeSlotConflictError
 } from '@/services/appointment-service';
 import type {
-  AppointmentResponse,
-  AppointmentStatus,
-  CheckAvailabilityParams,
-  CreateAppointmentRequest,
-  ListAppointmentsFilters,
-  ListAppointmentsResponse,
-  UpdateAppointmentRequest,
-  UpdateAppointmentStatusRequest
+    AppointmentResponse,
+    AppointmentStatus,
+    CreateAppointmentRequest,
+    ListAppointmentsFilters,
+    ListAppointmentsResponse,
+    RescheduleAppointmentRequest,
+    UpdateAppointmentStatusRequest
 } from '@/types/appointment';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -38,8 +36,6 @@ export const appointmentKeys = {
     [...appointmentKeys.lists(), filters] as const,
   details: () => [...appointmentKeys.all, 'detail'] as const,
   detail: (id: string) => [...appointmentKeys.details(), id] as const,
-  availability: (params: CheckAvailabilityParams) =>
-    [...appointmentKeys.all, 'availability', params] as const,
   professionals: () => ['professionals'] as const,
 };
 
@@ -85,18 +81,6 @@ export function useAppointment(id: string) {
     queryKey: appointmentKeys.detail(id),
     queryFn: () => appointmentService.getById(id),
     enabled: !!id,
-  });
-}
-
-/**
- * Hook para verificar disponibilidade
- */
-export function useAvailability(params: CheckAvailabilityParams) {
-  return useQuery({
-    queryKey: appointmentKeys.availability(params),
-    queryFn: () => appointmentService.checkAvailability(params),
-    enabled: !!params.professional_id && !!params.date,
-    staleTime: 60_000, // 1 minuto
   });
 }
 
@@ -147,11 +131,11 @@ export function useCreateAppointment() {
       queryClient.setQueriesData<ListAppointmentsResponse>(
         { queryKey: appointmentKeys.lists() },
         (old) => {
-          if (!old) return old;
+          if (!old || !Array.isArray(old.data)) return old;
           return {
             ...old,
             data: [newAppointment, ...old.data],
-            total: old.total + 1,
+            total: (old.total || 0) + 1,
           };
         }
       );
@@ -165,15 +149,15 @@ export function useCreateAppointment() {
 }
 
 /**
- * Hook para atualizar um agendamento
+ * Hook para reagendar um agendamento (alterar data/horário)
  * Usa optimistic update para resposta imediata na UI
  */
-export function useUpdateAppointment() {
+export function useRescheduleAppointment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateAppointmentRequest }) =>
-      appointmentService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: RescheduleAppointmentRequest }) =>
+      appointmentService.reschedule(id, data),
 
     // Optimistic Update
     onMutate: async ({ id, data }) => {
@@ -193,15 +177,15 @@ export function useUpdateAppointment() {
       queryClient.setQueriesData<ListAppointmentsResponse>(
         { queryKey: appointmentKeys.lists() },
         (old) => {
-          if (!old) return old;
+          if (!old || !Array.isArray(old.data)) return old;
           return {
             ...old,
             data: old.data.map((apt) =>
               apt.id === id
                 ? {
                     ...apt,
-                    start_time: data.start_time ?? apt.start_time,
-                    notes: data.notes ?? apt.notes,
+                    start_time: data.new_start_time ?? apt.start_time,
+                    professional_id: data.professional_id ?? apt.professional_id,
                   }
                 : apt
             ),
@@ -215,8 +199,8 @@ export function useUpdateAppointment() {
           appointmentKeys.detail(id),
           {
             ...previousDetail,
-            start_time: data.start_time ?? previousDetail.start_time,
-            notes: data.notes ?? previousDetail.notes,
+            start_time: data.new_start_time ?? previousDetail.start_time,
+            professional_id: data.professional_id ?? previousDetail.professional_id,
           }
         );
       }
@@ -249,7 +233,7 @@ export function useUpdateAppointment() {
     },
 
     onSuccess: () => {
-      toast.success('Agendamento atualizado com sucesso!');
+      toast.success('Agendamento reagendado com sucesso!');
     },
   });
 }
@@ -277,7 +261,7 @@ export function useCancelAppointment() {
       queryClient.setQueriesData<ListAppointmentsResponse>(
         { queryKey: appointmentKeys.lists() },
         (old) => {
-          if (!old) return old;
+          if (!old || !Array.isArray(old.data)) return old;
           return {
             ...old,
             data: old.data.map((apt) =>
@@ -292,13 +276,13 @@ export function useCancelAppointment() {
       return { previousLists };
     },
 
-    onError: (_, __, context) => {
+    onError: (error, __, context) => {
       if (context?.previousLists) {
         context.previousLists.forEach(([queryKey, data]) => {
           if (data) queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.error('Erro ao cancelar agendamento. Tente novamente.');
+      handleAppointmentError(error as Error);
     },
 
     onSettled: () => {
@@ -314,21 +298,38 @@ export function useCancelAppointment() {
 /**
  * Hook para atualizar o status de um agendamento
  * Usa optimistic update para transições de status suaves
+ * 
+ * IMPORTANTE: Verifica se o status atual já é o desejado para evitar
+ * chamadas duplicadas que causam erro "transição de status inválida"
  */
 export function useUpdateAppointmentStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       data,
+      currentStatus,
     }: {
       id: string;
       data: UpdateAppointmentStatusRequest;
-    }) => appointmentService.updateStatus(id, data),
+      currentStatus?: AppointmentStatus;
+    }) => {
+      // Se o status atual já é o desejado, não fazer a chamada
+      if (currentStatus && currentStatus === data.status) {
+        console.warn(`[useUpdateAppointmentStatus] Status já é ${data.status}, ignorando chamada duplicada`);
+        // Retorna dados "falsos" para satisfazer o tipo
+        return { id, status: data.status } as AppointmentResponse;
+      }
+      return appointmentService.updateStatus(id, data);
+    },
 
     // Optimistic Update
-    onMutate: async ({ id, data }) => {
+    onMutate: async ({ id, data, currentStatus }) => {
+      // Se status já é o desejado, não fazer optimistic update
+      if (currentStatus && currentStatus === data.status) {
+        return { skipped: true };
+      }
       await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
       await queryClient.cancelQueries({ queryKey: appointmentKeys.detail(id) });
 
@@ -343,12 +344,34 @@ export function useUpdateAppointmentStatus() {
       queryClient.setQueriesData<ListAppointmentsResponse>(
         { queryKey: appointmentKeys.lists() },
         (old) => {
+          // Se não há dados no cache, retornar como está
           if (!old) return old;
+          
+          // Verifica se old é um objeto válido
+          if (typeof old !== 'object') return old;
+          
+          // Suporta tanto 'data' quanto 'appointments' como propriedade
+          const rawAppointments = (old as { data?: unknown }).data ?? 
+                                  (old as { appointments?: unknown }).appointments;
+          
+          // Se não há array de appointments, retornar sem modificar
+          if (!Array.isArray(rawAppointments)) return old;
+          
+          // Filtra e mapeia com segurança total
+          const updatedAppointments = rawAppointments
+            .filter((apt): apt is AppointmentResponse => {
+              return apt != null && 
+                     typeof apt === 'object' && 
+                     'id' in apt && 
+                     'status' in apt;
+            })
+            .map((apt) =>
+              apt.id === id ? { ...apt, status: data.status } : apt
+            );
+          
           return {
             ...old,
-            data: old.data.map((apt) =>
-              apt.id === id ? { ...apt, status: data.status } : apt
-            ),
+            data: updatedAppointments,
           };
         }
       );
@@ -364,7 +387,10 @@ export function useUpdateAppointmentStatus() {
       return { previousLists, previousDetail, id };
     },
 
-    onError: (_, __, context) => {
+    onError: (error, __, context) => {
+      // Se foi skipped, não fazer rollback
+      if (context?.skipped) return;
+      
       if (context?.previousLists) {
         context.previousLists.forEach(([queryKey, data]) => {
           if (data) queryClient.setQueryData(queryKey, data);
@@ -376,18 +402,352 @@ export function useUpdateAppointmentStatus() {
           context.previousDetail
         );
       }
-      toast.error('Erro ao atualizar status. Tente novamente.');
+      handleAppointmentError(error as Error);
     },
 
-    onSettled: (_, __, variables) => {
+    onSettled: (_, __, variables, context) => {
+      // Se foi skipped, não invalidar queries
+      if (context?.skipped) return;
+      
       queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: appointmentKeys.detail(variables.id),
       });
     },
 
-    onSuccess: () => {
+    onSuccess: (_, __, context) => {
+      // Se foi skipped, não mostrar toast (já está no status desejado)
+      if (context?.skipped) return;
+      
       toast.success('Status atualizado!');
+    },
+  });
+}
+
+// =============================================================================
+// HOOKS DE WORKFLOW - Transições de Status Específicas
+// =============================================================================
+
+/**
+ * Hook para confirmar agendamento
+ * Transição: CREATED → CONFIRMED
+ */
+export function useConfirmAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => appointmentService.confirm(id),
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
+      
+      const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
+        queryKey: appointmentKeys.lists(),
+      });
+
+      queryClient.setQueriesData<ListAppointmentsResponse>(
+        { queryKey: appointmentKeys.lists() },
+        (old) => {
+          if (!old || !Array.isArray(old.data)) return old;
+          return {
+            ...old,
+            data: old.data.map((apt) =>
+              apt.id === id 
+                ? { ...apt, status: 'CONFIRMED' as AppointmentStatus } 
+                : apt
+            ),
+          };
+        }
+      );
+
+      return { previousLists };
+    },
+
+    onError: (error, __, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      handleAppointmentError(error as Error);
+    },
+
+    onSuccess: () => {
+      toast.success('Agendamento confirmado!');
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Hook para marcar cliente como chegou (check-in)
+ * Transição: CONFIRMED → CHECKED_IN
+ */
+export function useCheckInAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => appointmentService.checkIn(id),
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
+      
+      const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
+        queryKey: appointmentKeys.lists(),
+      });
+
+      queryClient.setQueriesData<ListAppointmentsResponse>(
+        { queryKey: appointmentKeys.lists() },
+        (old) => {
+          if (!old || !Array.isArray(old.data)) return old;
+          return {
+            ...old,
+            data: old.data.map((apt) =>
+              apt.id === id 
+                ? { ...apt, status: 'CHECKED_IN' as AppointmentStatus } 
+                : apt
+            ),
+          };
+        }
+      );
+
+      return { previousLists };
+    },
+
+    onError: (error, __, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          if (data) queryClient.setQueryData(queryKey, data);
+        });
+      }
+      handleAppointmentError(error as Error);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+    },
+
+    onSuccess: () => {
+      toast.success('Cliente chegou! ✅');
+    },
+  });
+}
+
+/**
+ * Hook para iniciar atendimento
+ * Transição: CONFIRMED/CHECKED_IN → IN_SERVICE
+ */
+export function useStartServiceAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => appointmentService.startService(id),
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
+      
+      const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
+        queryKey: appointmentKeys.lists(),
+      });
+
+      queryClient.setQueriesData<ListAppointmentsResponse>(
+        { queryKey: appointmentKeys.lists() },
+        (old) => {
+          if (!old || !Array.isArray(old.data)) return old;
+          return {
+            ...old,
+            data: old.data.map((apt) =>
+              apt.id === id 
+                ? { ...apt, status: 'IN_SERVICE' as AppointmentStatus } 
+                : apt
+            ),
+          };
+        }
+      );
+
+      return { previousLists };
+    },
+
+    onError: (error, __, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          if (data) queryClient.setQueryData(queryKey, data);
+        });
+      }
+      handleAppointmentError(error as Error);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+    },
+
+    onSuccess: () => {
+      toast.success('Atendimento iniciado! ✂️');
+    },
+  });
+}
+
+/**
+ * Hook para finalizar atendimento (aguardando pagamento)
+ * Transição: IN_SERVICE → AWAITING_PAYMENT
+ */
+export function useFinishServiceAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => appointmentService.finishService(id),
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
+      
+      const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
+        queryKey: appointmentKeys.lists(),
+      });
+
+      queryClient.setQueriesData<ListAppointmentsResponse>(
+        { queryKey: appointmentKeys.lists() },
+        (old) => {
+          if (!old || !Array.isArray(old.data)) return old;
+          return {
+            ...old,
+            data: old.data.map((apt) =>
+              apt.id === id 
+                ? { ...apt, status: 'AWAITING_PAYMENT' as AppointmentStatus } 
+                : apt
+            ),
+          };
+        }
+      );
+
+      return { previousLists };
+    },
+
+    onError: (error, __, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          if (data) queryClient.setQueryData(queryKey, data);
+        });
+      }
+      handleAppointmentError(error as Error);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+    },
+
+    onSuccess: () => {
+      toast.success('Atendimento finalizado! Aguardando pagamento 💰');
+    },
+  });
+}
+
+/**
+ * Hook para concluir agendamento (pagamento recebido)
+ * Transição: IN_SERVICE/AWAITING_PAYMENT → DONE
+ */
+export function useCompleteAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => appointmentService.complete(id),
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
+      
+      const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
+        queryKey: appointmentKeys.lists(),
+      });
+
+      queryClient.setQueriesData<ListAppointmentsResponse>(
+        { queryKey: appointmentKeys.lists() },
+        (old) => {
+          if (!old || !Array.isArray(old.data)) return old;
+          return {
+            ...old,
+            data: old.data.map((apt) =>
+              apt.id === id 
+                ? { ...apt, status: 'DONE' as AppointmentStatus } 
+                : apt
+            ),
+          };
+        }
+      );
+
+      return { previousLists };
+    },
+
+    onError: (error, __, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          if (data) queryClient.setQueryData(queryKey, data);
+        });
+      }
+      handleAppointmentError(error as Error);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+    },
+
+    onSuccess: () => {
+      toast.success('Agendamento concluído! ✅💰');
+    },
+  });
+}
+
+/**
+ * Hook para marcar cliente como não compareceu
+ * Transição: CONFIRMED/CHECKED_IN → NO_SHOW
+ */
+export function useNoShowAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => appointmentService.noShow(id),
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
+      
+      const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
+        queryKey: appointmentKeys.lists(),
+      });
+
+      queryClient.setQueriesData<ListAppointmentsResponse>(
+        { queryKey: appointmentKeys.lists() },
+        (old) => {
+          if (!old || !Array.isArray(old.data)) return old;
+          return {
+            ...old,
+            data: old.data.map((apt) =>
+              apt.id === id 
+                ? { ...apt, status: 'NO_SHOW' as AppointmentStatus } 
+                : apt
+            ),
+          };
+        }
+      );
+
+      return { previousLists };
+    },
+
+    onError: (error, __, context) => {
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          if (data) queryClient.setQueryData(queryKey, data);
+        });
+      }
+      handleAppointmentError(error as Error);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+    },
+
+    onSuccess: () => {
+      toast.warning('Cliente marcado como não compareceu.');
     },
   });
 }
@@ -405,8 +765,33 @@ function handleAppointmentError(error: Error) {
     return;
   }
 
-  if (error instanceof ProfessionalInactiveError) {
-    toast.error('Barbeiro não está disponível no momento.');
+  if (error instanceof BlockedTimeError) {
+    toast.error('Horário bloqueado para o profissional. Escolha outro horário.');
+    return;
+  }
+
+  if (error instanceof InsufficientIntervalError) {
+    toast.error('Intervalo mínimo de 10 minutos não respeitado.');
+    return;
+  }
+
+  if (error instanceof InvalidTransitionError) {
+    toast.error('Transição de status não permitida para este agendamento.');
+    return;
+  }
+
+  if (error instanceof ForbiddenScopeError) {
+    toast.error('Acesso negado: barbeiro só pode agir nos próprios agendamentos.');
+    return;
+  }
+
+  if (error instanceof ProfessionalNotFoundError) {
+    toast.error('Profissional não encontrado. Selecione outro.');
+    return;
+  }
+
+  if (error instanceof ServiceNotFoundError) {
+    toast.error('Serviço não encontrado. Verifique a lista de serviços.');
     return;
   }
 
@@ -415,6 +800,21 @@ function handleAppointmentError(error: Error) {
     return;
   }
 
+  if (error instanceof AppointmentNotFoundError) {
+    toast.error('Agendamento não encontrado. Atualize a página e tente novamente.');
+    return;
+  }
+
   // Erro genérico
   toast.error('Erro ao processar agendamento. Tente novamente.');
 }
+
+// =============================================================================
+// ALIASES (para manter compatibilidade com código existente)
+// =============================================================================
+
+/**
+ * @deprecated Use useRescheduleAppointment em vez disso
+ * Mantido para compatibilidade com código legado
+ */
+export const useUpdateAppointment = useRescheduleAppointment;

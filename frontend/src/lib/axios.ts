@@ -1,3 +1,4 @@
+import { UNIT_HEADER } from '@/types/unit';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Instância do Axios configurada para a API
@@ -9,12 +10,12 @@ export const api = axios.create({
   },
 });
 
-// Interceptor de Request - Adiciona token de autenticação
+// Interceptor de Request - Adiciona token de autenticação e Unit ID
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Só executa no client-side
     if (typeof window !== 'undefined') {
-      // Busca token do Zustand persist storage
+      // Busca token do Zustand persist storage (auth)
       const authData = localStorage.getItem('nexo-auth');
       console.log('[axios] authData do localStorage:', authData ? 'existe' : 'não existe');
       
@@ -29,6 +30,22 @@ api.interceptors.request.use(
           }
         } catch (error) {
           console.error('[axios] Erro ao parsear token:', error);
+        }
+      }
+
+      // Busca unit_id do Zustand persist storage (unit)
+      const unitData = localStorage.getItem('nexo-unit');
+      if (unitData) {
+        try {
+          const { state } = JSON.parse(unitData);
+          const unitId = state?.activeUnit?.unit_id;
+          
+          if (unitId && config.headers) {
+            config.headers[UNIT_HEADER] = unitId;
+            console.log('[axios] Unit-ID adicionado:', unitId.substring(0, 8) + '...');
+          }
+        } catch (error) {
+          console.error('[axios] Erro ao parsear unit:', error);
         }
       }
     }

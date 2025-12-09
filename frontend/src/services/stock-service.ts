@@ -7,15 +7,18 @@
 
 import { api } from '@/lib/axios';
 import type {
-  StockEntryFormData,
-  StockExitFormData,
-  StockFilters,
-  StockInventoryResponse,
-  StockItem,
-  StockItemFormData,
-  StockMovement,
-  StockMovementFilters,
-  StockMovementResponse,
+    StockEntryFormData,
+    StockEntryMultipleItemsRequest,
+    StockEntryResponse,
+    StockExitFormData,
+    StockExitResponse,
+    StockFilters,
+    StockInventoryResponse,
+    StockItem,
+    StockItemFormData,
+    StockMovement,
+    StockMovementFilters,
+    StockMovementResponse,
 } from '@/types/stock';
 
 // =============================================================================
@@ -74,6 +77,35 @@ export async function deleteStockItem(id: string): Promise<void> {
 }
 
 // =============================================================================
+// PRODUTOS (CRUD conforme backend DTO)
+// =============================================================================
+
+/**
+ * Tipo para criar produto (alinhado com CreateProdutoRequest do backend)
+ */
+export interface CreateProductRequest {
+  nome: string;
+  descricao?: string;
+  codigo_barras?: string;
+  categoria_produto_id: string; // FK para categoria customizada (obrigatório)
+  unidade_medida: string; // StockUnit
+  valor_unitario: string;
+  quantidade_minima: number;
+  quantidade_maxima?: string;
+  valor_venda_profissional?: string;
+  valor_entrada?: string;
+  fornecedor_id?: string;
+}
+
+/**
+ * Cria novo produto no estoque
+ */
+export async function createProduct(data: CreateProductRequest): Promise<StockItem> {
+  const { data: response } = await api.post<StockItem>('/stock/products', data);
+  return response;
+}
+
+// =============================================================================
 // STOCK MOVEMENTS (ENTRADAS/SAÍDAS)
 // =============================================================================
 
@@ -105,11 +137,35 @@ export async function getStockMovement(id: string): Promise<StockMovement> {
  */
 export async function createStockEntry(
   entryData: StockEntryFormData
-): Promise<StockMovement> {
-  const { data } = await api.post<StockMovement>(
-    '/stock/entries',
-    entryData
-  );
+): Promise<StockEntryResponse> {
+  const payload = {
+    fornecedor_id: entryData.supplier_id,
+    data_entrada: entryData.entry_date,
+    observacoes: [entryData.reference, entryData.notes].filter(Boolean).join(' - ') || undefined,
+    gerar_financeiro: entryData.generate_financial ?? false,
+    itens: [
+      {
+        produto_id: entryData.stock_item_id,
+        quantidade: entryData.quantity,
+        valor_unitario: entryData.unit_cost
+          ? entryData.unit_cost.replace(',', '.')
+          : '0',
+      },
+    ],
+  };
+
+  const { data } = await api.post<StockEntryResponse>('/stock/entries', payload);
+  return data;
+}
+
+/**
+ * Registra entrada de estoque com múltiplos produtos
+ * Alinhado com RegistrarEntradaRequest do backend
+ */
+export async function createStockEntryMultiple(
+  entryData: StockEntryMultipleItemsRequest
+): Promise<StockEntryResponse> {
+  const { data } = await api.post<StockEntryResponse>('/stock/entries', entryData);
   return data;
 }
 
@@ -118,11 +174,15 @@ export async function createStockEntry(
  */
 export async function createStockExit(
   exitData: StockExitFormData
-): Promise<StockMovement> {
-  const { data } = await api.post<StockMovement>(
-    '/stock/exits',
-    exitData
-  );
+): Promise<StockExitResponse> {
+  const payload = {
+    produto_id: exitData.stock_item_id,
+    quantidade: String(exitData.quantity),
+    motivo: exitData.reason,
+    observacoes: [exitData.reference, exitData.notes].filter(Boolean).join(' - ') || undefined,
+  };
+
+  const { data } = await api.post<StockExitResponse>('/stock/exit', payload);
   return data;
 }
 

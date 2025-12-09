@@ -5,12 +5,14 @@
  * Barra superior com:
  * - Menu mobile (toggle sidebar)
  * - Breadcrumbs
+ * - Unit selector (multi-unit)
  * - User navigation
  * - Theme toggle
  */
 
 'use client';
 
+import { UnitSelector } from '@/components/multi-unit';
 import { cn } from '@/lib/utils';
 import { useBreadcrumbs } from '@/store/ui-store';
 import Link from 'next/link';
@@ -62,6 +64,13 @@ export function Header() {
           <div className="h-5" /> // Espaço reservado
         )}
       </div>
+
+      {/* Unit Selector - aparece apenas se multi-unit */}
+      <UnitSelector
+        variant="outline"
+        size="sm"
+        collapsible
+      />
 
       {/* User Navigation */}
       <UserNav />

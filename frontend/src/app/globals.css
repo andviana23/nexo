@@ -186,3 +186,73 @@
 .fc-col-header-cell.fc-day-today {
     background-color: #ffffff !important;
 }
+
+/* ==========================================================================
+   DRAG & DROP VISUAL FEEDBACK
+   ========================================================================== */
+
+/* Event being dragged - Semi-transparent with smooth transition */
+.fc-event-dragging {
+    opacity: 0.6 !important;
+    cursor: grabbing !important;
+    transition: opacity 0.2s ease-in-out !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    z-index: 999 !important;
+}
+
+/* Invalid drop target - Red border with pulse animation */
+.fc-event.fc-event-dragging.fc-event-invalid {
+    border: 2px solid #ef4444 !important; /* Red border */
+    background-color: rgba(239, 68, 68, 0.1) !important; /* Light red background */
+    animation: invalidPulse 1s ease-in-out infinite !important;
+}
+
+/* Valid drop target - Green border with glow */
+.fc-event.fc-event-dragging:not(.fc-event-invalid) {
+    border: 2px solid #10b981 !important; /* Green border */
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4) !important; /* Green glow */
+}
+
+/* Pulse animation for invalid drops */
+@keyframes invalidPulse {
+    0%, 100% {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    50% {
+        border-color: #dc2626;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+    }
+}
+
+/* Hover state for time slots during drag - Subtle highlight */
+.fc-timegrid-slot:hover {
+    background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* Professional columns during drag - Highlight on hover */
+.fc-timegrid-col:hover {
+    background-color: rgba(59, 130, 246, 0.02) !important;
+}
+
+/* Status-based event colors (integrated with eventClassNames) */
+.fc-event.status-confirmado {
+    background-color: #10b981 !important; /* Green for confirmed */
+    border-color: #059669 !important;
+}
+
+.fc-event.status-pendente {
+    background-color: #f59e0b !important; /* Amber for pending */
+    border-color: #d97706 !important;
+}
+
+.fc-event.status-cancelado {
+    background-color: #ef4444 !important; /* Red for canceled */
+    border-color: #dc2626 !important;
+    opacity: 0.7 !important;
+}
+
+.fc-event.status-concluido {
+    background-color: #6366f1 !important; /* Indigo for completed */
+    border-color: #4f46e5 !important;
+}

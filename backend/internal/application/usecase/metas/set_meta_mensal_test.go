@@ -9,10 +9,15 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 )
+
+// TenantID de teste fixo
+var testTenantUUID = uuid.MustParse("11111111-1111-1111-1111-111111111111")
+var testTenantStr = testTenantUUID.String()
 
 // MockMetaMensalRepository é um mock do repositório
 type MockMetaMensalRepository struct {
@@ -73,12 +78,12 @@ func TestSetMetaMensalUseCase_Execute_Success_CreateNew(t *testing.T) {
 	useCase := metas.NewSetMetaMensalUseCase(mockRepo, logger)
 
 	ctx := context.Background()
-	tenantID := "tenant-123"
+	tenantID := testTenantStr
 	mesAno, _ := valueobject.NewMesAno("2025-01")
 	metaFaturamento := valueobject.NewMoney(100000) // R$ 1.000,00
 
 	input := metas.SetMetaMensalInput{
-		TenantID:        tenantID,
+		TenantID:        testTenantStr,
 		MesAno:          mesAno,
 		MetaFaturamento: metaFaturamento,
 		Origem:          valueobject.OrigemMetaManual,
@@ -94,7 +99,7 @@ func TestSetMetaMensalUseCase_Execute_Success_CreateNew(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, tenantID, result.TenantID)
+	assert.Equal(t, testTenantUUID, result.TenantID)
 	assert.Equal(t, mesAno, result.MesAno)
 	assert.Equal(t, metaFaturamento, result.MetaFaturamento)
 	mockRepo.AssertExpectations(t)
@@ -107,7 +112,7 @@ func TestSetMetaMensalUseCase_Execute_Success_UpdateExisting(t *testing.T) {
 	useCase := metas.NewSetMetaMensalUseCase(mockRepo, logger)
 
 	ctx := context.Background()
-	tenantID := "tenant-123"
+	tenantID := testTenantStr
 	mesAno, _ := valueobject.NewMesAno("2025-01")
 	oldMeta := valueobject.NewMoney(100000) // R$ 1.000,00
 	newMeta := valueobject.NewMoney(150000) // R$ 1.500,00
@@ -115,14 +120,14 @@ func TestSetMetaMensalUseCase_Execute_Success_UpdateExisting(t *testing.T) {
 	// Meta existente
 	existingMeta := &entity.MetaMensal{
 		ID:              "meta-123",
-		TenantID:        tenantID,
+		TenantID:        testTenantUUID,
 		MesAno:          mesAno,
 		MetaFaturamento: oldMeta,
 		Origem:          valueobject.OrigemMetaManual,
 	}
 
 	input := metas.SetMetaMensalInput{
-		TenantID:        tenantID,
+		TenantID:        testTenantStr,
 		MesAno:          mesAno,
 		MetaFaturamento: newMeta,
 		Origem:          valueobject.OrigemMetaManual,
@@ -138,7 +143,7 @@ func TestSetMetaMensalUseCase_Execute_Success_UpdateExisting(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, tenantID, result.TenantID)
+	assert.Equal(t, testTenantUUID, result.TenantID)
 	assert.Equal(t, mesAno, result.MesAno)
 	assert.Equal(t, newMeta, result.MetaFaturamento)
 	mockRepo.AssertExpectations(t)
@@ -178,12 +183,12 @@ func TestSetMetaMensalUseCase_Execute_Error_RepositoryCreate(t *testing.T) {
 	useCase := metas.NewSetMetaMensalUseCase(mockRepo, logger)
 
 	ctx := context.Background()
-	tenantID := "tenant-123"
+	tenantID := testTenantStr
 	mesAno, _ := valueobject.NewMesAno("2025-01")
 	metaFaturamento := valueobject.NewMoney(100000)
 
 	input := metas.SetMetaMensalInput{
-		TenantID:        tenantID,
+		TenantID:        testTenantStr,
 		MesAno:          mesAno,
 		MetaFaturamento: metaFaturamento,
 		Origem:          valueobject.OrigemMetaManual,
@@ -210,21 +215,21 @@ func TestSetMetaMensalUseCase_Execute_Error_RepositoryUpdate(t *testing.T) {
 	useCase := metas.NewSetMetaMensalUseCase(mockRepo, logger)
 
 	ctx := context.Background()
-	tenantID := "tenant-123"
+	tenantID := testTenantStr
 	mesAno, _ := valueobject.NewMesAno("2025-01")
 	oldMeta := valueobject.NewMoney(100000)
 	newMeta := valueobject.NewMoney(150000)
 
 	existingMeta := &entity.MetaMensal{
 		ID:              "meta-123",
-		TenantID:        tenantID,
+		TenantID:        testTenantUUID,
 		MesAno:          mesAno,
 		MetaFaturamento: oldMeta,
 		Origem:          valueobject.OrigemMetaManual,
 	}
 
 	input := metas.SetMetaMensalInput{
-		TenantID:        tenantID,
+		TenantID:        testTenantStr,
 		MesAno:          mesAno,
 		MetaFaturamento: newMeta,
 		Origem:          valueobject.OrigemMetaManual,

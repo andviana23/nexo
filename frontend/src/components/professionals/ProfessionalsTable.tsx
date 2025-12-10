@@ -11,6 +11,7 @@ import {
     EditIcon,
     EyeIcon,
     MoreHorizontalIcon,
+    Trash2Icon,
     UserXIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -50,7 +51,8 @@ interface ProfessionalsTableProps {
   professionals: ProfessionalResponse[];
   onView: (professional: ProfessionalResponse) => void;
   onEdit: (professional: ProfessionalResponse) => void;
-  onDeactivate: (professional: ProfessionalResponse) => void;
+  onDismiss: (professional: ProfessionalResponse) => void;
+  onDelete: (professional: ProfessionalResponse) => void;
   isLoading?: boolean;
 }
 
@@ -99,7 +101,8 @@ export function ProfessionalsTable({
   professionals,
   onView,
   onEdit,
-  onDeactivate,
+  onDismiss,
+  onDelete,
   isLoading,
 }: ProfessionalsTableProps) {
   const router = useRouter();
@@ -119,12 +122,20 @@ export function ProfessionalsTable({
     [onEdit]
   );
 
-  const handleDeactivate = useCallback(
+  const handleDismiss = useCallback(
     (professional: ProfessionalResponse) => (e: React.MouseEvent) => {
       e.stopPropagation();
-      onDeactivate(professional);
+      onDismiss(professional);
     },
-    [onDeactivate]
+    [onDismiss]
+  );
+
+  const handleDelete = useCallback(
+    (professional: ProfessionalResponse) => (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onDelete(professional);
+    },
+    [onDelete]
   );
 
   if (professionals.length === 0 && !isLoading) {
@@ -219,12 +230,19 @@ export function ProfessionalsTable({
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={handleDeactivate(professional)}
-                      className="text-destructive focus:text-destructive"
+                      onClick={handleDismiss(professional)}
+                      className="text-orange-600 focus:text-orange-600"
                       disabled={professional.status === 'DEMITIDO'}
                     >
                       <UserXIcon className="mr-2 size-4" />
-                      Deletar ou Demitir
+                      Demitir
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleDelete(professional)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2Icon className="mr-2 size-4" />
+                      Deletar Permanentemente
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

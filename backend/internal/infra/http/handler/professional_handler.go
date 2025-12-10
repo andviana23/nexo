@@ -402,14 +402,10 @@ func (h *ProfessionalHandler) DeleteProfessional(c echo.Context) error {
 		})
 	}
 
-	// Ao invés de deletar, altera status para DEMITIDO
-	req := dto.UpdateProfessionalStatusRequest{
-		Status: "DEMITIDO",
-	}
-
-	_, err := h.repo.UpdateStatus(ctx, tenantID, id, req)
+	// Deletar permanentemente o profissional
+	err := h.repo.Delete(ctx, tenantID, id)
 	if err != nil {
-		h.logger.Error("Erro ao deletar profissional", zap.Error(err))
+		h.logger.Error("Erro ao deletar profissional permanentemente", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Error:   "internal_error",
 			Message: "Erro ao deletar profissional",

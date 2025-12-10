@@ -6,30 +6,30 @@
  */
 
 import {
-  ProfessionalModal,
-  ProfessionalsTable,
+    ProfessionalModal,
+    ProfessionalsTable,
 } from '@/components/professionals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { useProfessionals, useUpdateProfessionalStatus } from '@/hooks/use-professionals';
+import { useDeleteProfessional, useProfessionals, useUpdateProfessionalStatus } from '@/hooks/use-professionals';
 import { useBreadcrumbs } from '@/store/ui-store';
 import type {
-  ListProfessionalsFilters,
-  ProfessionalModalState,
-  ProfessionalResponse,
-  ProfessionalStatus,
-  ProfessionalType,
+    ListProfessionalsFilters,
+    ProfessionalModalState,
+    ProfessionalResponse,
+    ProfessionalStatus,
+    ProfessionalType,
 } from '@/types/professional';
 import { Briefcase, PlusIcon, SearchIcon, Users, UserX } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -58,6 +58,7 @@ export default function ProfissionaisPage() {
   // Query
   const { data, isLoading, isError, refetch } = useProfessionals(filters);
   const updateStatus = useUpdateProfessionalStatus();
+  const deleteProfessional = useDeleteProfessional();
 
   // Breadcrumbs
   useEffect(() => {
@@ -118,21 +119,25 @@ export default function ProfissionaisPage() {
     setModalState({ isOpen: true, mode: 'edit', professional });
   }, []);
 
-  const handleDeactivate = useCallback(
+  const handleDismiss = useCallback(
     (professional: ProfessionalResponse) => {
-      // Toggle logic usually handled in Modal or discrete action, but simpler here:
-      const newStatus = professional.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
-      // If user wants to "Demitir", that might be a specific action.
-      // For now we just support Deactivate as per existing logic, or specific modal?
-      // The instruction was mostly about UI look.
-      if (confirm(`Deseja alterar o status de ${professional.nome}?`)) {
+      if (confirm(`Deseja demitir ${professional.nome}? O profissional será marcado como DEMITIDO mas manterá o histórico no sistema.`)) {
         updateStatus.mutate({
           id: professional.id,
-          data: { status: newStatus },
+          data: { status: 'DEMITIDO' },
         });
       }
     },
     [updateStatus]
+  );
+
+  const handleDelete = useCallback(
+    (professional: ProfessionalResponse) => {
+      if (confirm(`⚠️ ATENÇÃO: Deseja DELETAR PERMANENTEMENTE ${professional.nome}?\n\nEsta ação NÃO pode ser desfeita e todos os dados do profissional serão removidos do sistema.`)) {
+        deleteProfessional.mutate(professional.id);
+      }
+    },
+    [deleteProfessional]
   );
 
   const handleCloseModal = useCallback(() => {
@@ -283,7 +288,8 @@ export default function ProfissionaisPage() {
                 professionals={filteredProfessionals}
                 onView={handleView}
                 onEdit={handleEdit}
-                onDeactivate={handleDeactivate}
+                onDismiss={handleDismiss}
+                onDelete={handleDelete}
                 isLoading={isLoading}
               />
             </div>

@@ -19,9 +19,8 @@ import type {
     ListProfessionalsFilters,
     ListProfessionalsResponse,
     ProfessionalResponse,
-    ProfessionalStatus,
     UpdateProfessionalRequest,
-    UpdateProfessionalStatusRequest,
+    UpdateProfessionalStatusRequest
 } from '@/types/professional';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -310,7 +309,7 @@ export function useUpdateProfessionalStatus() {
 }
 
 /**
- * Hook para remover um profissional (soft delete)
+ * Hook para remover um profissional permanentemente (hard delete)
  * Usa optimistic update para feedback imediato
  */
 export function useDeleteProfessional() {
@@ -319,7 +318,7 @@ export function useDeleteProfessional() {
   return useMutation({
     mutationFn: (id: string) => professionalService.delete(id),
 
-    // Optimistic Update - marca como DEMITIDO
+    // Optimistic Update - remove da lista
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: professionalKeys.lists() });
 
@@ -327,18 +326,14 @@ export function useDeleteProfessional() {
         queryKey: professionalKeys.lists(),
       });
 
-      // Marca como DEMITIDO otimisticamente
+      // Remove o profissional da lista otimisticamente
       queryClient.setQueriesData<ListProfessionalsResponse>(
         { queryKey: professionalKeys.lists() },
         (old) => {
           if (!old) return old;
           return {
             ...old,
-            data: old.data.map((prof) =>
-              prof.id === id
-                ? { ...prof, status: 'DEMITIDO' as ProfessionalStatus }
-                : prof
-            ),
+            data: old.data.filter((prof) => prof.id !== id),
           };
         }
       );
@@ -362,7 +357,7 @@ export function useDeleteProfessional() {
     },
 
     onSuccess: () => {
-      toast.success('Profissional removido.');
+      toast.success('Profissional deletado permanentemente.');
     },
   });
 }

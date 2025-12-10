@@ -47,6 +47,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/servico"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/stock"
 	subscriptionUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/subscription"
+	unitUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/unit"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/auth"
 	db "github.com/andviana23/barber-analytics-backend/internal/infra/db/sqlc"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/gateway/asaas"
@@ -193,6 +194,10 @@ func main() {
 	// Caixa Diário repository
 	caixaDiarioRepo := postgres.NewCaixaDiarioRepository(queries)
 
+	// Unit repositories
+	unitRepo := postgres.NewUnitRepository(queries)
+	userUnitRepo := postgres.NewUserUnitRepository(queries)
+
 	// Commission repositories
 	commissionRuleRepo := postgres.NewCommissionRuleRepository(queries)
 	commissionPeriodRepo := postgres.NewCommissionPeriodRepository(queries)
@@ -278,6 +283,21 @@ func main() {
 	// Dashboard e Projeções (2 use cases)
 	getPainelMensalUC := financial.NewGetPainelMensalUseCase(contaPagarRepo, contaReceberRepo, despesaFixaRepo, metaMensalRepo, fluxoCaixaRepo, logger)
 	getProjecoesUC := financial.NewGetProjecoesUseCase(contaPagarRepo, contaReceberRepo, despesaFixaRepo, logger)
+
+	// Initialize use cases - Unit (13 use cases)
+	createUnitUC := unitUC.NewCreateUnitUseCase(unitRepo, userUnitRepo)
+	listUnitsUC := unitUC.NewListUnitsUseCase(unitRepo)
+	getUnitUC := unitUC.NewGetUnitUseCase(unitRepo)
+	updateUnitUC := unitUC.NewUpdateUnitUseCase(unitRepo)
+	deleteUnitUC := unitUC.NewDeleteUnitUseCase(unitRepo, userUnitRepo)
+	toggleUnitUC := unitUC.NewToggleUnitUseCase(unitRepo)
+	linkUserToUnitUC := unitUC.NewLinkUserToUnitUseCase(userUnitRepo)
+	unlinkUserFromUnitUC := unitUC.NewUnlinkUserFromUnitUseCase(userUnitRepo)
+	listUserUnitsUC := unitUC.NewListUserUnitsUseCase(userUnitRepo)
+	setDefaultUnitUC := unitUC.NewSetDefaultUnitUseCase(userUnitRepo)
+	getDefaultUnitUC := unitUC.NewGetDefaultUnitUseCase(userUnitRepo)
+	checkUserAccessToUnitUC := unitUC.NewCheckUserAccessToUnitUseCase(userUnitRepo)
+	listUnitUsersUC := unitUC.NewListUnitUsersUseCase(userUnitRepo)
 
 	// Initialize use cases - Stock (5 use cases)
 	criarProdutoUC := stock.NewCriarProdutoUseCase(produtoRepo, fornecedorRepo)
@@ -525,6 +545,24 @@ func main() {
 	// Start scheduler in background
 	sched.Start()
 	defer sched.Stop(ctx)
+
+	// Initialize handlers - Unit
+	unitHandler := handler.NewUnitHandler(
+		createUnitUC,
+		listUnitsUC,
+		getUnitUC,
+		updateUnitUC,
+		deleteUnitUC,
+		toggleUnitUC,
+		linkUserToUnitUC,
+		unlinkUserFromUnitUC,
+		listUserUnitsUC,
+		setDefaultUnitUC,
+		getDefaultUnitUC,
+		checkUserAccessToUnitUC,
+		listUnitUsersUC,
+		logger,
+	)
 
 	// Initialize handlers - Metas completo (15 use cases)
 	metasHandler := handler.NewMetasHandler(
@@ -885,6 +923,23 @@ func main() {
 	guarded := api.Group("")
 	guarded.Use(mw.JWTMiddleware(jwtManager, logger))
 	guarded.Use(requireActiveSubscription)
+
+	// Unit routes - PROTEGIDAS (JWT)
+	unitGroup := protected.Group("/units")
+	// User routes
+	unitGroup.GET("/me", unitHandler.ListMyUnits)
+	unitGroup.POST("/switch", unitHandler.SwitchUnit)
+	unitGroup.POST("/default", unitHandler.SetDefaultUnit)
+	// Admin routes
+	unitGroup.POST("", unitHandler.Create, mw.RequireAdminAccess(logger))
+	unitGroup.GET("", unitHandler.List, mw.RequireAdminAccess(logger))
+	unitGroup.GET("/:id", unitHandler.GetByID, mw.RequireAdminAccess(logger))
+	unitGroup.PUT("/:id", unitHandler.Update, mw.RequireAdminAccess(logger))
+	unitGroup.DELETE("/:id", unitHandler.Delete, mw.RequireAdminAccess(logger))
+	unitGroup.PATCH("/:id/toggle", unitHandler.Toggle, mw.RequireAdminAccess(logger))
+	unitGroup.POST("/users", unitHandler.AddUserToUnit, mw.RequireAdminAccess(logger))
+	unitGroup.DELETE("/:id/users/:userId", unitHandler.RemoveUserFromUnit, mw.RequireAdminAccess(logger))
+	unitGroup.GET("/:id/users", unitHandler.ListUnitUsers, mw.RequireAdminAccess(logger))
 
 	// Metas routes - 15 endpoints completos (PROTEGIDAS)
 	metasGroup := protected.Group("/metas")

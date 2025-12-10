@@ -3,21 +3,16 @@
 /**
  * NEXO - Sistema de Gestão para Barbearias
  * Componente: Professionals Table
- *
- * @component ProfessionalsTable
- * @description Tabela de listagem de profissionais com ações
  */
 
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
     EditIcon,
-    ExternalLinkIcon,
     EyeIcon,
     MoreHorizontalIcon,
     UserXIcon,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 
@@ -27,6 +22,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -51,15 +47,10 @@ import {
 // =============================================================================
 
 interface ProfessionalsTableProps {
-  /** Lista de profissionais */
   professionals: ProfessionalResponse[];
-  /** Callback ao clicar em visualizar */
   onView: (professional: ProfessionalResponse) => void;
-  /** Callback ao clicar em editar */
   onEdit: (professional: ProfessionalResponse) => void;
-  /** Callback ao clicar em desativar */
   onDeactivate: (professional: ProfessionalResponse) => void;
-  /** Loading state */
   isLoading?: boolean;
 }
 
@@ -77,7 +68,11 @@ function getInitials(name: string): string {
 }
 
 function formatDate(dateStr: string): string {
-  return format(new Date(dateStr), "dd 'de' MMM, yyyy", { locale: ptBR });
+  try {
+    return format(new Date(dateStr), "dd/MM/yyyy", { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
 }
 
 function formatCommission(
@@ -87,7 +82,12 @@ function formatCommission(
   if (!comissao) return '-';
   const comissaoNum = typeof comissao === 'string' ? parseFloat(comissao) : comissao;
   if (isNaN(comissaoNum)) return '-';
-  if (tipoComissao === 'PERCENTUAL') return `${comissaoNum.toFixed(2)}%`;
+  if (tipoComissao === 'PERCENTUAL') {
+    // Se o valor for menor que 1, assume que está em formato decimal (0.4 = 40%)
+    // Se for maior ou igual a 1, assume que já está em formato percentual (40 = 40%)
+    const percentual = comissaoNum < 1 ? comissaoNum * 100 : comissaoNum;
+    return `${percentual.toFixed(0)}%`;
+  }
   return `R$ ${comissaoNum.toFixed(2)}`;
 }
 
@@ -106,119 +106,110 @@ export function ProfessionalsTable({
 
   const handleRowClick = useCallback(
     (professional: ProfessionalResponse) => {
-      router.push(`/profissionais/${professional.id}`);
+      onView(professional);
     },
-    [router]
-  );
-
-  const handleView = useCallback(
-    (professional: ProfessionalResponse) => () => onView(professional),
     [onView]
   );
 
   const handleEdit = useCallback(
-    (professional: ProfessionalResponse) => () => onEdit(professional),
+    (professional: ProfessionalResponse) => (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onEdit(professional);
+    },
     [onEdit]
   );
 
   const handleDeactivate = useCallback(
-    (professional: ProfessionalResponse) => () => onDeactivate(professional),
+    (professional: ProfessionalResponse) => (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onDeactivate(professional);
+    },
     [onDeactivate]
   );
 
   if (professionals.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <UserXIcon className="size-12 text-muted-foreground/50" />
-        <h3 className="mt-4 text-lg font-semibold">Nenhum profissional encontrado</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Cadastre seu primeiro profissional para começar.
+      <div className="flex flex-col items-center justify-center py-16 text-center border rounded-md bg-muted/5">
+        <div className="bg-muted p-4 rounded-full mb-4">
+          <UserXIcon className="size-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-semibold">Nenhum profissional encontrado</h3>
+        <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+          Ajuste os filtros ou cadastre um novo profissional para começar a gerenciar sua equipe.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border shadow-sm">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[300px]">Profissional</TableHead>
-            <TableHead>Tipo</TableHead>
+          <TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHead className="w-[300px] pl-6">Profissional</TableHead>
+            <TableHead>Cargo</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Telefone</TableHead>
             <TableHead>Comissão</TableHead>
             <TableHead>Admissão</TableHead>
-            <TableHead className="w-[70px]" />
+            <TableHead className="w-[70px] text-right pr-6">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {professionals.map((professional) => (
-            <TableRow 
+            <TableRow
               key={professional.id}
-              className="cursor-pointer hover:bg-muted/50"
+              className="cursor-pointer group hover:bg-muted/30"
               onClick={() => handleRowClick(professional)}
             >
-              {/* Nome e Email */}
-              <TableCell>
+              <TableCell className="pl-6">
                 <div className="flex items-center gap-3">
-                  <Avatar className="size-10">
+                  <Avatar className="size-9 border">
                     <AvatarImage src={professional.foto} alt={professional.nome} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                    <AvatarFallback className="bg-primary/5 text-primary text-xs">
                       {getInitials(professional.nome)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{professional.nome}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-sm">{professional.nome}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-[180px]">
                       {professional.email}
                     </p>
                   </div>
                 </div>
               </TableCell>
 
-              {/* Tipo */}
               <TableCell>
                 <ProfessionalTypeBadge type={professional.tipo} />
               </TableCell>
 
-              {/* Status */}
               <TableCell>
                 <ProfessionalStatusBadge status={professional.status} />
               </TableCell>
 
-              {/* Telefone */}
-              <TableCell className="text-muted-foreground">
+              <TableCell className="text-sm text-muted-foreground">
                 {maskPhone(professional.telefone)}
               </TableCell>
 
-              {/* Comissão */}
-              <TableCell className="text-muted-foreground">
+              <TableCell className="text-sm font-mono text-muted-foreground">
                 {formatCommission(professional.tipo_comissao, professional.comissao)}
               </TableCell>
 
-              {/* Data Admissão */}
-              <TableCell className="text-muted-foreground">
+              <TableCell className="text-sm text-muted-foreground">
                 {formatDate(professional.data_admissao)}
               </TableCell>
 
-              {/* Ações */}
-              <TableCell onClick={(e) => e.stopPropagation()}>
+              <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="size-8 p-0">
+                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <span className="sr-only">Abrir menu</span>
                       <MoreHorizontalIcon className="size-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/profissionais/${professional.id}`}>
-                        <ExternalLinkIcon className="mr-2 size-4" />
-                        Abrir Detalhes
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleView(professional)}>
+                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => onView(professional)}>
                       <EyeIcon className="mr-2 size-4" />
                       Visualizar
                     </DropdownMenuItem>
@@ -233,7 +224,7 @@ export function ProfessionalsTable({
                       disabled={professional.status === 'DEMITIDO'}
                     >
                       <UserXIcon className="mr-2 size-4" />
-                      Desativar
+                      Deletar ou Demitir
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

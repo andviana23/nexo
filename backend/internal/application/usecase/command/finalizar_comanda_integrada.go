@@ -156,12 +156,18 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 	// Buscar profissional do appointment (para comissões)
 	var professionalID string
 	var professionalInfo *port.ProfessionalInfo
+	var appointmentDate *time.Time // Data do agendamento para reference_date
 	if command.AppointmentID != nil {
 		appointment, err := uc.appointmentRepo.FindByID(ctx, input.TenantID.String(), command.AppointmentID.String())
 		if err == nil && appointment != nil {
 			professionalID = appointment.ProfessionalID
 			// COM-001: Buscar info completa do profissional (inclui comissão)
 			professionalInfo, _ = uc.professionalReader.FindByID(ctx, input.TenantID.String(), professionalID)
+			// COM-004: Usar data do agendamento como reference_date
+			if !appointment.StartTime.IsZero() {
+				t := appointment.StartTime
+				appointmentDate = &t
+			}
 		}
 	}
 
@@ -181,8 +187,35 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 				// Continua mesmo com erro - log mas não bloqueia fechamento
 			}
 
+			// COM-005: Gerar comissão para produtos (usa comissão do profissional ou regra global)
+			if professionalID != "" {
+				ruleResult := uc.buscarRegraComissaoProduto(
+					ctx,
+					input.TenantID,
+					unitID,
+					professionalID,
+					professionalInfo,
+				)
+
+				if ruleResult != nil {
+					if err := uc.processarComissaoProduto(
+						ctx, input.TenantID, professionalID, command, &item,
+						ruleResult, appointmentDate, output,
+					); err != nil {
+						uc.logger.Warn("erro ao gerar comissão do produto",
+							zap.String("item_id", item.ID.String()),
+							zap.String("source", ruleResult.Source),
+							zap.Error(err))
+					}
+				} else {
+					uc.logger.Debug("nenhuma regra de comissão encontrada para o produto",
+						zap.String("item_id", item.ID.String()),
+						zap.String("produto_id", item.ItemID.String()))
+				}
+			}
+
 		case entity.CommandItemTypeServico:
-			// COM-001: Buscar regra usando hierarquia de 4 níveis
+			// COM-001: Buscar regra usando hierarquia de 5 níveis
 			if professionalID != "" {
 				ruleResult := uc.buscarRegraComissaoHierarquica(
 					ctx,
@@ -194,9 +227,9 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 				)
 
 				if ruleResult != nil {
-					if err := uc.processarComissaoServicoHierarquica(
+					if err := uc.processarComissaoServicoHierarquicaComData(
 						ctx, input.TenantID, professionalID, command, &item,
-						ruleResult, output,
+						ruleResult, appointmentDate, output,
 					); err != nil {
 						uc.logger.Warn("erro ao gerar comissão do serviço",
 							zap.String("item_id", item.ID.String()),
@@ -477,18 +510,18 @@ func (uc *FinalizarComandaIntegradaUseCase) processarComissaoServico(
 }
 
 // =============================================================================
-// COM-001: Hierarquia de Regras de Comissão (4 níveis)
+// COM-001: Hierarquia de Regras de Comissão (5 níveis)
 // =============================================================================
 
 // CommissionRuleResult encapsula o resultado da busca de regra de comissão
 type CommissionRuleResult struct {
 	Rule            *entity.CommissionRule
-	Source          string // SERVICO, PROFISSIONAL, REGRA
+	Source          string // SERVICO, CATEGORIA, PROFISSIONAL, REGRA
 	CalculationBase string // BRUTO, LIQUIDO
 }
 
-// buscarRegraComissaoHierarquica implementa a hierarquia de 4 níveis para regras de comissão
-// Prioridade: 1) Serviço → 2) Profissional → 3) Unidade → 4) Tenant Global
+// buscarRegraComissaoHierarquica implementa a hierarquia de 5 níveis para regras de comissão
+// Prioridade: 1) Serviço → 2) Categoria → 3) Profissional → 4) Unidade → 5) Tenant Global
 // Retorna a regra encontrada, source e base de cálculo
 func (uc *FinalizarComandaIntegradaUseCase) buscarRegraComissaoHierarquica(
 	ctx context.Context,
@@ -500,33 +533,62 @@ func (uc *FinalizarComandaIntegradaUseCase) buscarRegraComissaoHierarquica(
 ) *CommissionRuleResult {
 	tenantIDStr := tenantID.String()
 
-	// 1º NÍVEL: Serviço tem comissão específica?
+	// Buscar info do serviço (necessário para comissão específica e categoria)
+	var servico *port.ServiceInfo
 	if item.ItemID != uuid.Nil {
-		servico, err := uc.serviceReader.FindByID(ctx, tenantIDStr, item.ItemID.String())
-		if err == nil && servico != nil && servico.Comissao != nil && *servico.Comissao != "" {
-			// Converter comissão do serviço para decimal
-			comissaoServico, err := decimal.NewFromString(*servico.Comissao)
-			if err == nil && comissaoServico.GreaterThan(decimal.Zero) {
-				uc.logger.Debug("usando comissão do serviço (nível 1)",
-					zap.String("servico_id", servico.ID),
-					zap.String("comissao", comissaoServico.String()))
+		servico, _ = uc.serviceReader.FindByID(ctx, tenantIDStr, item.ItemID.String())
+	}
+
+	// 1º NÍVEL: Serviço tem comissão específica?
+	if servico != nil && servico.Comissao != nil && *servico.Comissao != "" {
+		// Converter comissão do serviço para decimal
+		comissaoServico, err := decimal.NewFromString(*servico.Comissao)
+		if err == nil && comissaoServico.GreaterThan(decimal.Zero) {
+			uc.logger.Debug("usando comissão do serviço (nível 1)",
+				zap.String("servico_id", servico.ID),
+				zap.String("comissao", comissaoServico.String()))
+			return &CommissionRuleResult{
+				Rule: &entity.CommissionRule{
+					ID:          "servico-" + servico.ID, // ID virtual
+					TenantID:    tenantID,
+					Name:        "Comissão do Serviço: " + servico.Name,
+					Type:        "PERCENTUAL", // Comissão de serviço é sempre percentual
+					DefaultRate: comissaoServico,
+					IsActive:    true,
+				},
+				Source:          "SERVICO",
+				CalculationBase: "BRUTO", // Comissão de serviço usa valor bruto por padrão
+			}
+		}
+	}
+
+	// 2º NÍVEL: Profissional tem comissão específica para a CATEGORIA do serviço?
+	if servico != nil && servico.CategoriaID != nil && *servico.CategoriaID != "" && professionalID != "" {
+		comissaoCategoria, err := uc.professionalReader.GetCategoryCommission(ctx, tenantIDStr, professionalID, *servico.CategoriaID)
+		if err == nil && comissaoCategoria != nil && *comissaoCategoria != "" {
+			comissaoCat, err := decimal.NewFromString(*comissaoCategoria)
+			if err == nil && comissaoCat.GreaterThan(decimal.Zero) {
+				uc.logger.Debug("usando comissão da categoria (nível 2)",
+					zap.String("categoria_id", *servico.CategoriaID),
+					zap.String("profissional_id", professionalID),
+					zap.String("comissao", comissaoCat.String()))
 				return &CommissionRuleResult{
 					Rule: &entity.CommissionRule{
-						ID:          "servico-" + servico.ID, // ID virtual
+						ID:          "categoria-" + *servico.CategoriaID + "-" + professionalID, // ID virtual
 						TenantID:    tenantID,
-						Name:        "Comissão do Serviço: " + servico.Name,
-						Type:        "PERCENTUAL", // Comissão de serviço é sempre percentual
-						DefaultRate: comissaoServico,
+						Name:        "Comissão por Categoria",
+						Type:        "PERCENTUAL", // Comissão por categoria é sempre percentual
+						DefaultRate: comissaoCat,
 						IsActive:    true,
 					},
-					Source:          "SERVICO",
-					CalculationBase: "BRUTO", // Comissão de serviço usa valor bruto por padrão
+					Source:          "CATEGORIA",
+					CalculationBase: "BRUTO", // Comissão por categoria usa valor bruto por padrão
 				}
 			}
 		}
 	}
 
-	// 2º NÍVEL: Profissional tem comissão configurada?
+	// 3º NÍVEL: Profissional tem comissão padrão configurada?
 	if professionalInfo != nil && professionalInfo.Comissao != nil && *professionalInfo.Comissao != "" {
 		comissaoProf, err := decimal.NewFromString(*professionalInfo.Comissao)
 		if err == nil && comissaoProf.GreaterThan(decimal.Zero) {
@@ -534,7 +596,7 @@ func (uc *FinalizarComandaIntegradaUseCase) buscarRegraComissaoHierarquica(
 			if professionalInfo.TipoComissao != nil && *professionalInfo.TipoComissao != "" {
 				tipoComissao = *professionalInfo.TipoComissao
 			}
-			uc.logger.Debug("usando comissão do profissional (nível 2)",
+			uc.logger.Debug("usando comissão do profissional (nível 3)",
 				zap.String("profissional_id", professionalID),
 				zap.String("comissao", comissaoProf.String()),
 				zap.String("tipo", tipoComissao))
@@ -553,7 +615,7 @@ func (uc *FinalizarComandaIntegradaUseCase) buscarRegraComissaoHierarquica(
 		}
 	}
 
-	// 3º NÍVEL: Regra específica da unidade?
+	// 4º NÍVEL: Regra específica da unidade?
 	if unitID != nil && *unitID != "" {
 		rule, err := uc.commissionRuleRepo.GetEffectiveByUnit(ctx, tenantIDStr, *unitID, time.Now())
 		if err == nil && rule != nil {
@@ -561,7 +623,7 @@ func (uc *FinalizarComandaIntegradaUseCase) buscarRegraComissaoHierarquica(
 			if rule.CalculationBase != nil {
 				calcBase = *rule.CalculationBase
 			}
-			uc.logger.Debug("usando regra da unidade (nível 3)",
+			uc.logger.Debug("usando regra da unidade (nível 4)",
 				zap.String("unit_id", *unitID),
 				zap.String("rule_id", rule.ID),
 				zap.String("calculation_base", calcBase))
@@ -573,14 +635,14 @@ func (uc *FinalizarComandaIntegradaUseCase) buscarRegraComissaoHierarquica(
 		}
 	}
 
-	// 4º NÍVEL: Regra global do tenant
+	// 5º NÍVEL: Regra global do tenant
 	rule, err := uc.commissionRuleRepo.GetEffectiveGlobal(ctx, tenantIDStr, time.Now())
 	if err == nil && rule != nil {
 		calcBase := "BRUTO"
 		if rule.CalculationBase != nil {
 			calcBase = *rule.CalculationBase
 		}
-		uc.logger.Debug("usando regra global do tenant (nível 4)",
+		uc.logger.Debug("usando regra global do tenant (nível 5)",
 			zap.String("tenant_id", tenantIDStr),
 			zap.String("rule_id", rule.ID),
 			zap.String("calculation_base", calcBase))
@@ -713,4 +775,243 @@ func (uc *FinalizarComandaIntegradaUseCase) calcularValorLiquidoProporcional(
 	valorLiquidoItem := proporcao.Mul(totalLiquido).Round(2)
 
 	return valorLiquidoItem
+}
+
+// =============================================================================
+// COM-004: Funções de comissão com data de referência correta
+// =============================================================================
+
+// processarComissaoServicoHierarquicaComData cria CommissionItem com data do agendamento
+// COM-004: Usa appointmentDate como reference_date quando disponível
+func (uc *FinalizarComandaIntegradaUseCase) processarComissaoServicoHierarquicaComData(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	professionalID string,
+	command *entity.Command,
+	item *entity.CommandItem,
+	ruleResult *CommissionRuleResult,
+	appointmentDate *time.Time,
+	output *FinalizarComandaIntegradaOutput,
+) error {
+	rule := ruleResult.Rule
+	commissionSource := ruleResult.Source
+	calculationBase := ruleResult.CalculationBase
+
+	// COM-003: Determinar valor base para cálculo
+	var baseValue decimal.Decimal
+	if calculationBase == "LIQUIDO" {
+		baseValue = uc.calcularValorLiquidoProporcional(command, item)
+		uc.logger.Debug("usando base LIQUIDO para comissão",
+			zap.String("item_id", item.ID.String()),
+			zap.String("preco_final", decimal.NewFromFloat(item.PrecoFinal).String()),
+			zap.String("valor_liquido_proporcional", baseValue.String()))
+	} else {
+		baseValue = decimal.NewFromFloat(item.PrecoFinal)
+	}
+
+	grossValue := decimal.NewFromFloat(item.PrecoFinal)
+
+	// COM-004: Usar data do agendamento ou fallback para data atual
+	referenceDate := time.Now()
+	if appointmentDate != nil {
+		referenceDate = *appointmentDate
+	}
+
+	// Criar item de comissão com base correta e data correta
+	commissionItem, err := entity.NewCommissionItem(
+		tenantID,
+		professionalID,
+		baseValue,
+		rule.DefaultRate,
+		rule.Type,
+		commissionSource,
+		referenceDate, // Usa data do agendamento
+	)
+	if err != nil {
+		return fmt.Errorf("erro ao criar item de comissão: %w", err)
+	}
+
+	commissionItem.GrossValue = grossValue
+
+	commandIDStr := command.ID.String()
+	itemIDStr := item.ID.String()
+	commissionItem.CommandID = &commandIDStr
+	commissionItem.CommandItemID = &itemIDStr
+	commissionItem.ServiceID = func() *string { s := item.ItemID.String(); return &s }()
+	commissionItem.ServiceName = &item.Descricao
+
+	if commissionSource == "REGRA" {
+		commissionItem.RuleID = &rule.ID
+	}
+
+	created, err := uc.commissionItemRepo.Create(ctx, commissionItem)
+	if err != nil {
+		return fmt.Errorf("erro ao persistir item de comissão: %w", err)
+	}
+
+	output.CommissionItems = append(output.CommissionItems, created.ID)
+	output.TotalComissoes = output.TotalComissoes.Add(created.CommissionValue)
+
+	uc.logger.Info("comissão de serviço gerada",
+		zap.String("commission_item_id", created.ID),
+		zap.String("professional_id", professionalID),
+		zap.String("source", commissionSource),
+		zap.String("reference_date", referenceDate.Format("2006-01-02")),
+		zap.String("comissao", created.CommissionValue.String()))
+
+	return nil
+}
+
+// =============================================================================
+// COM-005: Comissão de Produtos
+// =============================================================================
+
+// buscarRegraComissaoProduto busca regra de comissão para produtos
+// Hierarquia simplificada: 1) Profissional → 2) Unidade → 3) Global
+// Produtos não têm comissão específica por item nem por categoria
+func (uc *FinalizarComandaIntegradaUseCase) buscarRegraComissaoProduto(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	unitID *string,
+	professionalID string,
+	professionalInfo *port.ProfessionalInfo,
+) *CommissionRuleResult {
+	tenantIDStr := tenantID.String()
+
+	// 1º NÍVEL: Profissional tem comissão padrão configurada?
+	if professionalInfo != nil && professionalInfo.Comissao != nil && *professionalInfo.Comissao != "" {
+		comissaoProf, err := decimal.NewFromString(*professionalInfo.Comissao)
+		if err == nil && comissaoProf.GreaterThan(decimal.Zero) {
+			tipoComissao := "PERCENTUAL"
+			if professionalInfo.TipoComissao != nil && *professionalInfo.TipoComissao != "" {
+				tipoComissao = *professionalInfo.TipoComissao
+			}
+			uc.logger.Debug("usando comissão do profissional para produto",
+				zap.String("profissional_id", professionalID),
+				zap.String("comissao", comissaoProf.String()))
+			return &CommissionRuleResult{
+				Rule: &entity.CommissionRule{
+					ID:          "profissional-produto-" + professionalID,
+					TenantID:    tenantID,
+					Name:        "Comissão do Profissional (Produto): " + professionalInfo.Name,
+					Type:        tipoComissao,
+					DefaultRate: comissaoProf,
+					IsActive:    true,
+				},
+				Source:          "PROFISSIONAL",
+				CalculationBase: "BRUTO",
+			}
+		}
+	}
+
+	// 2º NÍVEL: Regra específica da unidade?
+	if unitID != nil && *unitID != "" {
+		rule, err := uc.commissionRuleRepo.GetEffectiveByUnit(ctx, tenantIDStr, *unitID, time.Now())
+		if err == nil && rule != nil {
+			calcBase := "BRUTO"
+			if rule.CalculationBase != nil {
+				calcBase = *rule.CalculationBase
+			}
+			return &CommissionRuleResult{
+				Rule:            rule,
+				Source:          "REGRA",
+				CalculationBase: calcBase,
+			}
+		}
+	}
+
+	// 3º NÍVEL: Regra global do tenant
+	rule, err := uc.commissionRuleRepo.GetEffectiveGlobal(ctx, tenantIDStr, time.Now())
+	if err == nil && rule != nil {
+		calcBase := "BRUTO"
+		if rule.CalculationBase != nil {
+			calcBase = *rule.CalculationBase
+		}
+		return &CommissionRuleResult{
+			Rule:            rule,
+			Source:          "REGRA",
+			CalculationBase: calcBase,
+		}
+	}
+
+	return nil
+}
+
+// processarComissaoProduto cria CommissionItem para um item do tipo PRODUTO
+// COM-005: Gera comissão de produtos usando a mesma estrutura de serviços
+func (uc *FinalizarComandaIntegradaUseCase) processarComissaoProduto(
+	ctx context.Context,
+	tenantID uuid.UUID,
+	professionalID string,
+	command *entity.Command,
+	item *entity.CommandItem,
+	ruleResult *CommissionRuleResult,
+	appointmentDate *time.Time,
+	output *FinalizarComandaIntegradaOutput,
+) error {
+	rule := ruleResult.Rule
+	commissionSource := ruleResult.Source
+	calculationBase := ruleResult.CalculationBase
+
+	// Determinar valor base para cálculo (produtos usam valor bruto por padrão)
+	var baseValue decimal.Decimal
+	if calculationBase == "LIQUIDO" {
+		baseValue = uc.calcularValorLiquidoProporcional(command, item)
+	} else {
+		baseValue = decimal.NewFromFloat(item.PrecoFinal)
+	}
+
+	grossValue := decimal.NewFromFloat(item.PrecoFinal)
+
+	// Usar data do agendamento ou fallback para data atual
+	referenceDate := time.Now()
+	if appointmentDate != nil {
+		referenceDate = *appointmentDate
+	}
+
+	// Criar item de comissão para produto
+	commissionItem, err := entity.NewCommissionItem(
+		tenantID,
+		professionalID,
+		baseValue,
+		rule.DefaultRate,
+		rule.Type,
+		commissionSource,
+		referenceDate,
+	)
+	if err != nil {
+		return fmt.Errorf("erro ao criar item de comissão de produto: %w", err)
+	}
+
+	commissionItem.GrossValue = grossValue
+
+	commandIDStr := command.ID.String()
+	itemIDStr := item.ID.String()
+	commissionItem.CommandID = &commandIDStr
+	commissionItem.CommandItemID = &itemIDStr
+	// Para produtos, ServiceID é o ProdutoID e ServiceName é a descrição
+	commissionItem.ServiceID = func() *string { s := item.ItemID.String(); return &s }()
+	commissionItem.ServiceName = &item.Descricao
+
+	if commissionSource == "REGRA" {
+		commissionItem.RuleID = &rule.ID
+	}
+
+	created, err := uc.commissionItemRepo.Create(ctx, commissionItem)
+	if err != nil {
+		return fmt.Errorf("erro ao persistir item de comissão de produto: %w", err)
+	}
+
+	output.CommissionItems = append(output.CommissionItems, created.ID)
+	output.TotalComissoes = output.TotalComissoes.Add(created.CommissionValue)
+
+	uc.logger.Info("comissão de produto gerada",
+		zap.String("commission_item_id", created.ID),
+		zap.String("professional_id", professionalID),
+		zap.String("produto_id", item.ItemID.String()),
+		zap.String("source", commissionSource),
+		zap.String("reference_date", referenceDate.Format("2006-01-02")),
+		zap.String("comissao", created.CommissionValue.String()))
+
+	return nil
 }

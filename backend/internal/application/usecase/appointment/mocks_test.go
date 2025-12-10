@@ -128,9 +128,10 @@ func (m *MockAppointmentRepository) GetDailyStats(ctx context.Context, tenantID 
 
 // MockProfessionalReader implementa port.ProfessionalReader para testes.
 type MockProfessionalReader struct {
-	ExistsFn     func(ctx context.Context, tenantID, professionalID string) (bool, error)
-	FindByIDFn   func(ctx context.Context, tenantID, professionalID string) (*port.ProfessionalInfo, error)
-	ListActiveFn func(ctx context.Context, tenantID string) ([]*port.ProfessionalInfo, error)
+	ExistsFn                func(ctx context.Context, tenantID, professionalID string) (bool, error)
+	FindByIDFn              func(ctx context.Context, tenantID, professionalID string) (*port.ProfessionalInfo, error)
+	ListActiveFn            func(ctx context.Context, tenantID string) ([]*port.ProfessionalInfo, error)
+	GetCategoryCommissionFn func(ctx context.Context, tenantID, professionalID, categoriaID string) (*string, error)
 }
 
 func (m *MockProfessionalReader) Exists(ctx context.Context, tenantID, professionalID string) (bool, error) {
@@ -152,6 +153,13 @@ func (m *MockProfessionalReader) ListActive(ctx context.Context, tenantID string
 		return m.ListActiveFn(ctx, tenantID)
 	}
 	return nil, nil
+}
+
+func (m *MockProfessionalReader) GetCategoryCommission(ctx context.Context, tenantID, professionalID, categoriaID string) (*string, error) {
+	if m.GetCategoryCommissionFn != nil {
+		return m.GetCategoryCommissionFn(ctx, tenantID, professionalID, categoriaID)
+	}
+	return nil, nil // Nenhuma comissão por categoria por padrão
 }
 
 // ============================================================================

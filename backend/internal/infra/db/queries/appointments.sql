@@ -289,7 +289,7 @@ SELECT EXISTS (
 ) as exists;
 
 -- name: GetServiceInfo :one
-SELECT id, nome, preco, duracao, ativo, comissao::text as comissao
+SELECT id, nome, preco, duracao, ativo, comissao::text as comissao, categoria_id
 FROM servicos
 WHERE id = $1 AND tenant_id = $2;
 

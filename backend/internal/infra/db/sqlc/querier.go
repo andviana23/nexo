@@ -508,6 +508,8 @@ type Querier interface {
 	// ========================================
 	GetProdutosComEstoqueBaixo(ctx context.Context, tenantID pgtype.UUID) ([]GetProdutosComEstoqueBaixoRow, error)
 	GetProfessionalByID(ctx context.Context, arg GetProfessionalByIDParams) (GetProfessionalByIDRow, error)
+	// Busca comissão específica de um profissional para uma categoria de serviço
+	GetProfessionalCategoryCommission(ctx context.Context, arg GetProfessionalCategoryCommissionParams) (string, error)
 	GetProfessionalInfo(ctx context.Context, arg GetProfessionalInfoParams) (GetProfessionalInfoRow, error)
 	GetReconciliationLogByID(ctx context.Context, arg GetReconciliationLogByIDParams) (AsaasReconciliationLog, error)
 	GetRefreshToken(ctx context.Context, token string) (RefreshToken, error)

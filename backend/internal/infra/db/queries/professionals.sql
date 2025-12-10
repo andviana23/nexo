@@ -131,3 +131,11 @@ INSERT INTO comissoes_categoria_profissional (
 -- name: DeleteProfessionalCategoryCommissionsByProfessional :exec
 DELETE FROM comissoes_categoria_profissional
 WHERE tenant_id = @tenant_id AND profissional_id = @profissional_id;
+
+-- name: GetProfessionalCategoryCommission :one
+-- Busca comissão específica de um profissional para uma categoria de serviço
+SELECT comissao::text as comissao
+FROM comissoes_categoria_profissional
+WHERE tenant_id = @tenant_id 
+  AND profissional_id = @profissional_id 
+  AND categoria_id = @categoria_id;

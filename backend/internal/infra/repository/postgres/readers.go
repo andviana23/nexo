@@ -109,6 +109,29 @@ func (r *ProfessionalReaderPG) ListActive(ctx context.Context, tenantID string) 
 	return professionals, nil
 }
 
+// GetCategoryCommission busca comissão específica do profissional para uma categoria de serviço.
+func (r *ProfessionalReaderPG) GetCategoryCommission(ctx context.Context, tenantID, professionalID, categoriaID string) (*string, error) {
+	params := db.GetProfessionalCategoryCommissionParams{
+		TenantID:       uuidStringToPgtype(tenantID),
+		ProfissionalID: uuidStringToPgtype(professionalID),
+		CategoriaID:    uuidStringToPgtype(categoriaID),
+	}
+
+	comissao, err := r.queries.GetProfessionalCategoryCommission(ctx, params)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil // Não há regra específica para essa categoria
+		}
+		return nil, fmt.Errorf("erro ao buscar comissão por categoria: %w", err)
+	}
+
+	if comissao == "" {
+		return nil, nil
+	}
+
+	return &comissao, nil
+}
+
 // ============================================================================
 // CustomerReader Implementation
 // ============================================================================
@@ -221,13 +244,21 @@ func (r *ServiceReaderPG) FindByID(ctx context.Context, tenantID, serviceID stri
 		comissao = &row.Comissao
 	}
 
+	// Converter CategoriaID para *string
+	var categoriaID *string
+	if row.CategoriaID.Valid {
+		catID := pgUUIDToString(row.CategoriaID)
+		categoriaID = &catID
+	}
+
 	return &port.ServiceInfo{
-		ID:       pgUUIDToString(row.ID),
-		Name:     row.Nome,
-		Price:    valueobject.NewMoneyFromDecimal(row.Preco),
-		Duration: int(row.Duracao),
-		Active:   active,
-		Comissao: comissao,
+		ID:          pgUUIDToString(row.ID),
+		Name:        row.Nome,
+		Price:       valueobject.NewMoneyFromDecimal(row.Preco),
+		Duration:    int(row.Duracao),
+		Active:      active,
+		Comissao:    comissao,
+		CategoriaID: categoriaID,
 	}, nil
 }
 

@@ -668,7 +668,7 @@ func (q *Queries) GetProfessionalInfo(ctx context.Context, arg GetProfessionalIn
 }
 
 const getServiceInfo = `-- name: GetServiceInfo :one
-SELECT id, nome, preco, duracao, ativo, comissao::text as comissao
+SELECT id, nome, preco, duracao, ativo, comissao::text as comissao, categoria_id
 FROM servicos
 WHERE id = $1 AND tenant_id = $2
 `
@@ -679,12 +679,13 @@ type GetServiceInfoParams struct {
 }
 
 type GetServiceInfoRow struct {
-	ID       pgtype.UUID     `json:"id"`
-	Nome     string          `json:"nome"`
-	Preco    decimal.Decimal `json:"preco"`
-	Duracao  int32           `json:"duracao"`
-	Ativo    *bool           `json:"ativo"`
-	Comissao string          `json:"comissao"`
+	ID          pgtype.UUID     `json:"id"`
+	Nome        string          `json:"nome"`
+	Preco       decimal.Decimal `json:"preco"`
+	Duracao     int32           `json:"duracao"`
+	Ativo       *bool           `json:"ativo"`
+	Comissao    string          `json:"comissao"`
+	CategoriaID pgtype.UUID     `json:"categoria_id"`
 }
 
 func (q *Queries) GetServiceInfo(ctx context.Context, arg GetServiceInfoParams) (GetServiceInfoRow, error) {
@@ -697,6 +698,7 @@ func (q *Queries) GetServiceInfo(ctx context.Context, arg GetServiceInfoParams) 
 		&i.Duracao,
 		&i.Ativo,
 		&i.Comissao,
+		&i.CategoriaID,
 	)
 	return i, err
 }

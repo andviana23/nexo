@@ -313,6 +313,28 @@ func (q *Queries) GetProfessionalByID(ctx context.Context, arg GetProfessionalBy
 	return i, err
 }
 
+const getProfessionalCategoryCommission = `-- name: GetProfessionalCategoryCommission :one
+SELECT comissao::text as comissao
+FROM comissoes_categoria_profissional
+WHERE tenant_id = $1 
+  AND profissional_id = $2 
+  AND categoria_id = $3
+`
+
+type GetProfessionalCategoryCommissionParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	ProfissionalID pgtype.UUID `json:"profissional_id"`
+	CategoriaID    pgtype.UUID `json:"categoria_id"`
+}
+
+// Busca comissão específica de um profissional para uma categoria de serviço
+func (q *Queries) GetProfessionalCategoryCommission(ctx context.Context, arg GetProfessionalCategoryCommissionParams) (string, error) {
+	row := q.db.QueryRow(ctx, getProfessionalCategoryCommission, arg.TenantID, arg.ProfissionalID, arg.CategoriaID)
+	var comissao string
+	err := row.Scan(&comissao)
+	return comissao, err
+}
+
 const listBarbers = `-- name: ListBarbers :many
 SELECT id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
        comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 

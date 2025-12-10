@@ -104,6 +104,10 @@ type ProfessionalReader interface {
 
 	// ListActive lista profissionais ativos
 	ListActive(ctx context.Context, tenantID string) ([]*ProfessionalInfo, error)
+
+	// GetCategoryCommission busca comissão específica do profissional para uma categoria de serviço
+	// Retorna nil se não houver regra específica para a categoria
+	GetCategoryCommission(ctx context.Context, tenantID, professionalID, categoriaID string) (*string, error)
 }
 
 // ProfessionalInfo dados básicos de um profissional
@@ -147,10 +151,11 @@ type ServiceReader interface {
 
 // ServiceInfo dados de um serviço
 type ServiceInfo struct {
-	ID       string
-	Name     string
-	Price    valueobject.Money
-	Duration int // minutos
-	Active   bool
-	Comissao *string // Taxa de comissão específica do serviço (decimal como string)
+	ID          string
+	Name        string
+	Price       valueobject.Money
+	Duration    int // minutos
+	Active      bool
+	Comissao    *string // Taxa de comissão específica do serviço (decimal como string)
+	CategoriaID *string // ID da categoria do serviço (para buscar comissão por categoria)
 }

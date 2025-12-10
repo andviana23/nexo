@@ -273,6 +273,7 @@ type Querier interface {
 	// ========================================
 	CreateProdutoFornecedor(ctx context.Context, arg CreateProdutoFornecedorParams) (ProdutoFornecedor, error)
 	CreateProfessional(ctx context.Context, arg CreateProfessionalParams) (CreateProfessionalRow, error)
+	CreateProfessionalCategoryCommission(ctx context.Context, arg CreateProfessionalCategoryCommissionParams) (ComissoesCategoriaProfissional, error)
 	// ============================================================
 	// ASAAS_RECONCILIATION_LOGS (Auditoria de Conciliação)
 	// ============================================================
@@ -362,6 +363,7 @@ type Querier interface {
 	DeleteProduto(ctx context.Context, arg DeleteProdutoParams) error
 	DeleteProdutoFornecedor(ctx context.Context, arg DeleteProdutoFornecedorParams) error
 	DeleteProfessional(ctx context.Context, arg DeleteProfessionalParams) error
+	DeleteProfessionalCategoryCommissionsByProfessional(ctx context.Context, arg DeleteProfessionalCategoryCommissionsByProfessionalParams) error
 	DeleteRefreshToken(ctx context.Context, token string) error
 	// ============================================================================
 	// DELETE
@@ -488,6 +490,7 @@ type Querier interface {
 	// Retorna o próximo barbeiro da vez (topo da fila ativa)
 	GetNextBarber(ctx context.Context, tenantID pgtype.UUID) (GetNextBarberRow, error)
 	// Retorna o próximo número sequencial para comandas do tenant no ano atual
+	// Extrai apenas o número sequencial após o último hífen (ex: CMD-2025-00001 -> 00001)
 	GetNextCommandNumber(ctx context.Context, tenantID pgtype.UUID) (int32, error)
 	// Buscar pagamento pelo ID do Asaas (para webhooks)
 	GetPaymentByAsaasID(ctx context.Context, asaasPaymentID *string) (SubscriptionPayment, error)
@@ -684,6 +687,7 @@ type Querier interface {
 	ListProdutosAtivos(ctx context.Context, tenantID pgtype.UUID) ([]Produto, error)
 	ListProdutosByCategoria(ctx context.Context, arg ListProdutosByCategoriaParams) ([]Produto, error)
 	ListProdutosByFornecedor(ctx context.Context, arg ListProdutosByFornecedorParams) ([]ListProdutosByFornecedorRow, error)
+	ListProfessionalCategoryCommissions(ctx context.Context, arg ListProfessionalCategoryCommissionsParams) ([]ComissoesCategoriaProfissional, error)
 	// =============================================================================
 	// QUERIES PARA PROFISSIONAIS
 	// =============================================================================

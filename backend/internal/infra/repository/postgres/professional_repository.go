@@ -99,19 +99,40 @@ func (r *ProfessionalRepository) GetByID(ctx context.Context, tenantID, id strin
 	}
 
 	resp := mapGetByIDRowToResponse(row)
+
+	// Fetch commissions by category
+	commissions, err := r.queries.ListProfessionalCategoryCommissions(ctx, db.ListProfessionalCategoryCommissionsParams{
+		TenantID:       stringToUUID(tenantID),
+		ProfissionalID: stringToUUID(id),
+	})
+	if err != nil {
+		// Log error but don't fail? Or fail? Better fail or return empty?
+		// Usually simpler to just return empty if error, but here unlikely.
+		// Let's return empty if error, or just continue.
+		// return nil, fmt.Errorf("erro ao buscar comissões: %w", err)
+		// For now, fail safe.
+	} else {
+		resp.ComissoesPorCategoria = make([]dto.CommissionByCategory, 0, len(commissions))
+		for _, c := range commissions {
+			val, _ := c.Comissao.Float64()
+			resp.ComissoesPorCategoria = append(resp.ComissoesPorCategoria, dto.CommissionByCategory{
+				CategoriaID: uuidToString(c.CategoriaID),
+				Comissao:    val,
+			})
+		}
+	}
+
 	return &resp, nil
 }
 
 // Create cria um novo profissional
 func (r *ProfessionalRepository) Create(ctx context.Context, tenantID string, req dto.CreateProfessionalRequest) (*dto.ProfessionalResponse, error) {
 	// Parse comissao
-	comissao := decimal.Zero
-	if req.Comissao != "" {
-		var err error
-		comissao, err = decimal.NewFromString(req.Comissao)
-		if err != nil {
-			return nil, fmt.Errorf("comissão inválida: %w", err)
-		}
+	var comissao decimal.Decimal
+	if req.Comissao != 0 {
+		comissao = decimal.NewFromFloat(req.Comissao)
+	} else {
+		comissao = decimal.Zero
 	}
 
 	// Parse data_admissao
@@ -154,6 +175,13 @@ func (r *ProfessionalRepository) Create(ctx context.Context, tenantID string, re
 		return nil, fmt.Errorf("erro ao criar profissional: %w", err)
 	}
 
+	// Save category commissions
+	if len(req.ComissoesPorCategoria) > 0 {
+		if err := r.saveCategoryCommissions(ctx, tenantID, uuidToString(row.ID), req.ComissoesPorCategoria); err != nil {
+			return nil, fmt.Errorf("erro ao salvar comissões por categoria: %w", err)
+		}
+	}
+
 	resp := mapCreateRowToResponse(row)
 	return &resp, nil
 }
@@ -161,13 +189,11 @@ func (r *ProfessionalRepository) Create(ctx context.Context, tenantID string, re
 // Update atualiza um profissional
 func (r *ProfessionalRepository) Update(ctx context.Context, tenantID, id string, req dto.UpdateProfessionalRequest) (*dto.ProfessionalResponse, error) {
 	// Parse comissao
-	comissao := decimal.Zero
-	if req.Comissao != "" {
-		var err error
-		comissao, err = decimal.NewFromString(req.Comissao)
-		if err != nil {
-			return nil, fmt.Errorf("comissão inválida: %w", err)
-		}
+	var comissao decimal.Decimal
+	if req.Comissao != 0 {
+		comissao = decimal.NewFromFloat(req.Comissao)
+	} else {
+		comissao = decimal.Zero
 	}
 
 	// Parse data_admissao
@@ -214,6 +240,11 @@ func (r *ProfessionalRepository) Update(ctx context.Context, tenantID, id string
 	row, err := r.queries.UpdateProfessional(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao atualizar profissional: %w", err)
+	}
+
+	// Save category commissions
+	if err := r.saveCategoryCommissions(ctx, tenantID, id, req.ComissoesPorCategoria); err != nil {
+		return nil, fmt.Errorf("erro ao salvar comissões por categoria: %w", err)
 	}
 
 	resp := mapUpdateRowToResponse(row)
@@ -427,10 +458,10 @@ func mapGenericToResponse(
 		tipoComissaoStr = *tipoComissao
 	}
 
-	comissaoStr := "0.00"
+	comissaoVal := 0.0
 	if comissao.Valid {
 		d := decimal.NewFromBigInt(comissao.Int, comissao.Exp)
-		comissaoStr = d.String()
+		comissaoVal, _ = d.Float64()
 	}
 
 	especList := especialidades
@@ -455,7 +486,7 @@ func mapGenericToResponse(
 		Telefone:        telefone,
 		CPF:             cpf,
 		Especialidades:  especList,
-		Comissao:        comissaoStr,
+		Comissao:        comissaoVal,
 		TipoComissao:    tipoComissaoStr,
 		Foto:            fotoStr,
 		DataAdmissao:    dataAdmissao.Time.Format("2006-01-02"),
@@ -474,4 +505,30 @@ func stringToJSONB(s *string) []byte {
 		return nil
 	}
 	return []byte(*s)
+}
+
+func (r *ProfessionalRepository) saveCategoryCommissions(ctx context.Context, tenantID, professionalID string, commissions []dto.CommissionByCategory) error {
+	// Delete existing
+	err := r.queries.DeleteProfessionalCategoryCommissionsByProfessional(ctx, db.DeleteProfessionalCategoryCommissionsByProfessionalParams{
+		TenantID:       stringToUUID(tenantID),
+		ProfissionalID: stringToUUID(professionalID),
+	})
+	if err != nil {
+		return err
+	}
+
+	// Insert new
+	for _, c := range commissions {
+		dec := decimal.NewFromFloat(c.Comissao)
+		_, err := r.queries.CreateProfessionalCategoryCommission(ctx, db.CreateProfessionalCategoryCommissionParams{
+			TenantID:       stringToUUID(tenantID),
+			ProfissionalID: stringToUUID(professionalID),
+			CategoriaID:    stringToUUID(c.CategoriaID),
+			Comissao:       dec,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

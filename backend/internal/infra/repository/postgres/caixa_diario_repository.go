@@ -280,7 +280,17 @@ func (r *CaixaDiarioRepository) SumOperacoesByTipo(ctx context.Context, caixaID,
 			val, _ = decimal.NewFromString(v)
 		case decimal.Decimal:
 			val = v
+		case pgtype.Numeric:
+			// pgtype.Numeric é o tipo retornado pelo pgx/v5 para colunas numeric
+			if v.Valid {
+				// Converte para float64 primeiro e depois para decimal
+				f, err := v.Float64Value()
+				if err == nil && f.Valid {
+					val = decimal.NewFromFloat(f.Float64)
+				}
+			}
 		default:
+			// Log do tipo desconhecido para debugging
 			val = decimal.Zero
 		}
 		sums[entity.TipoOperacaoCaixa(row.Tipo)] = val

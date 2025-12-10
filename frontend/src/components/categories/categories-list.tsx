@@ -4,38 +4,38 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { useCategories, useDeleteCategory } from '@/hooks/useCategories';
 import { Category } from '@/types/category';
-import { Edit, FolderOpen, MoreHorizontal, Plus, Tags, Trash2 } from 'lucide-react';
+import { Edit, Folder, FolderOpen, MoreHorizontal, Plus, Tags, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { CategoryModal } from './category-modal';
 
 export function CategoriesList() {
   const { data: categories, isLoading } = useCategories();
   const deleteCategory = useDeleteCategory();
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
@@ -72,17 +72,14 @@ export function CategoriesList() {
           <Skeleton className="h-10 w-36" />
         </div>
         <Card>
-          <CardContent className="p-0">
-            <div className="space-y-1">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-4 p-4 border-b last:border-0">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                  </div>
-                  <Skeleton className="h-8 w-8" />
-                </div>
+          <CardHeader>
+            <Skeleton className="h-6 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
           </CardContent>
@@ -94,16 +91,16 @@ export function CategoriesList() {
   const totalCategories = categories?.length || 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header Info */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categorias</h1>
-          <p className="text-muted-foreground">
-            Organize seus serviços em categorias para melhor visualização.
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Categorias de Serviço</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Organize seus serviços em grupos para facilitar a gestão e agendamento.
           </p>
         </div>
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="shadow-sm">
           <Plus className="mr-2 h-4 w-4" />
           Nova Categoria
         </Button>
@@ -114,65 +111,69 @@ export function CategoriesList() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Categorias</CardTitle>
-            <Tags className="h-4 w-4 text-muted-foreground" />
+            <Folder className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalCategories}</div>
             <p className="text-xs text-muted-foreground">
-              {totalCategories === 1 ? 'categoria cadastrada' : 'categorias cadastradas'}
+              Cadastradas no sistema
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Table Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Categorias</CardTitle>
-          <CardDescription>
-            Gerencie as categorias de serviços da sua barbearia.
-          </CardDescription>
+      {/* Main Content */}
+      <Card className="border-border shadow-sm">
+        <CardHeader className="bg-muted/40 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Gerenciamento</CardTitle>
+              <CardDescription>
+                Lista completa de categorias cadastradas.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">Categoria</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="w-[350px] pl-6">Categoria</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead className="w-[100px] text-right">Ações</TableHead>
+                <TableHead className="w-[100px] text-right pr-6">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {categories?.map((category) => (
-                <TableRow key={category.id} className="group">
-                  <TableCell>
+                <TableRow key={category.id} className="group hover:bg-muted/30">
+                  <TableCell className="pl-6">
                     <div className="flex items-center gap-3">
                       <div
-                        className="h-9 w-9 rounded-lg flex items-center justify-center shadow-sm"
+                        className="h-9 w-9 rounded-lg flex items-center justify-center shadow-sm ring-1 ring-border"
                         style={{ backgroundColor: category.cor || '#6366f1' }}
                       >
                         <FolderOpen className="h-4 w-4 text-white" />
                       </div>
                       <div>
                         <p className="font-medium">{category.nome}</p>
-                        {category.ativa && (
-                          <Badge variant="secondary" className="text-xs mt-0.5">
-                            Ativa
+                        {category.ativa === false && (
+                          <Badge variant="outline" className="text-[10px] mt-0.5">
+                            Inativa
                           </Badge>
                         )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {category.descricao || 'Sem descrição'}
+                  <TableCell className="text-muted-foreground text-sm">
+                    {category.descricao || <span className="text-muted-foreground/50 italic">Sem descrição</span>}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right pr-6">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                           <span className="sr-only">Abrir menu</span>
@@ -197,13 +198,17 @@ export function CategoriesList() {
               ))}
               {categories?.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-32 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <Tags className="h-8 w-8 text-muted-foreground/50" />
-                      <p className="text-muted-foreground">Nenhuma categoria cadastrada.</p>
-                      <Button variant="outline" size="sm" onClick={handleCreate}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Criar primeira categoria
+                  <TableCell colSpan={3} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <Tags className="h-6 w-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-medium text-foreground">Nenhuma categoria encontrada</p>
+                        <p className="text-sm">Crie categorias para organizar seus serviços.</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={handleCreate} className="mt-2">
+                        Criar Primeira Categoria
                       </Button>
                     </div>
                   </TableCell>
@@ -225,8 +230,11 @@ export function CategoriesList() {
           <DialogHeader>
             <DialogTitle>Excluir Categoria</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir a categoria &quot;{categoryToDelete?.nome}&quot;?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir a categoria <strong>{categoryToDelete?.nome}</strong>?
+              <br />
+              <span className="text-xs text-muted-foreground mt-2 block">
+                Isso pode afetar serviços associados a esta categoria.
+              </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

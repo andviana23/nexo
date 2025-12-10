@@ -153,17 +153,33 @@ export async function removeCommandPayment(
 // ============================================================================
 
 /**
- * Fechar comanda (finalizar conta)
+ * Resposta do endpoint de fechamento integrado
+ */
+interface CloseCommandIntegratedResponse {
+  command: CommandResponse;
+  contas_receber: string[];
+  operacoes_caixa: string[];
+  commission_items: string[];
+  movimentacoes_estoque: string[];
+  total_caixa: string;
+  total_contas_receber: string;
+  total_comissoes: string;
+}
+
+/**
+ * Fechar comanda (finalizar conta) - Integração completa
+ * Integra com: Caixa Diário, Contas a Receber, Estoque e Comissões
  */
 export async function closeCommand(
   commandId: string,
   data: CloseCommandRequest
 ): Promise<CommandResponse> {
-  const response = await apiClient.post<CommandResponse>(
-    `${BASE_PATH}/${commandId}/close`,
+  const response = await apiClient.post<CloseCommandIntegratedResponse>(
+    `${BASE_PATH}/${commandId}/close-integrated`,
     data
   );
-  return response.data;
+  // Retorna apenas o command para manter compatibilidade com o hook existente
+  return response.data.command;
 }
 
 /**

@@ -55,14 +55,14 @@ export interface Professional {
   id: string;
   tenant_id: string;
   user_id?: string;
-  
+
   // Dados Pessoais
   nome: string;
   email: string;
   telefone: string;
   cpf: string;
   foto?: string;
-  
+
   // Dados Profissionais
   tipo: ProfessionalType;
   status: ProfessionalStatus;
@@ -70,15 +70,15 @@ export interface Professional {
   data_demissao?: string;
   especialidades?: string[];
   observacoes?: string;
-  
+
   // Comissão
   tipo_comissao?: CommissionType;
   comissao?: number;
   comissao_produtos?: number;
-  
+
   // Horário de Trabalho
   horario_trabalho?: WorkSchedule;
-  
+
   // Timestamps
   criado_em: string;
   atualizado_em: string;
@@ -99,12 +99,13 @@ export interface CreateProfessionalRequest {
   foto?: string;
   especialidades?: string[];
   observacoes?: string;
-  
+
   // Campos condicionais (Barbeiro/Gerente)
   tambem_barbeiro?: boolean;
   tipo_comissao?: CommissionType;
   comissao?: number;
   comissao_produtos?: number;
+  comissoes_por_categoria?: CommissionByCategory[];
   horario_trabalho?: WorkSchedule;
 }
 
@@ -119,6 +120,7 @@ export interface UpdateProfessionalRequest {
   tipo_comissao?: CommissionType;
   comissao?: number;
   comissao_produtos?: number;
+  comissoes_por_categoria?: CommissionByCategory[];
   horario_trabalho?: WorkSchedule;
   status?: ProfessionalStatus;
 }
@@ -143,6 +145,12 @@ export interface ListProfessionalsFilters {
 // DTOs - Response
 // ============================================================================
 
+/** Comissão por Categoria */
+export interface CommissionByCategory {
+  categoria_id: string;
+  comissao: number;
+}
+
 /** Resposta de um profissional */
 export interface ProfessionalResponse {
   id: string;
@@ -157,7 +165,9 @@ export interface ProfessionalResponse {
   tipo_comissao?: CommissionType;
   comissao?: number | string; // Backend pode retornar como string (numeric do PostgreSQL)
   comissao_produtos?: number | string;
+  comissoes_por_categoria?: CommissionByCategory[];
   horario_trabalho?: WorkSchedule;
+  observacoes?: string;
   data_admissao: string;
   criado_em: string;
   atualizado_em: string;

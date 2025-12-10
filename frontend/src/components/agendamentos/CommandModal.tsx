@@ -36,48 +36,49 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
-    useAddCommandPayment,
-    useCloseCommand,
-    useCommand,
-    useUpdateCommandItem,
+  useAddCommandPayment,
+  useCloseCommand,
+  useCommand,
+  useUpdateCommandItem,
 } from '@/hooks/use-commands';
 import { useCustomer } from '@/hooks/use-customers';
 import { useMeiosPagamento } from '@/hooks/use-meios-pagamento';
 import { cn } from '@/lib/utils';
 import type { CommandPaymentResponse, SelectedPayment } from '@/types/command';
 import {
-    calcularResumoFinanceiro,
-    calcularValorLiquido,
-    canCloseCommand,
-    formatMoney,
+  calcularResumoFinanceiro,
+  calcularValorLiquido,
+  canCloseCommand,
+  formatMoney,
 } from '@/types/command';
+import { TIPO_PAGAMENTO_LABELS } from '@/types/meio-pagamento';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-    Gift,
-    HelpCircle,
-    Package,
-    Pencil,
-    Scissors,
-    Star,
-    Tag,
-    Ticket,
-    X,
+  Gift,
+  HelpCircle,
+  Package,
+  Pencil,
+  Scissors,
+  Star,
+  Tag,
+  Ticket,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -162,9 +163,12 @@ export function CommandModal({
     const taxa = parseFloat(meio.taxa) || 0;
     const taxaFixa = parseFloat(meio.taxa_fixa) || 0;
 
+    const label = TIPO_PAGAMENTO_LABELS[meio.tipo as import('@/types/meio-pagamento').TipoPagamento] || meio.tipo;
+    const nomeFormatado = meio.bandeira ? `${label} - ${meio.bandeira}` : label;
+
     const payment: SelectedPayment = {
       meio_pagamento_id: meio.id,
-      nome: meio.nome,
+      nome: nomeFormatado,
       tipo: meio.tipo,
       valor_recebido: valor,
       taxa_percentual: taxa,
@@ -421,7 +425,8 @@ export function CommandModal({
                   <SelectContent>
                     {meios.map((meio) => (
                       <SelectItem key={meio.id} value={meio.id} className="text-sm">
-                        {meio.nome}
+                        {TIPO_PAGAMENTO_LABELS[meio.tipo as import('@/types/meio-pagamento').TipoPagamento] || meio.tipo}
+                        {meio.bandeira ? ` - ${meio.bandeira}` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>

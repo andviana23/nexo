@@ -17,9 +17,10 @@ type AbrirCaixaRequest struct {
 
 // SangriaRequest representa a requisição para registrar sangria
 type SangriaRequest struct {
-	Valor     string `json:"valor" validate:"required"`
-	Destino   string `json:"destino" validate:"required,oneof=DEPOSITO PAGAMENTO COFRE OUTROS"`
-	Descricao string `json:"descricao" validate:"required,min=5"`
+	Valor        string  `json:"valor" validate:"required"`
+	Destino      string  `json:"destino" validate:"required,oneof=DEPOSITO PAGAMENTO COFRE OUTROS"`
+	Descricao    string  `json:"descricao" validate:"required,min=5"`
+	ContaPagarID *string `json:"conta_pagar_id,omitempty" validate:"omitempty,uuid"`
 }
 
 // ---------- REFORÇO ----------
@@ -93,15 +94,16 @@ type CaixaDiarioResumoResponse struct {
 
 // OperacaoCaixaResponse representa uma operação do caixa
 type OperacaoCaixaResponse struct {
-	ID          string  `json:"id"`
-	Tipo        string  `json:"tipo"`
-	Valor       string  `json:"valor"`
-	Descricao   string  `json:"descricao"`
-	Destino     *string `json:"destino,omitempty"`
-	Origem      *string `json:"origem,omitempty"`
-	UsuarioID   string  `json:"usuario_id"`
-	UsuarioNome string  `json:"usuario_nome"`
-	CreatedAt   string  `json:"created_at"`
+	ID           string  `json:"id"`
+	Tipo         string  `json:"tipo"`
+	Valor        string  `json:"valor"`
+	Descricao    string  `json:"descricao"`
+	Destino      *string `json:"destino,omitempty"`
+	Origem       *string `json:"origem,omitempty"`
+	UsuarioID    string  `json:"usuario_id"`
+	UsuarioNome  string  `json:"usuario_nome"`
+	ContaPagarID *string `json:"conta_pagar_id,omitempty"`
+	CreatedAt    string  `json:"created_at"`
 }
 
 // CaixaStatusResponse representa o status atual do caixa

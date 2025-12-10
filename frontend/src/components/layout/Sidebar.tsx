@@ -16,38 +16,40 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useCurrentUser } from '@/store/auth-store';
+import { useAuthStore, useCurrentUser } from '@/store/auth-store';
 import { useSidebar } from '@/store/ui-store';
 import {
-    Banknote,
-    BarChart3,
-    Calculator,
-    Calendar,
-    CalendarDays,
-    ChevronDown,
-    ChevronLeft,
-    ClipboardList,
-    CreditCard,
-    DollarSign,
-    FileText,
-    FolderOpen,
-    HandCoins,
-    LayoutDashboard,
-    Menu,
-    Package,
-    Receipt,
-    RefreshCw,
-    Scissors,
-    ScrollText,
-    Settings,
-    Tags,
-    TrendingDown,
-    TrendingUp,
-    Truck,
-    UserCog,
-    Users,
-    Wallet,
+  Banknote,
+  BarChart3,
+  Calculator,
+  Calendar,
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ClipboardList,
+  CreditCard,
+  DollarSign,
+  FileText,
+  FolderOpen,
+  HandCoins,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Package,
+  Receipt,
+  RefreshCw,
+  Scissors,
+  ScrollText,
+  Settings,
+  Tags,
+  TrendingDown,
+  TrendingUp,
+  Truck,
+  UserCog,
+  Users,
+  Wallet
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -252,11 +254,13 @@ function SidebarContent({
   setCollapsed,
   pathname,
   filteredItems,
+  user,
 }: {
   isCollapsed: boolean;
   setCollapsed: (value: boolean) => void;
   pathname: string;
   filteredItems: NavigationItem[];
+  user: any; // Using any for simplicity here to match existing usage patterns or import User type
 }) {
   // Estado para controlar menus abertos
   const [openGroups, setOpenGroups] = useState<string[]>(() => {
@@ -285,17 +289,18 @@ function SidebarContent({
       )}
     >
       {/* Logo / Brand */}
-      <div className="flex h-16 items-center border-b px-4">
-        {!isCollapsed ? (
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Scissors className="h-6 w-6 text-primary" />
-            <span className="text-xl">NEXO</span>
-          </Link>
-        ) : (
-          <Link href="/" className="flex items-center justify-center">
-            <Scissors className="h-6 w-6 text-primary" />
-          </Link>
-        )}
+      <div className="flex h-16 items-center justify-center border-b px-4 transition-all duration-300">
+        <Link href="/" className="flex items-center justify-center">
+          <div className={cn("relative shrink-0 transition-all duration-300", isCollapsed ? "h-10 w-10" : "h-12 w-40")}>
+            <Image
+              src="/nexo.png"
+              alt="NEXO Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </Link>
       </div>
 
       {/* Navigation */}
@@ -440,6 +445,39 @@ function SidebarContent({
         })}
       </nav>
 
+      {/* Footer / User Profile & Logout */}
+      <div className="border-t p-4">
+        {!isCollapsed ? (
+          <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 p-2">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="flex flex-col truncate">
+                <span className="text-sm font-medium truncate">{user?.name || 'Usuário'}</span>
+                <span className="text-xs text-muted-foreground truncate capitalize">{user?.role || 'Cargo'}</span>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+              onClick={() => useAuthStore.getState().logout()}
+              title="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-full text-muted-foreground hover:text-destructive transition-colors"
+            onClick={() => useAuthStore.getState().logout()}
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
       {/* Collapse Toggle (Desktop only) */}
       <div className="hidden border-t p-2 md:block">
         <Button
@@ -549,6 +587,7 @@ export function Sidebar() {
               setCollapsed={setCollapsed}
               pathname={pathname}
               filteredItems={filteredItems}
+              user={user}
             />
           </SheetContent>
         </Sheet>
@@ -561,6 +600,7 @@ export function Sidebar() {
           setCollapsed={setCollapsed}
           pathname={pathname}
           filteredItems={filteredItems}
+          user={user}
         />
       </aside>
     </>

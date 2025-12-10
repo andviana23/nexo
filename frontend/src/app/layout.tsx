@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NEXO - Sistema de Gestão para Barbearias",
   description: "Sistema completo de gestão para barbearias com agendamento, estoque, financeiro e muito mais.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

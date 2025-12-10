@@ -149,14 +149,28 @@ func (uc *GenerateDREUseCase) Execute(ctx context.Context, input GenerateDREInpu
 	// Calcular resultado final
 	dre.Calcular()
 
-	// Persistir ou atualizar
-	if dre.ProcessadoEm.IsZero() {
-		if err := uc.dreRepo.Create(ctx, dre); err != nil {
-			return nil, fmt.Errorf("erro ao salvar DRE: %w", err)
-		}
-	} else {
+	// Persistir usando UPSERT (CreateOrUpdate) para garantir última versão
+	// Se dre.ID for vazio, é criação. Se não, é update.
+	// No caso de DRE, a chave única é (TenantID, MesAno).
+
+	// Verificar se já existe DRE para este mês/ano novamente (double check lock)
+	existingDRE, err := uc.dreRepo.FindByMesAno(ctx, input.TenantID, input.MesAno)
+	if err == nil && existingDRE != nil {
+		dre.ID = existingDRE.ID // Garantir que usamos o ID existente para o Update
 		if err := uc.dreRepo.Update(ctx, dre); err != nil {
 			return nil, fmt.Errorf("erro ao atualizar DRE: %w", err)
+		}
+	} else {
+		if err := uc.dreRepo.Create(ctx, dre); err != nil {
+			// Se falhar no create por chave duplicada (race condition), tentamos update
+			if existingDRE, err := uc.dreRepo.FindByMesAno(ctx, input.TenantID, input.MesAno); err == nil && existingDRE != nil {
+				dre.ID = existingDRE.ID
+				if err := uc.dreRepo.Update(ctx, dre); err != nil {
+					return nil, fmt.Errorf("erro ao atualizar DRE após retry: %w", err)
+				}
+			} else {
+				return nil, fmt.Errorf("erro ao salvar DRE: %w", err)
+			}
 		}
 	}
 

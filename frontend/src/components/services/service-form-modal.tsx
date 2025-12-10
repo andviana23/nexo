@@ -2,29 +2,30 @@
 
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateService, useUpdateService } from '@/hooks/useServices';
 import { api } from '@/lib/axios';
@@ -36,7 +37,6 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-// Schema de validação
 const formSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   descricao: z.string().optional(),
@@ -62,7 +62,6 @@ export function ServiceFormModal({
   const createService = useCreateService();
   const updateService = useUpdateService();
 
-  // Buscar categorias para o select
   const { data: categoriesData } = useQuery({
     queryKey: ['categories', 'list'],
     queryFn: async () => {
@@ -114,7 +113,6 @@ export function ServiceFormModal({
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const data = {
       ...values,
-      // Limpar campos opcionais vazios
       categoria_id: values.categoria_id || undefined,
       descricao: values.descricao || undefined,
       comissao: values.comissao || undefined,
@@ -143,118 +141,164 @@ export function ServiceFormModal({
   };
 
   const isLoading = createService.isPending || updateService.isPending;
+  const isEditing = !!serviceToEdit;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {serviceToEdit ? 'Editar Serviço' : 'Novo Serviço'}
+            {isEditing ? 'Editar Serviço' : 'Novo Serviço'}
           </DialogTitle>
           <DialogDescription>
-            Preencha os dados do serviço abaixo.
+            {isEditing
+              ? 'Atualize as informações do serviço.'
+              : 'Cadastre um novo serviço para seu catálogo.'}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+
+            {/* GRUPO 1: Informações Básicas */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Dados Gerais</h4>
+
               <FormField
                 control={form.control}
                 name="nome"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Nome</FormLabel>
+                  <FormItem>
+                    <FormLabel>Nome do Serviço</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Corte de Cabelo" {...field} />
+                      <Input placeholder="Ex: Corte Degradê" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="categoria_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="categoria_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categoriesData?.categorias?.map((cat: Category) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cor de Identificação</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
+                        <div className="flex gap-2">
+                          <Input
+                            type="color"
+                            className="w-10 h-9 p-0.5 cursor-pointer border-2"
+                            {...field}
+                          />
+                          <Input
+                            placeholder="#000000"
+                            className="flex-1 font-mono uppercase"
+                            {...field}
+                          />
+                        </div>
                       </FormControl>
-                      <SelectContent>
-                        {categoriesData?.categorias?.map((cat: Category) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
-              <FormField
-                control={form.control}
-                name="cor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cor</FormLabel>
-                    <div className="flex gap-2">
+            <Separator />
+
+            {/* GRUPO 2: Precificação */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Precificação & Tempo</h4>
+
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="preco"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preço (R$)</FormLabel>
                       <FormControl>
-                        <Input type="color" className="w-12 p-1 h-10" {...field} />
+                        <Input type="number" step="0.01" min="0" placeholder="0.00" className="text-right" {...field} />
                       </FormControl>
-                      <Input {...field} placeholder="#000000" />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <FormField
+                  control={form.control}
+                  name="comissao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Comissão (%)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" min="0" max="100" placeholder="0.00" className="text-right" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="duracao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duração (min)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="5" step="5" className="text-center" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* GRUPO 3: Detalhes */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Detalhes Adicionais</h4>
               <FormField
                 control={form.control}
-                name="preco"
+                name="descricao"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preço (R$)</FormLabel>
+                    <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="comissao"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Comissão (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="duracao"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duração (minutos)</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
+                      <Textarea placeholder="Detalhes opcionais sobre o serviço..." className="resize-none" rows={3} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -262,21 +306,7 @@ export function ServiceFormModal({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="descricao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Detalhes do serviço..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <Button
                 type="button"
                 variant="outline"
@@ -285,7 +315,7 @@ export function ServiceFormModal({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Salvando...' : 'Salvar'}
+                {isLoading ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Criar Serviço'}
               </Button>
             </DialogFooter>
           </form>

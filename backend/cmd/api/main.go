@@ -434,7 +434,7 @@ func main() {
 
 	// Initialize use cases - Caixa Diário (8 use cases)
 	abrirCaixaUC := caixaUC.NewAbrirCaixaUseCase(caixaDiarioRepo, logger)
-	sangriaUC := caixaUC.NewSangriaUseCase(caixaDiarioRepo, logger)
+	sangriaUC := caixaUC.NewSangriaUseCase(caixaDiarioRepo, contaPagarRepo, logger)
 	reforcoUC := caixaUC.NewReforcoUseCase(caixaDiarioRepo, logger)
 	fecharCaixaUC := caixaUC.NewFecharCaixaUseCase(caixaDiarioRepo, logger)
 	getCaixaAbertoUC := caixaUC.NewGetCaixaAbertoUseCase(caixaDiarioRepo, logger)

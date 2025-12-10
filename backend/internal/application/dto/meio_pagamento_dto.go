@@ -8,7 +8,7 @@ import "time"
 
 // CreateMeioPagamentoRequest representa a requisição para criar um meio de pagamento
 type CreateMeioPagamentoRequest struct {
-	Nome          string `json:"nome" validate:"required,max=100"`
+	Nome          string `json:"nome,omitempty" validate:"max=100"`
 	Tipo          string `json:"tipo" validate:"required,oneof=DINHEIRO PIX CREDITO DEBITO TRANSFERENCIA BOLETO OUTRO"`
 	Bandeira      string `json:"bandeira,omitempty" validate:"max=50"`
 	Taxa          string `json:"taxa,omitempty"`      // Percentual (0-100)

@@ -135,6 +135,9 @@ export function useCreateCommandFromAppointment() {
 
 /**
  * Hook para fechar comanda
+ * 
+ * Ao fechar a comanda com close-integrated, o backend registra operações no caixa
+ * para TODOS os meios de pagamento. Por isso, invalidamos as queries do caixa.
  */
 export function useCloseCommand() {
   const queryClient = useQueryClient();
@@ -150,6 +153,9 @@ export function useCloseCommand() {
         // Invalida appointment para atualizar status para DONE
         queryClient.invalidateQueries({ queryKey: ['appointments', 'detail', data.appointment_id] });
       }
+      // Invalida queries do caixa - fechamento de comanda registra operações
+      // no caixa diário para TODOS os meios de pagamento via close-integrated
+      queryClient.invalidateQueries({ queryKey: ['caixa'] });
       toast.success('Comanda fechada com sucesso');
     },
     onError: (error: unknown) => {

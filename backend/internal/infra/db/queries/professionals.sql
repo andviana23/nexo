@@ -116,3 +116,18 @@ WHERE tenant_id = @tenant_id
   AND tipo = 'BARBEIRO' 
   AND status = 'ATIVO'
 ORDER BY nome;
+
+-- name: ListProfessionalCategoryCommissions :many
+SELECT * FROM comissoes_categoria_profissional
+WHERE tenant_id = @tenant_id AND profissional_id = @profissional_id;
+
+-- name: CreateProfessionalCategoryCommission :one
+INSERT INTO comissoes_categoria_profissional (
+  tenant_id, profissional_id, categoria_id, comissao
+) VALUES (
+  @tenant_id, @profissional_id, @categoria_id, @comissao
+) RETURNING *;
+
+-- name: DeleteProfessionalCategoryCommissionsByProfessional :exec
+DELETE FROM comissoes_categoria_profissional
+WHERE tenant_id = @tenant_id AND profissional_id = @profissional_id;

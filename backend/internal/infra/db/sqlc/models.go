@@ -218,6 +218,16 @@ type Cliente struct {
 	AtualizadoEm        pgtype.Timestamptz `json:"atualizado_em"`
 }
 
+type ComissoesCategoriaProfissional struct {
+	ID             pgtype.UUID        `json:"id"`
+	TenantID       pgtype.UUID        `json:"tenant_id"`
+	ProfissionalID pgtype.UUID        `json:"profissional_id"`
+	CategoriaID    pgtype.UUID        `json:"categoria_id"`
+	Comissao       decimal.Decimal    `json:"comissao"`
+	CriadoEm       pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm   pgtype.Timestamptz `json:"atualizado_em"`
+}
+
 type Command struct {
 	ID                 pgtype.UUID        `json:"id"`
 	TenantID           pgtype.UUID        `json:"tenant_id"`

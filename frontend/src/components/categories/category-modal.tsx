@@ -2,21 +2,23 @@
 
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateCategory, useUpdateCategory } from '@/hooks/useCategories';
 import { Category } from '@/types/category';
@@ -47,12 +49,15 @@ export function CategoryModal({
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
 
+  const isEditing = !!categoryToEdit;
+  const isLoading = createCategory.isPending || updateCategory.isPending;
+
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       nome: '',
       descricao: '',
-      cor: '#000000',
+      cor: '#6366f1',
     },
   });
 
@@ -61,13 +66,13 @@ export function CategoryModal({
       form.reset({
         nome: categoryToEdit.nome,
         descricao: categoryToEdit.descricao || '',
-        cor: categoryToEdit.cor || '#000000',
+        cor: categoryToEdit.cor || '#6366f1',
       });
     } else {
       form.reset({
         nome: '',
         descricao: '',
-        cor: '#000000',
+        cor: '#6366f1',
       });
     }
   }, [categoryToEdit, form, isOpen]);
@@ -88,80 +93,95 @@ export function CategoryModal({
     }
   };
 
-  const isLoading = createCategory.isPending || updateCategory.isPending;
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {categoryToEdit ? 'Editar Categoria' : 'Nova Categoria'}
+            {isEditing ? 'Editar Categoria' : 'Nova Categoria'}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Atualize as informações da categoria.'
+              : 'Organize seus serviços criando uma nova categoria.'}
+          </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Corte de Cabelo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
 
-            <FormField
-              control={form.control}
-              name="descricao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descrição opcional da categoria"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Informações Gerais</h4>
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome da Categoria</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Cortes Masculinos" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="cor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cor (Hex)</FormLabel>
-                  <FormControl>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        className="w-12 p-1 h-10"
+              <FormField
+                control={form.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Breve descrição da categoria..."
+                        className="resize-none"
+                        rows={3}
                         {...field}
                       />
-                      <Input
-                        placeholder="#000000"
-                        {...field}
-                        className="flex-1"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            <DialogFooter>
+            <Separator />
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Identificação Visual</h4>
+              <FormField
+                control={form.control}
+                name="cor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cor da Categoria</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2">
+                        <Input
+                          type="color"
+                          className="w-10 h-9 p-0.5 cursor-pointer border-2"
+                          {...field}
+                        />
+                        <Input
+                          placeholder="#000000"
+                          className="flex-1 font-mono uppercase"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Salvando...' : 'Salvar'}
+                {isLoading ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Criar Categoria'}
               </Button>
             </DialogFooter>
           </form>

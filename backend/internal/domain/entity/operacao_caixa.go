@@ -79,11 +79,12 @@ type OperacaoCaixa struct {
 	CreatedAt time.Time
 
 	// Relacionamento (carregado quando necessário)
-	UsuarioNome string
+	UsuarioNome  string
+	ContaPagarID *uuid.UUID
 }
 
 // NewOperacaoSangria cria uma nova operação de sangria
-func NewOperacaoSangria(caixaID, tenantID, usuarioID uuid.UUID, valor decimal.Decimal, destino, descricao string) (*OperacaoCaixa, error) {
+func NewOperacaoSangria(caixaID, tenantID, usuarioID uuid.UUID, valor decimal.Decimal, destino, descricao string, contaPagarID *uuid.UUID) (*OperacaoCaixa, error) {
 	if caixaID == uuid.Nil {
 		return nil, errors.New("caixa_id é obrigatório")
 	}
@@ -104,15 +105,16 @@ func NewOperacaoSangria(caixaID, tenantID, usuarioID uuid.UUID, valor decimal.De
 	}
 
 	return &OperacaoCaixa{
-		ID:        uuid.New(),
-		CaixaID:   caixaID,
-		TenantID:  tenantID,
-		Tipo:      TipoOperacaoSangria,
-		Valor:     valor,
-		Descricao: descricao,
-		Destino:   &destino,
-		UsuarioID: usuarioID,
-		CreatedAt: time.Now(),
+		ID:           uuid.New(),
+		CaixaID:      caixaID,
+		TenantID:     tenantID,
+		Tipo:         TipoOperacaoSangria,
+		Valor:        valor,
+		Descricao:    descricao,
+		Destino:      &destino,
+		UsuarioID:    usuarioID,
+		CreatedAt:    time.Now(),
+		ContaPagarID: contaPagarID,
 	}, nil
 }
 

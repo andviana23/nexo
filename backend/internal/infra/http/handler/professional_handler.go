@@ -188,15 +188,17 @@ func (h *ProfessionalHandler) CreateProfessional(c echo.Context) error {
 	}
 
 	// Verificar se CPF já existe
-	cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, req.CPF, nil)
-	if err != nil {
-		h.logger.Error("Erro ao verificar CPF", zap.Error(err))
-	}
-	if cpfExists {
-		return c.JSON(http.StatusConflict, dto.ErrorResponse{
-			Error:   "conflict",
-			Message: "Este CPF já está cadastrado",
-		})
+	if req.CPF != "" {
+		cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, req.CPF, nil)
+		if err != nil {
+			h.logger.Error("Erro ao verificar CPF", zap.Error(err))
+		}
+		if cpfExists {
+			return c.JSON(http.StatusConflict, dto.ErrorResponse{
+				Error:   "conflict",
+				Message: "Este CPF já está cadastrado",
+			})
+		}
 	}
 
 	professional, err := h.repo.Create(ctx, tenantID, req)
@@ -276,16 +278,18 @@ func (h *ProfessionalHandler) UpdateProfessional(c echo.Context) error {
 		})
 	}
 
-	// Verificar se CPF já existe (excluindo o próprio)
-	cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, req.CPF, &id)
-	if err != nil {
-		h.logger.Error("Erro ao verificar CPF", zap.Error(err))
-	}
-	if cpfExists {
-		return c.JSON(http.StatusConflict, dto.ErrorResponse{
-			Error:   "conflict",
-			Message: "Este CPF já está cadastrado",
-		})
+	// Verificar se CPF já existe (se foi alterado)
+	if req.CPF != "" {
+		cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, req.CPF, &id)
+		if err != nil {
+			h.logger.Error("Erro ao verificar CPF", zap.Error(err))
+		}
+		if cpfExists {
+			return c.JSON(http.StatusConflict, dto.ErrorResponse{
+				Error:   "conflict",
+				Message: "Este CPF já está cadastrado",
+			})
+		}
 	}
 
 	professional, err := h.repo.Update(ctx, tenantID, id, req)

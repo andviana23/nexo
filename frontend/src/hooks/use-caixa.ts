@@ -73,11 +73,13 @@ export function useCaixaAberto() {
 /**
  * Hook para buscar totais do caixa
  */
-export function useCaixaTotais() {
+export function useCaixaTotais(enabled: boolean = true) {
   return useQuery({
     queryKey: caixaKeys.totais(),
     queryFn: () => caixaService.getTotais(),
-    staleTime: 30 * 1000, // 30 segundos
+    staleTime: 10 * 1000, // 10 segundos - atualiza mais rápido para refletir vendas
+    enabled,
+    retry: false, // Não retentar se falhar (ex: caixa fechado)
   });
 }
 
@@ -202,7 +204,10 @@ export function useFecharCaixa() {
  */
 export function useCaixaDiario() {
   const status = useCaixaStatus();
-  const totais = useCaixaTotais();
+  const isAberto = status.data?.aberto ?? false;
+  
+  // Só busca totais se houver caixa aberto
+  const totais = useCaixaTotais(isAberto);
 
   return {
     // Status
@@ -211,7 +216,7 @@ export function useCaixaDiario() {
     error: status.error,
 
     // Dados
-    isAberto: status.data?.aberto ?? false,
+    isAberto,
     caixaAtual: status.data?.caixa_atual,
     ultimoFechamento: status.data?.ultimo_fechamento,
 
@@ -222,7 +227,9 @@ export function useCaixaDiario() {
     // Refetch
     refetch: () => {
       status.refetch();
-      totais.refetch();
+      if (isAberto) {
+        totais.refetch();
+      }
     },
   };
 }

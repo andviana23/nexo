@@ -29,7 +29,7 @@ import {
     Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -489,6 +489,9 @@ export default function CaixaPage() {
   const [modalReforco, setModalReforco] = useState(false);
   const [modalFechar, setModalFechar] = useState(false);
 
+  // Debug logs para os modais
+  console.log('[CaixaPage] Estados dos modais:', { modalAbrir, modalSangria, modalReforco, modalFechar });
+
   // Dados do caixa
   const {
     isLoading,
@@ -500,6 +503,44 @@ export default function CaixaPage() {
     totais,
     refetch,
   } = useCaixaDiario();
+
+  // Debug log para dados do caixa
+  console.log('[CaixaPage] Dados do caixa:', { isLoading, isError, isAberto, caixaAtual, totais });
+
+  // Calcular totais a partir das operações (fallback quando endpoint de totais não responde)
+  const totaisCalculados = useMemo(() => {
+    if (!caixaAtual?.operacoes) return null;
+    
+    const vendas = caixaAtual.operacoes
+      .filter((op) => op.tipo === 'VENDA')
+      .reduce((sum, op) => sum + parseFloat(op.valor || '0'), 0);
+    
+    const sangrias = caixaAtual.operacoes
+      .filter((op) => op.tipo === 'SANGRIA')
+      .reduce((sum, op) => sum + parseFloat(op.valor || '0'), 0);
+    
+    const reforcos = caixaAtual.operacoes
+      .filter((op) => op.tipo === 'REFORCO')
+      .reduce((sum, op) => sum + parseFloat(op.valor || '0'), 0);
+    
+    const despesas = caixaAtual.operacoes
+      .filter((op) => op.tipo === 'DESPESA')
+      .reduce((sum, op) => sum + parseFloat(op.valor || '0'), 0);
+    
+    const saldoInicial = parseFloat(caixaAtual.saldo_inicial || '0');
+    const saldoAtual = saldoInicial + vendas + reforcos - sangrias - despesas;
+    
+    return {
+      total_vendas: vendas.toFixed(2),
+      total_sangrias: sangrias.toFixed(2),
+      total_reforcos: reforcos.toFixed(2),
+      total_despesas: despesas.toFixed(2),
+      saldo_atual: saldoAtual.toFixed(2),
+    };
+  }, [caixaAtual?.operacoes, caixaAtual?.saldo_inicial]);
+
+  // Usar totais do endpoint ou calculados localmente
+  const totaisFinais = totais || totaisCalculados;
 
   // Loading state
   if (isLoading) {
@@ -538,7 +579,10 @@ export default function CaixaPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => refetch()}
+                  onClick={() => {
+                    console.log('[CaixaPage] Botão Atualizar clicado');
+                    refetch();
+                  }}
                   className="gap-2"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -564,7 +608,10 @@ export default function CaixaPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setModalReforco(true)}
+                      onClick={() => {
+                        console.log('[CaixaPage] Botão Reforço clicado');
+                        setModalReforco(true);
+                      }}
                       className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950"
                     >
                       <PlusCircle className="h-4 w-4" />
@@ -579,7 +626,10 @@ export default function CaixaPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setModalSangria(true)}
+                      onClick={() => {
+                        console.log('[CaixaPage] Botão Sangria clicado');
+                        setModalSangria(true);
+                      }}
                       className="gap-2 border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-950"
                     >
                       <MinusCircle className="h-4 w-4" />
@@ -592,7 +642,10 @@ export default function CaixaPage() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => setModalFechar(true)}
+                  onClick={() => {
+                    console.log('[CaixaPage] Botão Fechar Caixa clicado');
+                    setModalFechar(true);
+                  }}
                   className="gap-2"
                 >
                   <Lock className="h-4 w-4" />
@@ -602,7 +655,10 @@ export default function CaixaPage() {
             )}
 
             {!isAberto && (
-              <Button onClick={() => setModalAbrir(true)} className="gap-2">
+              <Button onClick={() => {
+                console.log('[CaixaPage] Botão Abrir Caixa clicado');
+                setModalAbrir(true);
+              }} className="gap-2">
                 <LockOpen className="h-4 w-4" />
                 Abrir Caixa
               </Button>
@@ -633,35 +689,35 @@ export default function CaixaPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <MetricCard
               title="Saldo Atual"
-              value={totais?.saldo_atual || caixaAtual?.saldo_esperado}
+              value={totaisFinais?.saldo_atual || caixaAtual?.saldo_esperado}
               icon={<Wallet className="h-4 w-4" />}
               trend="neutral"
               description="Saldo esperado em caixa"
             />
             <MetricCard
               title="Vendas"
-              value={totais?.total_vendas || '0'}
+              value={totaisFinais?.total_vendas || '0'}
               icon={<ArrowUpCircle className="h-4 w-4" />}
               trend="up"
               description="Total de vendas do dia"
             />
             <MetricCard
               title="Sangrias"
-              value={caixaAtual?.total_sangrias || totais?.total_sangrias || '0'}
+              value={totaisFinais?.total_sangrias || caixaAtual?.total_sangrias || '0'}
               icon={<TrendingDown className="h-4 w-4" />}
               trend="down"
               description="Retiradas do caixa"
             />
             <MetricCard
               title="Reforços"
-              value={caixaAtual?.total_reforcos || totais?.total_reforcos || '0'}
+              value={totaisFinais?.total_reforcos || caixaAtual?.total_reforcos || '0'}
               icon={<TrendingUp className="h-4 w-4" />}
               trend="up"
               description="Adições ao caixa"
             />
             <MetricCard
               title="Despesas"
-              value={totais?.total_despesas || '0'}
+              value={totaisFinais?.total_despesas || '0'}
               icon={<ArrowDownCircle className="h-4 w-4" />}
               trend="down"
               description="Despesas pagas"

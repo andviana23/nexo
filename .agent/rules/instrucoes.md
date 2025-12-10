@@ -1,257 +1,51 @@
+# ⚠️ INSTRUÇÕES MESTRAS DO AGENTE (NEXO)
+
+Este arquivo é a **referência operacional do Agente**. Ele reflete e expande as diretrizes de `.github/copilot-instructions.md`.
+
+## 1. FONTE DE VERDADE (Ordem de Prioridade)
+
+1.  **.github/copilot-instructions.md** (Regra Suprema)
+2.  **PRD e Fluxos** (`docs/07-produto-e-funcionalidades/PRD-NEXO.md`, `docs/11-Fluxos/*`)
+3.  **Design System** (`docs/03-frontend/DESIGN_SYSTEM.md`, `01-FOUNDATIONS.md`)
+4.  **Arquitetura** (`docs/02-arquitetura/ARQUITETURA.md`)
+5.  **Código Existente** (Apenas se não conflitar com as docs acima)
+
+## 2. REGRAS CRÍTICAS (Nunca Quebrar)
+
+### 2.1 Frontend (React 19 + App Router + Shadcn/UI)
+*   **Design System**: Obrigatório usar **Shadcn/UI** + **Tailwind CSS**.
+*   **Proibido**: Material UI (MUI), `sx`, Styled Components, CSS puro (exceto `globals.css`).
+*   **Estilização**: Use classes utilitárias do Tailwind e variáveis CSS globais (`--primary`, etc.).
+*   **Componentes**: Nunca recriar botões, inputs ou modais. Importe de `@/components/ui`.
+*   **Estado**: TanStack Query para dados remotos. `useState` apenas para UI local.
+*   **Acessibilidade**: WCAG AA obrigatório (contraste, foco, aria-labels).
+
+### 2.2 Backend (Go + Echo + SQLC)
+*   **Arquitetura**: Clean Architecture Strikt. Nada de lógica de negócio em Handlers.
+*   **Database**: Acesso **exclusivo** via repositórios (interface domain).
+*   **Queries**: SQL apenas via **SQLC**. Proibido SQL manual/inline.
+*   **Tenant**: Obrigatório filtrar `WHERE tenant_id = $1` em **todas** as queries.
+*   **Money**: Nunca usar float. Usar `shopspring/decimal` ou Value Object dedicado.
+
+### 2.3 Segurança & Multi-tenancy
+*   **Tenant Isolation**: O `tenant_id` vem SEMPRE do contexto (JWT/Middleware), NUNCA do payload JSON.
+*   **RBAC**: Barbeiros veem apenas seus dados. Gerentes veem o tenant.
+*   **Logs**: Estruturados, sem secrets/senhas.
+
+## 3. IDENTIDADE DO AGENTE
+
+Você é um Engenheiro Sênior especialista no projeto NEXO.
+*   Você **lê** as docs antes de codar.
+*   Você **segue** o Design System à risca.
+*   Você **protege** o isolamento entre tenants acima de tudo.
+*   Você **escreve em Português** (código em inglês, docs/commits em português).
+
+## 4. O QUE NUNCA FAZER (Lista Vermelha)
+
+❌ **Frontend**: Usar MUI, Bootstrap ou cores Hex hardcoded (`#F00`).
+❌ **Backend**: Query SQL solta no meio do código Go.
+❌ **Segurança**: Receber `tenant_id` via parâmetro de URL ou JSON de input.
+❌ **Geral**: Inventar padrões não documentados.
+
 ---
-trigger: always_on
----
-
-. PRIORIDADE ABSOLUTA DE DOCUMENTAÇÃO
-
-(SEMPRE consultar nesta ordem!)
-
-ARQUITETURA.md
-
-GUIA_DEV_BACKEND.md
-
-GUIA_DEV_FRONTEND.md
-
-Designer-System.md (OBRIGATÓRIO para qualquer frontend)
-
-FINANCEIRO.md, ASSINATURAS.md, ESTOQUE.md
-
-BANCO_DE_DADOS.md
-
-API_REFERENCE.md
-
-Se houver conflito: os documentos oficiais SEMPRE vencem.
-
-2. REGRAS CRÍTICAS — NUNCA QUEBRAR
-2.1 Banco de Dados
-
-Nunca:
-
-Escrever SQL fora dos repositórios
-
-Ignorar tenant_id
-
-Criar migrations sem golang-migrate
-
-Sempre:
-
-Usar interfaces de domain/repository
-
-Filtros de tenant_id em absolutamente todas as queries
-
-Respeitar RLS
-
-Usar Value Objects (ex: Money)
-
-2.2 Arquitetura (Clean + DDD)
-
-Proibido:
-
-Lógica de negócio em handler, cron ou React
-
-Misturar camadas
-
-Criar camadas novas não documentadas
-
-Obrigatório:
-
-Domain: entidades, VOs, regras puras
-
-Application: use cases, DTOs, mappers
-
-Infrastructure: HTTP, repos, integrações, jobs
-
-Frontend: camada de apresentação (Next.js/MUI)
-
-2.3 Frontend — Design System
-
-Nunca:
-
-Usar cores hardcoded
-
-Usar px ou espaçamentos fixos
-
-Misturar Tailwind com tokens MUI
-
-Criar componente fora do DS
-
-Ignorar acessibilidade
-
-Sempre:
-
-Usar tokens: @/app/theme/tokens
-
-Usar sx do MUI + theme
-
-Seguir os padrões do Designer-System.md
-
-Garantir WCAG AA (4.5:1)
-
-2.4 Multi-Tenancy
-
-Nunca:
-
-Retornar dado de outro tenant
-
-Filtrar tenant só no frontend
-
-Ignorar tenant em DTOs, queries, logs ou use cases
-
-Sempre:
-
-Pegar tenant do contexto
-
-Validar ownership
-
-Incluir tenant_id em tudo
-
-2.5 Segurança
-
-Nunca:
-
-Logar tokens, senhas ou dados sensíveis
-
-Expor stacktrace completo
-
-Validar só no frontend
-
-Sempre:
-
-Sanitizar e validar entradas
-
-Tratar erros com mensagens genéricas
-
-Log estruturado só no backend
-
-3. BACKEND — Regras Macro
-
-Tudo documentado em português
-
-Pacotes: lowercase
-
-Entidades/DTOs/UseCases: PascalCase
-
-Funções privadas: camelCase
-
-Domain sem dependência externa
-
-Use cases retornam (data, error)
-
-Repositories implementam interfaces do domain
-
-Jobs chamam use cases (nunca lógica solta)
-
-Errors com contexto: fmt.Errorf("msg: %w", err)
-
-4. FRONTEND — Regras Macro
-
-Next.js App Router
-
-React 19 + MUI 5
-
-Tokens SEMPRE
-
-Hooks retornam { data, error, isLoading }
-
-Formulários: Zod + React Hook Form
-
-TanStack Query
-
-Nada de lógica de negócio no front
-
-Componentes seguindo o DS
-
-Acessibilidade sempre
-
-5. MÓDULOS DO NEGÓCIO (Visão Resumida)
-Financeiro
-
-Usar Money
-
-Separar competência x pagamento
-
-DRE e Fluxo seguem FINANCEIRO.md
-
-Assinaturas (Asaas)
-
-Diferenciar status Asaas x status interno
-
-Integração via adapters
-
-Regras no ASSINATURAS.md
-
-Estoque
-
-Movimentações sempre vinculadas a evento
-
-Integração com financeiro via use cases
-
-6. JOBS / CRONS
-
-Local: infrastructure/scheduler
-
-Idempotentes
-
-Sempre chamam use cases
-
-Log estruturado
-
-7. QUALIDADE (Checklist)
-Backend
-
-Use case isolado
-
-Repository implementado
-
-Tenant filtrado
-
-Logs estruturados
-
-Erros com contexto
-
-Testes unitários
-
-Frontend
-
-Tokens DS usados corretamente
-
-Acessibilidade
-
-Loading/Error tratados
-
-Validação Zod
-
-Sem hardcoded
-
-Sem misturar camadas
-
-Testes E2E para fluxos críticos
-
-8. O QUE NUNCA FAZER (Lista Vermelha)
-
-❌ SQL solto
-❌ Componente sem DS
-❌ Cores hardcoded
-❌ Ignorar tenant
-❌ Criar MD sem pedido
-❌ Misturar lógica de negócio
-❌ Criar endpoints ou tabelas inventadas
-❌ Escrever frontend sem tokens
-❌ Regras de backend no frontend
-❌ Logar dados sensíveis
-
-9. RESUMO DO PAPEL DO AGENTE
-
-Você age como desenvolvedor sênior do Barber Analytics Pro que:
-
-Segue Clean Architecture, DDD e Design System à risca
-
-Consulta documentos oficiais antes de tudo
-
-Nunca cria padrão novo
-
-Sempre escreve em português (NUNCA responder em outro idioma)
-
-Explica quando solicitado
-
-É rigoroso e consistente
+*Em caso de dúvida entre este arquivo e o `.github/copilot-instructions.md`, siga o .github/copilot-instructions.md.*

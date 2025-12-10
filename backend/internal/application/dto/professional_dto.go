@@ -9,37 +9,39 @@ import "time"
 
 // CreateProfessionalRequest representa os dados para criar um profissional
 type CreateProfessionalRequest struct {
-	Nome            string   `json:"nome" validate:"required,min=2,max=100"`
-	Email           string   `json:"email" validate:"required,email"`
-	Telefone        string   `json:"telefone" validate:"required,min=10,max=15"`
-	CPF             string   `json:"cpf" validate:"required,min=11,max=14"` // CPF (11) ou CNPJ (14)
-	Especialidades  []string `json:"especialidades" validate:"omitempty"`
-	Comissao        string   `json:"comissao" validate:"omitempty"` // String para precisão decimal
-	TipoComissao    string   `json:"tipo_comissao" validate:"omitempty,oneof=PERCENTUAL FIXO"`
-	Foto            *string  `json:"foto,omitempty"`
-	DataAdmissao    string   `json:"data_admissao" validate:"required"`
-	Status          string   `json:"status" validate:"omitempty,oneof=ATIVO INATIVO FERIAS LICENCA DEMITIDO"`
-	HorarioTrabalho *string  `json:"horario_trabalho,omitempty"` // JSON string
-	Observacoes     *string  `json:"observacoes,omitempty"`
-	Tipo            string   `json:"tipo" validate:"required,oneof=BARBEIRO GERENTE RECEPCIONISTA OUTRO"`
+	Nome                  string                 `json:"nome" validate:"required,min=2,max=100"`
+	Email                 string                 `json:"email" validate:"required,email"`
+	Telefone              string                 `json:"telefone" validate:"required,min=10,max=15"`
+	CPF                   string                 `json:"cpf" validate:"omitempty,min=11,max=14"` // CPF (11) ou CNPJ (14)
+	Especialidades        []string               `json:"especialidades" validate:"omitempty"`
+	Comissao              float64                `json:"comissao" validate:"omitempty"`
+	TipoComissao          string                 `json:"tipo_comissao" validate:"omitempty,oneof=PERCENTUAL FIXO"`
+	Foto                  *string                `json:"foto,omitempty"`
+	DataAdmissao          string                 `json:"data_admissao" validate:"required"`
+	Status                string                 `json:"status" validate:"omitempty,oneof=ATIVO INATIVO FERIAS LICENCA DEMITIDO"`
+	HorarioTrabalho       *string                `json:"horario_trabalho,omitempty"` // JSON string
+	Observacoes           *string                `json:"observacoes,omitempty"`
+	Tipo                  string                 `json:"tipo" validate:"required,oneof=BARBEIRO GERENTE RECEPCIONISTA OUTRO"`
+	ComissoesPorCategoria []CommissionByCategory `json:"comissoes_por_categoria,omitempty"`
 }
 
 // UpdateProfessionalRequest representa os dados para atualizar um profissional
 type UpdateProfessionalRequest struct {
-	Nome            string   `json:"nome" validate:"required,min=2,max=100"`
-	Email           string   `json:"email" validate:"required,email"`
-	Telefone        string   `json:"telefone" validate:"required,min=10,max=15"`
-	CPF             string   `json:"cpf" validate:"required,min=11,max=14"` // CPF (11) ou CNPJ (14)
-	Especialidades  []string `json:"especialidades" validate:"omitempty"`
-	Comissao        string   `json:"comissao" validate:"omitempty"`
-	TipoComissao    string   `json:"tipo_comissao" validate:"omitempty,oneof=PERCENTUAL FIXO"`
-	Foto            *string  `json:"foto,omitempty"`
-	DataAdmissao    string   `json:"data_admissao" validate:"required"`
-	DataDemissao    *string  `json:"data_demissao,omitempty"`
-	Status          string   `json:"status" validate:"omitempty,oneof=ATIVO INATIVO FERIAS LICENCA DEMITIDO"`
-	HorarioTrabalho *string  `json:"horario_trabalho,omitempty"`
-	Observacoes     *string  `json:"observacoes,omitempty"`
-	Tipo            string   `json:"tipo" validate:"required,oneof=BARBEIRO GERENTE RECEPCIONISTA OUTRO"`
+	Nome                  string                 `json:"nome" validate:"required,min=2,max=100"`
+	Email                 string                 `json:"email" validate:"required,email"`
+	Telefone              string                 `json:"telefone" validate:"required,min=10,max=15"`
+	CPF                   string                 `json:"cpf" validate:"omitempty,min=11,max=14"` // CPF (11) ou CNPJ (14)
+	Especialidades        []string               `json:"especialidades" validate:"omitempty"`
+	Comissao              float64                `json:"comissao" validate:"omitempty"`
+	TipoComissao          string                 `json:"tipo_comissao" validate:"omitempty,oneof=PERCENTUAL FIXO"`
+	Foto                  *string                `json:"foto,omitempty"`
+	DataAdmissao          string                 `json:"data_admissao" validate:"required"`
+	DataDemissao          *string                `json:"data_demissao,omitempty"`
+	Status                string                 `json:"status" validate:"omitempty,oneof=ATIVO INATIVO FERIAS LICENCA DEMITIDO"`
+	HorarioTrabalho       *string                `json:"horario_trabalho,omitempty"`
+	Observacoes           *string                `json:"observacoes,omitempty"`
+	Tipo                  string                 `json:"tipo" validate:"required,oneof=BARBEIRO GERENTE RECEPCIONISTA OUTRO"`
+	ComissoesPorCategoria []CommissionByCategory `json:"comissoes_por_categoria,omitempty"`
 }
 
 // UpdateProfessionalStatusRequest representa os dados para atualizar status
@@ -75,27 +77,34 @@ type CheckCpfProfessionalRequest struct {
 // Response DTOs
 // =============================================================================
 
+// CommissionByCategory DTO
+type CommissionByCategory struct {
+	CategoriaID string  `json:"categoria_id"`
+	Comissao    float64 `json:"comissao"`
+}
+
 // ProfessionalResponse resposta de profissional
 type ProfessionalResponse struct {
-	ID              string    `json:"id"`
-	TenantID        string    `json:"tenant_id"`
-	UserID          *string   `json:"user_id,omitempty"`
-	Nome            string    `json:"nome"`
-	Email           string    `json:"email"`
-	Telefone        string    `json:"telefone"`
-	CPF             string    `json:"cpf"`
-	Especialidades  []string  `json:"especialidades"`
-	Comissao        string    `json:"comissao"`
-	TipoComissao    string    `json:"tipo_comissao"`
-	Foto            *string   `json:"foto,omitempty"`
-	DataAdmissao    string    `json:"data_admissao"`
-	DataDemissao    *string   `json:"data_demissao,omitempty"`
-	Status          string    `json:"status"`
-	HorarioTrabalho *string   `json:"horario_trabalho,omitempty"`
-	Observacoes     *string   `json:"observacoes,omitempty"`
-	Tipo            string    `json:"tipo"`
-	CriadoEm        time.Time `json:"criado_em"`
-	AtualizadoEm    time.Time `json:"atualizado_em"`
+	ID                    string                 `json:"id"`
+	TenantID              string                 `json:"tenant_id"`
+	UserID                *string                `json:"user_id,omitempty"`
+	Nome                  string                 `json:"nome"`
+	Email                 string                 `json:"email"`
+	Telefone              string                 `json:"telefone"`
+	CPF                   string                 `json:"cpf"`
+	Especialidades        []string               `json:"especialidades"`
+	Comissao              float64                `json:"comissao"`
+	TipoComissao          string                 `json:"tipo_comissao"`
+	Foto                  *string                `json:"foto,omitempty"`
+	DataAdmissao          string                 `json:"data_admissao"`
+	DataDemissao          *string                `json:"data_demissao,omitempty"`
+	Status                string                 `json:"status"`
+	HorarioTrabalho       *string                `json:"horario_trabalho,omitempty"`
+	Observacoes           *string                `json:"observacoes,omitempty"`
+	Tipo                  string                 `json:"tipo"`
+	ComissoesPorCategoria []CommissionByCategory `json:"comissoes_por_categoria,omitempty"`
+	CriadoEm              time.Time              `json:"criado_em"`
+	AtualizadoEm          time.Time              `json:"atualizado_em"`
 }
 
 // ListProfessionalsResponse resposta de listagem de profissionais

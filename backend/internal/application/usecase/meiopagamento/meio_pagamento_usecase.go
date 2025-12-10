@@ -34,7 +34,16 @@ func (uc *CreateMeioPagamentoUseCase) Execute(ctx context.Context, tenantID stri
 		return nil, entity.ErrMeioPagamentoTipoInvalido
 	}
 
-	meio, err := entity.NewMeioPagamento(tenantUUID, req.Nome, tipo)
+	// Auto-generate name if empty
+	nome := req.Nome
+	if nome == "" {
+		nome = string(tipo)
+		if req.Bandeira != "" {
+			nome = fmt.Sprintf("%s - %s", nome, req.Bandeira)
+		}
+	}
+
+	meio, err := entity.NewMeioPagamento(tenantUUID, nome, tipo)
 	if err != nil {
 		return nil, err
 	}

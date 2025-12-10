@@ -216,6 +216,7 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 	}
 
 	// Processar cada pagamento (caixaAberto já foi validado no início)
+	// TODOS os pagamentos são registrados no caixa do dia, independente do tipo
 	for _, payment := range command.Payments {
 		// Buscar meio de pagamento para obter tipo e D+
 		meioPagamento, err := uc.meioPagamentoRepo.FindByID(ctx, input.TenantID.String(), payment.MeioPagamentoID.String())
@@ -225,6 +226,7 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 				zap.Error(err))
 			// Continua com valores padrão
 			meioPagamento = &entity.MeioPagamento{
+				Nome:  "Pagamento",
 				Tipo:  entity.TipoPagamentoOutro,
 				DMais: 0,
 			}
@@ -232,77 +234,78 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 
 		valorRecebido := decimal.NewFromFloat(payment.ValorRecebido)
 
-		// Decidir ação baseado no tipo de pagamento
-		switch meioPagamento.Tipo {
-		case entity.TipoPagamentoDinheiro, entity.TipoPagamentoPIX:
-			// Lançar no caixa diretamente (D+0) - caixa já foi validado no início
-			operacao, err := entity.NewOperacaoVenda(
-				caixaAberto.ID,
-				input.TenantID,
-				input.UserID,
-				valorRecebido,
-				fmt.Sprintf("Comanda #%s - %s", command.ID.String()[:8], meioPagamento.Tipo),
-			)
-			if err != nil {
-				uc.logger.Error("erro ao criar operação de venda", zap.Error(err))
-				continue
-			}
+		// Usar o nome cadastrado do meio de pagamento na descrição
+		nomeDescricao := meioPagamento.Nome
+		if nomeDescricao == "" {
+			nomeDescricao = string(meioPagamento.Tipo)
+		}
 
-			if err := uc.caixaRepo.CreateOperacao(ctx, operacao); err != nil {
-				uc.logger.Error("erro ao registrar operação no caixa", zap.Error(err))
-				continue
-			}
+		// TODOS os pagamentos são registrados no caixa diário
+		operacao, err := entity.NewOperacaoVenda(
+			caixaAberto.ID,
+			input.TenantID,
+			input.UserID,
+			valorRecebido,
+			fmt.Sprintf("Comanda #%s - %s", command.ID.String()[:8], nomeDescricao),
+		)
+		if err != nil {
+			uc.logger.Error("erro ao criar operação de venda", zap.Error(err))
+			continue
+		}
 
-			// Atualizar totais do caixa
-			sangrias := decimal.Zero
-			reforcos := decimal.Zero
-			entradas := caixaAberto.TotalEntradas.Add(valorRecebido)
-			if err := uc.caixaRepo.UpdateTotais(ctx, caixaAberto.ID, input.TenantID, sangrias, reforcos, entradas); err != nil {
-				uc.logger.Error("erro ao atualizar totais do caixa", zap.Error(err))
-			}
+		if err := uc.caixaRepo.CreateOperacao(ctx, operacao); err != nil {
+			uc.logger.Error("erro ao registrar operação no caixa", zap.Error(err))
+			continue
+		}
 
-			output.OperacoesCaixa = append(output.OperacoesCaixa, operacao.ID.String())
-			output.TotalLancadoCaixa = output.TotalLancadoCaixa.Add(valorRecebido)
+		// Atualizar totais do caixa
+		novoTotalEntradas := caixaAberto.TotalEntradas.Add(valorRecebido)
+		caixaAberto.TotalEntradas = novoTotalEntradas // Atualizar local para próximos pagamentos
+		if err := uc.caixaRepo.UpdateTotais(ctx, caixaAberto.ID, input.TenantID, caixaAberto.TotalSangrias, caixaAberto.TotalReforcos, novoTotalEntradas); err != nil {
+			uc.logger.Error("erro ao atualizar totais do caixa", zap.Error(err))
+		}
 
-			uc.logger.Info("operação de venda registrada no caixa",
-				zap.String("operacao_id", operacao.ID.String()),
-				zap.String("valor", valorRecebido.String()))
+		output.OperacoesCaixa = append(output.OperacoesCaixa, operacao.ID.String())
+		output.TotalLancadoCaixa = output.TotalLancadoCaixa.Add(valorRecebido)
 
-		default:
-			// Criar conta a receber para pagamentos não-caixa (cartão, boleto, etc)
+		uc.logger.Info("operação de venda registrada no caixa",
+			zap.String("operacao_id", operacao.ID.String()),
+			zap.String("meio_pagamento", nomeDescricao),
+			zap.String("tipo", string(meioPagamento.Tipo)),
+			zap.String("valor", valorRecebido.String()))
+
+		// Para pagamentos com D+ > 0 (cartões, boletos), também criar conta a receber
+		// como controle de quando o dinheiro será compensado na conta bancária
+		if meioPagamento.DMais > 0 {
 			valorMoney := valueobject.NewMoneyFromDecimal(valorRecebido)
-
-			// Calcular data de vencimento baseado no D+
 			dataVencimento := time.Now().AddDate(0, 0, meioPagamento.DMais)
-
-			descricao := fmt.Sprintf("Comanda #%s - %s", command.ID.String()[:8], meioPagamento.Nome)
+			descricao := fmt.Sprintf("Compensação - Comanda #%s - %s (D+%d)", command.ID.String()[:8], nomeDescricao, meioPagamento.DMais)
 
 			contaReceber, err := entity.NewContaReceber(
 				input.TenantID,
-				"SERVICO", // Origem padrão para comandas
-				nil,       // Sem assinatura vinculada
+				"SERVICO",
+				nil,
 				descricao,
 				valorMoney,
 				dataVencimento,
 			)
 			if err != nil {
-				uc.logger.Error("erro ao criar conta a receber", zap.Error(err))
+				uc.logger.Warn("erro ao criar conta a receber para compensação", zap.Error(err))
 				continue
 			}
 
-			// Definir competência como o mês atual
 			competencia := time.Now().Format("2006-01")
 			contaReceber.CompetenciaMes = &competencia
 
 			if err := uc.contaReceberRepo.Create(ctx, contaReceber); err != nil {
-				uc.logger.Error("erro ao persistir conta a receber", zap.Error(err))
+				uc.logger.Warn("erro ao persistir conta a receber para compensação", zap.Error(err))
 				continue
 			}
 
 			output.ContasReceber = append(output.ContasReceber, contaReceber.ID)
 			output.TotalContasReceber = output.TotalContasReceber.Add(valorRecebido)
 
-			uc.logger.Info("conta a receber criada",
+			uc.logger.Info("conta a receber de compensação criada",
 				zap.String("conta_receber_id", contaReceber.ID),
 				zap.String("valor", valorRecebido.String()),
 				zap.Int("d_mais", meioPagamento.DMais))

@@ -2,41 +2,42 @@
 
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateMeioPagamento, useUpdateMeioPagamento } from '@/hooks/use-meios-pagamento';
 import {
-    BANDEIRAS_CARTAO,
-    CORES_TIPO_PAGAMENTO,
-    CreateMeioPagamentoDTO,
-    D_MAIS_PADRAO,
-    MeioPagamento,
-    TIPO_PAGAMENTO_LABELS,
-    TipoPagamento,
+  BANDEIRAS_CARTAO,
+  CORES_TIPO_PAGAMENTO,
+  CreateMeioPagamentoDTO,
+  D_MAIS_PADRAO,
+  MeioPagamento,
+  TIPO_PAGAMENTO_LABELS,
+  TipoPagamento,
 } from '@/types/meio-pagamento';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
@@ -45,7 +46,7 @@ import { z } from 'zod';
 
 // Schema de validação
 const meioPagamentoSchema = z.object({
-  nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  nome: z.string().optional(),
   tipo: z.enum(['DINHEIRO', 'PIX', 'CREDITO', 'DEBITO', 'TRANSFERENCIA', 'BOLETO', 'OUTRO']),
   bandeira: z.string().optional(),
   taxa: z.string().optional(),
@@ -102,7 +103,7 @@ export function MeioPagamentoModal({
     if (!isEditing && tipoSelecionado) {
       form.setValue('d_mais', D_MAIS_PADRAO[tipoSelecionado] || 0);
       form.setValue('cor', CORES_TIPO_PAGAMENTO[tipoSelecionado] || '');
-      
+
       // Limpa bandeira se não for cartão
       if (tipoSelecionado !== 'CREDITO' && tipoSelecionado !== 'DEBITO') {
         form.setValue('bandeira', '');
@@ -145,7 +146,7 @@ export function MeioPagamentoModal({
 
   const onSubmit = async (data: MeioPagamentoFormData) => {
     const payload: CreateMeioPagamentoDTO = {
-      nome: data.nome,
+      nome: data.nome || '',
       tipo: data.tipo,
       taxa: data.taxa || '0',
       taxa_fixa: data.taxa_fixa || '0',
@@ -167,8 +168,6 @@ export function MeioPagamentoModal({
     if (data.observacoes && data.observacoes.trim() !== '') {
       payload.observacoes = data.observacoes.trim();
     }
-
-    console.log('📦 Payload enviado:', payload);
 
     try {
       if (isEditing && meioPagamento) {
@@ -197,236 +196,226 @@ export function MeioPagamentoModal({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Nome e Tipo */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="nome"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: PIX Banco X" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
 
-              <FormField
-                control={form.control}
-                name="tipo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(TIPO_PAGAMENTO_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+            {/* GRUPO 1: Informações Básicas */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Informações Básicas</h4>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="tipo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(TIPO_PAGAMENTO_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {mostrarBandeira && (
+                  <FormField
+                    control={form.control}
+                    name="bandeira"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bandeira</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a bandeira" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {BANDEIRAS_CARTAO.map((bandeira) => (
+                              <SelectItem key={bandeira} value={bandeira}>
+                                {bandeira}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
+              </div>
             </div>
 
-            {/* Bandeira (apenas para cartão) */}
-            {mostrarBandeira && (
-              <FormField
-                control={form.control}
-                name="bandeira"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bandeira</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value}
-                    >
+            <Separator />
+
+            {/* GRUPO 2: Financeiro */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Configuração Financeira</h4>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="taxa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Taxa (%)</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a bandeira" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {BANDEIRAS_CARTAO.map((bandeira) => (
-                          <SelectItem key={bandeira} value={bandeira}>
-                            {bandeira}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Taxa e Taxa Fixa */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="taxa"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Taxa (%)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="0.00"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Taxa percentual sobre o valor.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="taxa_fixa"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Taxa Fixa (R$)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Valor fixo por transação.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* D+ e Cor */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="d_mais"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prazo de Recebimento (D+)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" max="365" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Dias úteis para receber (D+0 = no mesmo dia).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="cor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cor</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-2">
                         <Input
-                          type="color"
-                          className="w-14 h-10 p-1 cursor-pointer"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="0.00"
+                          className="text-right"
                           {...field}
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="taxa_fixa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Taxa Fixa (R$)</FormLabel>
+                      <FormControl>
                         <Input
-                          type="text"
-                          placeholder="#000000"
-                          className="flex-1"
-                          value={field.value}
-                          onChange={field.onChange}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          className="text-right"
+                          {...field}
                         />
-                      </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="d_mais"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recebimento (D+)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" max="365" placeholder="0" className="text-center" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* GRUPO 3: Visual & Outros */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Aparência & Outros</h4>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="cor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cor de Identificação</FormLabel>
+                      <FormControl>
+                        <div className="flex gap-2">
+                          <Input
+                            type="color"
+                            className="w-10 h-9 p-0.5 cursor-pointer border-2"
+                            {...field}
+                          />
+                          <Input
+                            type="text"
+                            placeholder="#000000"
+                            className="flex-1 font-mono uppercase"
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="ordem_exibicao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ordem</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="observacoes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Anotações internas..."
+                        className="resize-none"
+                        rows={2}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="ativo"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/20">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-sm font-semibold">Status Ativo</FormLabel>
+                      <FormDescription className="text-xs">
+                        Habilitar este meio de pagamento no sistema.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
 
-            {/* Ordem de Exibição */}
-            <FormField
-              control={form.control}
-              name="ordem_exibicao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ordem de Exibição</FormLabel>
-                  <FormControl>
-                    <Input type="number" min="0" placeholder="0" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Define a ordem de exibição na lista (menor número = primeiro).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Observações */}
-            <FormField
-              control={form.control}
-              name="observacoes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Observações</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Informações adicionais sobre este meio de pagamento..."
-                      className="resize-none"
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Status Ativo */}
-            <FormField
-              control={form.control}
-              name="ativo"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Ativo</FormLabel>
-                    <FormDescription>
-                      Quando ativo, este meio de pagamento estará disponível para uso.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Criar'}
+                {isPending ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Criar Tipo'}
               </Button>
             </DialogFooter>
           </form>

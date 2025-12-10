@@ -67,57 +67,63 @@ export const createProfessionalSchema = z.object({
   nome: z.string()
     .min(3, 'Nome deve ter no mínimo 3 caracteres')
     .max(255, 'Nome muito longo'),
-  
+
   email: z.string()
     .email('Email inválido')
     .max(255, 'Email muito longo'),
-  
+
   telefone: phoneSchema,
-  
-  cpf: cpfCnpjSchema,
-  
+
+  cpf: cpfCnpjSchema.optional().or(z.literal('')),
+
   tipo: z.enum(['BARBEIRO', 'GERENTE', 'RECEPCIONISTA', 'OUTRO'], {
     required_error: 'Selecione o tipo de profissional',
   }),
-  
+
   data_admissao: z.date({
     required_error: 'Data de admissão é obrigatória',
   }).max(new Date(), 'Data não pode ser futura'),
-  
+
   // Campos opcionais
   foto: z.string().url('URL inválida').optional().nullable().or(z.literal('')),
-  
+
   especialidades: z.array(z.string()).optional(),
-  
+
   observacoes: z.string().max(500, 'Máximo 500 caracteres').optional(),
-  
+
   // Campos condicionais (Gerente)
   tambem_barbeiro: z.boolean().default(false),
-  
+
   // Comissão
   tipo_comissao: z.enum(['PERCENTUAL', 'FIXO']).optional(),
-  
+
   comissao: z.number()
     .min(0, 'Comissão não pode ser negativa')
     .max(100, 'Comissão máxima é 100%')
     .optional()
     .nullable(),
-  
+
   comissao_produtos: z.number()
     .min(0, 'Comissão não pode ser negativa')
     .max(100, 'Comissão máxima é 100%')
     .optional()
     .nullable(),
-  
+
+  // Comissões por categoria (Frontend only por enquanto)
+  comissoes_por_categoria: z.array(z.object({
+    categoria_id: z.string(),
+    comissao: z.number().min(0).max(100),
+  })).optional(),
+
   // Horário de trabalho
   horario_trabalho: workScheduleSchema.optional(),
-  
+
 }).superRefine((data, ctx) => {
   // Validação condicional: Barbeiro precisa de comissão
-  const precisaComissao = 
-    data.tipo === 'BARBEIRO' || 
+  const precisaComissao =
+    data.tipo === 'BARBEIRO' ||
     (data.tipo === 'GERENTE' && data.tambem_barbeiro);
-  
+
   if (precisaComissao) {
     if (!data.tipo_comissao) {
       ctx.addIssue({
@@ -126,7 +132,7 @@ export const createProfessionalSchema = z.object({
         path: ['tipo_comissao'],
       });
     }
-    
+
     if (data.comissao === undefined || data.comissao === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -143,36 +149,42 @@ export const updateProfessionalSchema = z.object({
     .min(3, 'Nome deve ter no mínimo 3 caracteres')
     .max(255, 'Nome muito longo')
     .optional(),
-  
+
   email: z.string()
     .email('Email inválido')
     .max(255, 'Email muito longo')
     .optional(),
-  
+
   telefone: phoneSchema.optional(),
-  
+
   foto: z.string().url('URL inválida').optional().nullable().or(z.literal('')),
-  
+
   especialidades: z.array(z.string()).optional(),
-  
+
   observacoes: z.string().max(500, 'Máximo 500 caracteres').optional(),
-  
+
   tipo_comissao: z.enum(['PERCENTUAL', 'FIXO']).optional(),
-  
+
   comissao: z.number()
     .min(0, 'Comissão não pode ser negativa')
     .max(100, 'Comissão máxima é 100%')
     .optional()
     .nullable(),
-  
+
   comissao_produtos: z.number()
     .min(0, 'Comissão não pode ser negativa')
     .max(100, 'Comissão máxima é 100%')
     .optional()
     .nullable(),
-  
+
+  // Comissões por categoria (Frontend only por enquanto)
+  comissoes_por_categoria: z.array(z.object({
+    categoria_id: z.string(),
+    comissao: z.number().min(0).max(100),
+  })).optional(),
+
   horario_trabalho: workScheduleSchema.optional(),
-  
+
   status: z.enum(['ATIVO', 'INATIVO', 'AFASTADO', 'DEMITIDO']).optional(),
 });
 
@@ -205,7 +217,7 @@ export function unmaskPhone(phone: string): string {
 /** Aplica máscara ao CPF ou CNPJ */
 export function maskCPF(cpf: string): string {
   const cleaned = cpf.replace(/\D/g, '');
-  
+
   // CNPJ (14 dígitos): 00.000.000/0000-00
   if (cleaned.length === 14) {
     return cleaned
@@ -214,7 +226,7 @@ export function maskCPF(cpf: string): string {
       .replace(/(\d{3})(\d)/, '$1/$2')
       .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
   }
-  
+
   // CPF (11 dígitos): 000.000.000-00
   return cleaned
     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -238,4 +250,25 @@ export function maskPhone(phone: string): string {
   return cleaned
     .replace(/(\d{2})(\d)/, '($1) $2')
     .replace(/(\d{5})(\d)/, '$1-$2');
+}
+
+/** Remove máscara do CEP */
+export function unmaskCEP(cep: string): string {
+  return cep.replace(/\D/g, '');
+}
+
+/** Aplica máscara ao CEP */
+export function maskCEP(cep: string): string {
+  const cleaned = cep.replace(/\D/g, '');
+  return cleaned.replace(/^(\d{5})(\d)/, '$1-$2');
+}
+
+/** Remove máscara do CNPJ (alias) */
+export function unmaskCNPJ(cnpj: string): string {
+  return unmaskCPF(cnpj);
+}
+
+/** Aplica máscara ao CNPJ (alias) */
+export function maskCNPJ(cnpj: string): string {
+  return maskCPF(cnpj);
 }

@@ -7,20 +7,27 @@
  */
 
 import {
-    appointmentService,
-    appointmentsToCalendarEvents,
-    CustomerNotFoundError,
-    professionalsToCalendarResources,
-    TimeSlotConflictError
+  appointmentService,
+  appointmentsToCalendarEvents,
+  BlockedTimeError,
+  CustomerNotFoundError,
+  professionalsToCalendarResources,
+  TimeSlotConflictError,
+  InsufficientIntervalError,
+  InvalidTransitionError,
+  ForbiddenScopeError,
+  ProfessionalNotFoundError,
+  ServiceNotFoundError,
+  AppointmentNotFoundError
 } from '@/services/appointment-service';
 import type {
-    AppointmentResponse,
-    AppointmentStatus,
-    CreateAppointmentRequest,
-    ListAppointmentsFilters,
-    ListAppointmentsResponse,
-    RescheduleAppointmentRequest,
-    UpdateAppointmentStatusRequest
+  AppointmentResponse,
+  AppointmentStatus,
+  CreateAppointmentRequest,
+  ListAppointmentsFilters,
+  ListAppointmentsResponse,
+  RescheduleAppointmentRequest,
+  UpdateAppointmentStatusRequest
 } from '@/types/appointment';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -183,10 +190,10 @@ export function useRescheduleAppointment() {
             data: old.data.map((apt) =>
               apt.id === id
                 ? {
-                    ...apt,
-                    start_time: data.new_start_time ?? apt.start_time,
-                    professional_id: data.professional_id ?? apt.professional_id,
-                  }
+                  ...apt,
+                  start_time: data.new_start_time ?? apt.start_time,
+                  professional_id: data.professional_id ?? apt.professional_id,
+                }
                 : apt
             ),
           };
@@ -346,29 +353,29 @@ export function useUpdateAppointmentStatus() {
         (old) => {
           // Se não há dados no cache, retornar como está
           if (!old) return old;
-          
+
           // Verifica se old é um objeto válido
           if (typeof old !== 'object') return old;
-          
+
           // Suporta tanto 'data' quanto 'appointments' como propriedade
-          const rawAppointments = (old as { data?: unknown }).data ?? 
-                                  (old as { appointments?: unknown }).appointments;
-          
+          const rawAppointments = (old as { data?: unknown }).data ??
+            (old as { appointments?: unknown }).appointments;
+
           // Se não há array de appointments, retornar sem modificar
           if (!Array.isArray(rawAppointments)) return old;
-          
+
           // Filtra e mapeia com segurança total
           const updatedAppointments = rawAppointments
             .filter((apt): apt is AppointmentResponse => {
-              return apt != null && 
-                     typeof apt === 'object' && 
-                     'id' in apt && 
-                     'status' in apt;
+              return apt != null &&
+                typeof apt === 'object' &&
+                'id' in apt &&
+                'status' in apt;
             })
             .map((apt) =>
               apt.id === id ? { ...apt, status: data.status } : apt
             );
-          
+
           return {
             ...old,
             data: updatedAppointments,
@@ -390,7 +397,7 @@ export function useUpdateAppointmentStatus() {
     onError: (error, __, context) => {
       // Se foi skipped, não fazer rollback
       if (context?.skipped) return;
-      
+
       if (context?.previousLists) {
         context.previousLists.forEach(([queryKey, data]) => {
           if (data) queryClient.setQueryData(queryKey, data);
@@ -408,7 +415,7 @@ export function useUpdateAppointmentStatus() {
     onSettled: (_, __, variables, context) => {
       // Se foi skipped, não invalidar queries
       if (context?.skipped) return;
-      
+
       queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: appointmentKeys.detail(variables.id),
@@ -418,7 +425,7 @@ export function useUpdateAppointmentStatus() {
     onSuccess: (_, __, context) => {
       // Se foi skipped, não mostrar toast (já está no status desejado)
       if (context?.skipped) return;
-      
+
       toast.success('Status atualizado!');
     },
   });
@@ -440,7 +447,7 @@ export function useConfirmAppointment() {
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
-      
+
       const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
         queryKey: appointmentKeys.lists(),
       });
@@ -452,8 +459,8 @@ export function useConfirmAppointment() {
           return {
             ...old,
             data: old.data.map((apt) =>
-              apt.id === id 
-                ? { ...apt, status: 'CONFIRMED' as AppointmentStatus } 
+              apt.id === id
+                ? { ...apt, status: 'CONFIRMED' as AppointmentStatus }
                 : apt
             ),
           };
@@ -494,7 +501,7 @@ export function useCheckInAppointment() {
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
-      
+
       const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
         queryKey: appointmentKeys.lists(),
       });
@@ -506,8 +513,8 @@ export function useCheckInAppointment() {
           return {
             ...old,
             data: old.data.map((apt) =>
-              apt.id === id 
-                ? { ...apt, status: 'CHECKED_IN' as AppointmentStatus } 
+              apt.id === id
+                ? { ...apt, status: 'CHECKED_IN' as AppointmentStatus }
                 : apt
             ),
           };
@@ -548,7 +555,7 @@ export function useStartServiceAppointment() {
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
-      
+
       const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
         queryKey: appointmentKeys.lists(),
       });
@@ -560,8 +567,8 @@ export function useStartServiceAppointment() {
           return {
             ...old,
             data: old.data.map((apt) =>
-              apt.id === id 
-                ? { ...apt, status: 'IN_SERVICE' as AppointmentStatus } 
+              apt.id === id
+                ? { ...apt, status: 'IN_SERVICE' as AppointmentStatus }
                 : apt
             ),
           };
@@ -602,7 +609,7 @@ export function useFinishServiceAppointment() {
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
-      
+
       const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
         queryKey: appointmentKeys.lists(),
       });
@@ -614,8 +621,8 @@ export function useFinishServiceAppointment() {
           return {
             ...old,
             data: old.data.map((apt) =>
-              apt.id === id 
-                ? { ...apt, status: 'AWAITING_PAYMENT' as AppointmentStatus } 
+              apt.id === id
+                ? { ...apt, status: 'AWAITING_PAYMENT' as AppointmentStatus }
                 : apt
             ),
           };
@@ -656,7 +663,7 @@ export function useCompleteAppointment() {
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
-      
+
       const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
         queryKey: appointmentKeys.lists(),
       });
@@ -668,8 +675,8 @@ export function useCompleteAppointment() {
           return {
             ...old,
             data: old.data.map((apt) =>
-              apt.id === id 
-                ? { ...apt, status: 'DONE' as AppointmentStatus } 
+              apt.id === id
+                ? { ...apt, status: 'DONE' as AppointmentStatus }
                 : apt
             ),
           };
@@ -710,7 +717,7 @@ export function useNoShowAppointment() {
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: appointmentKeys.lists() });
-      
+
       const previousLists = queryClient.getQueriesData<ListAppointmentsResponse>({
         queryKey: appointmentKeys.lists(),
       });
@@ -722,8 +729,8 @@ export function useNoShowAppointment() {
           return {
             ...old,
             data: old.data.map((apt) =>
-              apt.id === id 
-                ? { ...apt, status: 'NO_SHOW' as AppointmentStatus } 
+              apt.id === id
+                ? { ...apt, status: 'NO_SHOW' as AppointmentStatus }
                 : apt
             ),
           };

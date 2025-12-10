@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 const checkCpfExistsProfessional = `-- name: CheckCpfExistsProfessional :one
@@ -185,6 +186,41 @@ func (q *Queries) CreateProfessional(ctx context.Context, arg CreateProfessional
 	return i, err
 }
 
+const createProfessionalCategoryCommission = `-- name: CreateProfessionalCategoryCommission :one
+INSERT INTO comissoes_categoria_profissional (
+  tenant_id, profissional_id, categoria_id, comissao
+) VALUES (
+  $1, $2, $3, $4
+) RETURNING id, tenant_id, profissional_id, categoria_id, comissao, criado_em, atualizado_em
+`
+
+type CreateProfessionalCategoryCommissionParams struct {
+	TenantID       pgtype.UUID     `json:"tenant_id"`
+	ProfissionalID pgtype.UUID     `json:"profissional_id"`
+	CategoriaID    pgtype.UUID     `json:"categoria_id"`
+	Comissao       decimal.Decimal `json:"comissao"`
+}
+
+func (q *Queries) CreateProfessionalCategoryCommission(ctx context.Context, arg CreateProfessionalCategoryCommissionParams) (ComissoesCategoriaProfissional, error) {
+	row := q.db.QueryRow(ctx, createProfessionalCategoryCommission,
+		arg.TenantID,
+		arg.ProfissionalID,
+		arg.CategoriaID,
+		arg.Comissao,
+	)
+	var i ComissoesCategoriaProfissional
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.ProfissionalID,
+		&i.CategoriaID,
+		&i.Comissao,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
 const deleteProfessional = `-- name: DeleteProfessional :exec
 DELETE FROM profissionais
 WHERE id = $1 AND tenant_id = $2
@@ -197,6 +233,21 @@ type DeleteProfessionalParams struct {
 
 func (q *Queries) DeleteProfessional(ctx context.Context, arg DeleteProfessionalParams) error {
 	_, err := q.db.Exec(ctx, deleteProfessional, arg.ID, arg.TenantID)
+	return err
+}
+
+const deleteProfessionalCategoryCommissionsByProfessional = `-- name: DeleteProfessionalCategoryCommissionsByProfessional :exec
+DELETE FROM comissoes_categoria_profissional
+WHERE tenant_id = $1 AND profissional_id = $2
+`
+
+type DeleteProfessionalCategoryCommissionsByProfessionalParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	ProfissionalID pgtype.UUID `json:"profissional_id"`
+}
+
+func (q *Queries) DeleteProfessionalCategoryCommissionsByProfessional(ctx context.Context, arg DeleteProfessionalCategoryCommissionsByProfessionalParams) error {
+	_, err := q.db.Exec(ctx, deleteProfessionalCategoryCommissionsByProfessional, arg.TenantID, arg.ProfissionalID)
 	return err
 }
 
@@ -324,6 +375,44 @@ func (q *Queries) ListBarbers(ctx context.Context, tenantID pgtype.UUID) ([]List
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 			&i.Tipo,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProfessionalCategoryCommissions = `-- name: ListProfessionalCategoryCommissions :many
+SELECT id, tenant_id, profissional_id, categoria_id, comissao, criado_em, atualizado_em FROM comissoes_categoria_profissional
+WHERE tenant_id = $1 AND profissional_id = $2
+`
+
+type ListProfessionalCategoryCommissionsParams struct {
+	TenantID       pgtype.UUID `json:"tenant_id"`
+	ProfissionalID pgtype.UUID `json:"profissional_id"`
+}
+
+func (q *Queries) ListProfessionalCategoryCommissions(ctx context.Context, arg ListProfessionalCategoryCommissionsParams) ([]ComissoesCategoriaProfissional, error) {
+	rows, err := q.db.Query(ctx, listProfessionalCategoryCommissions, arg.TenantID, arg.ProfissionalID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ComissoesCategoriaProfissional{}
+	for rows.Next() {
+		var i ComissoesCategoriaProfissional
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.ProfissionalID,
+			&i.CategoriaID,
+			&i.Comissao,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
 		); err != nil {
 			return nil, err
 		}

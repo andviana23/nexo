@@ -588,16 +588,25 @@ func (q *Queries) GetCommandPaymentsSummary(ctx context.Context, arg GetCommandP
 const getNextCommandNumber = `-- name: GetNextCommandNumber :one
 SELECT COALESCE(MAX(
     CAST(
-        NULLIF(REGEXP_REPLACE(numero, '[^0-9]', '', 'g'), '') 
-        AS INTEGER
+        NULLIF(
+            CASE 
+                WHEN numero LIKE 'CMD-%-_____' THEN 
+                    SUBSTRING(numero FROM '[0-9]+$')
+                ELSE 
+                    '0'
+            END, 
+            ''
+        ) AS INTEGER
     )
 ), 0) + 1 as next_number
 FROM commands
 WHERE tenant_id = $1
     AND EXTRACT(YEAR FROM criado_em) = EXTRACT(YEAR FROM NOW())
+    AND numero LIKE 'CMD-%'
 `
 
 // Retorna o próximo número sequencial para comandas do tenant no ano atual
+// Extrai apenas o número sequencial após o último hífen (ex: CMD-2025-00001 -> 00001)
 func (q *Queries) GetNextCommandNumber(ctx context.Context, tenantID pgtype.UUID) (int32, error) {
 	row := q.db.QueryRow(ctx, getNextCommandNumber, tenantID)
 	var next_number int32

@@ -30,25 +30,37 @@ func (r *ContaReceberRepository) Create(ctx context.Context, conta *entity.Conta
 	tenantUUID := entityUUIDToPgtype(conta.TenantID)
 
 	origemStr := conta.Origem
-	statusStr := string(conta.Status)
+	statusStr := mapContaReceberStatusToDB(conta.Status)
 
 	var assinaturaUUID pgtype.UUID
 	if conta.AssinaturaID != nil {
 		assinaturaUUID = uuidStringToPgtype(*conta.AssinaturaID)
 	}
 
+	var commandUUID pgtype.UUID
+	if conta.CommandID != nil {
+		commandUUID = uuidStringToPgtype(*conta.CommandID)
+	}
+
+	var commandPaymentUUID pgtype.UUID
+	if conta.CommandPaymentID != nil {
+		commandPaymentUUID = uuidStringToPgtype(*conta.CommandPaymentID)
+	}
+
 	params := db.CreateContaReceberParams{
-		TenantID:        tenantUUID,
-		Origem:          &origemStr,
-		AssinaturaID:    assinaturaUUID,
-		ServicoID:       pgtype.UUID{Valid: false},
-		Descricao:       conta.DescricaoOrigem,
-		Valor:           moneyToRawDecimal(conta.Valor),
-		ValorPago:       moneyToNumeric(conta.ValorPago),
-		DataVencimento:  dateToDate(conta.DataVencimento),
-		DataRecebimento: pgtype.Date{Valid: conta.DataRecebimento != nil},
-		Status:          &statusStr,
-		Observacoes:     &conta.Observacoes,
+		TenantID:         tenantUUID,
+		Origem:           &origemStr,
+		AssinaturaID:     assinaturaUUID,
+		ServicoID:        pgtype.UUID{Valid: false},
+		CommandID:        commandUUID,
+		CommandPaymentID: commandPaymentUUID,
+		Descricao:        conta.DescricaoOrigem,
+		Valor:            moneyToRawDecimal(conta.Valor),
+		ValorPago:        moneyToNumeric(conta.ValorPago),
+		DataVencimento:   dateToDate(conta.DataVencimento),
+		DataRecebimento:  pgtype.Date{Valid: conta.DataRecebimento != nil},
+		Status:           &statusStr,
+		Observacoes:      &conta.Observacoes,
 	}
 
 	if conta.DataRecebimento != nil {
@@ -88,7 +100,7 @@ func (r *ContaReceberRepository) Update(ctx context.Context, conta *entity.Conta
 	tenantUUID := entityUUIDToPgtype(conta.TenantID)
 	idUUID := uuidStringToPgtype(conta.ID)
 
-	statusStr := string(conta.Status)
+	statusStr := mapContaReceberStatusToDB(conta.Status)
 
 	params := db.UpdateContaReceberParams{
 		ID:              idUUID,
@@ -184,10 +196,42 @@ func (r *ContaReceberRepository) List(ctx context.Context, tenantID string, filt
 		offset = int32((filters.Page - 1) * filters.PageSize)
 	}
 
-	results, err := r.queries.ListContasReceberByTenant(ctx, db.ListContasReceberByTenantParams{
-		TenantID: tenantUUID,
-		Limit:    limit,
-		Offset:   offset,
+	var statusStr *string
+	if filters.Status != nil {
+		s := mapContaReceberStatusToDB(*filters.Status)
+		statusStr = &s
+	}
+
+	var origemStr *string
+	if filters.Origem != nil && *filters.Origem != "" {
+		o := *filters.Origem
+		origemStr = &o
+	}
+
+	assinaturaUUID := pgtype.UUID{Valid: false}
+	if filters.AssinaturaID != nil && *filters.AssinaturaID != "" {
+		assinaturaUUID = uuidStringToPgtype(*filters.AssinaturaID)
+	}
+
+	dataInicio := pgtype.Date{Valid: false}
+	if filters.DataInicio != nil && !filters.DataInicio.IsZero() {
+		dataInicio = dateToDate(*filters.DataInicio)
+	}
+
+	dataFim := pgtype.Date{Valid: false}
+	if filters.DataFim != nil && !filters.DataFim.IsZero() {
+		dataFim = dateToDate(*filters.DataFim)
+	}
+
+	results, err := r.queries.ListContasReceberFiltered(ctx, db.ListContasReceberFilteredParams{
+		TenantID:     tenantUUID,
+		Limit:        limit,
+		Offset:       offset,
+		Status:       statusStr,
+		Origem:       origemStr,
+		AssinaturaID: assinaturaUUID,
+		DataInicio:   dataInicio,
+		DataFim:      dataFim,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar contas: %w", err)
@@ -237,7 +281,7 @@ func (r *ContaReceberRepository) ListVencendoEm(ctx context.Context, tenantID st
 func (r *ContaReceberRepository) SumByPeriod(ctx context.Context, tenantID string, inicio, fim time.Time, status *valueobject.StatusConta) (valueobject.Money, error) {
 	tenantUUID := uuidStringToPgtype(tenantID)
 
-	if status != nil && *status == valueobject.StatusContaPago {
+	if status != nil && (*status == valueobject.StatusContaRecebido || *status == valueobject.StatusContaPago) {
 		// Usar query específica para contas recebidas
 		params := db.SumContasRecebidasByPeriodParams{
 			TenantID:          tenantUUID,
@@ -266,16 +310,16 @@ func (r *ContaReceberRepository) SumByPeriod(ctx context.Context, tenantID strin
 
 // SumByOrigem soma valores por origem
 func (r *ContaReceberRepository) SumByOrigem(ctx context.Context, tenantID, origem string, inicio, fim time.Time) (valueobject.Money, error) {
-	// Por enquanto, usar SumByPeriod filtrado manualmente
-	// TODO: Criar query específica no sqlc
 	tenantUUID := uuidStringToPgtype(tenantID)
 
-	params := db.SumContasReceberByPeriodParams{
+	origemStr := origem
+	params := db.SumContasReceberByOrigemParams{
 		TenantID:         tenantUUID,
+		Origem:           &origemStr,
 		DataVencimento:   dateToDate(inicio),
 		DataVencimento_2: dateToDate(fim),
 	}
-	result, err := r.queries.SumContasReceberByPeriod(ctx, params)
+	result, err := r.queries.SumContasReceberByOrigem(ctx, params)
 	if err != nil {
 		return valueobject.Zero(), fmt.Errorf("erro ao somar contas por origem: %w", err)
 	}
@@ -303,7 +347,7 @@ func (r *ContaReceberRepository) toDomain(model *db.ContasAReceber) (*entity.Con
 
 	var status valueobject.StatusConta
 	if model.Status != nil {
-		status = valueobject.StatusConta(*model.Status)
+		status = mapContaReceberStatusFromDB(*model.Status)
 	}
 
 	var observacoes string
@@ -311,21 +355,35 @@ func (r *ContaReceberRepository) toDomain(model *db.ContasAReceber) (*entity.Con
 		observacoes = *model.Observacoes
 	}
 
+	var commandID *string
+	if model.CommandID.Valid {
+		cid := pgUUIDToString(model.CommandID)
+		commandID = &cid
+	}
+
+	var commandPaymentID *string
+	if model.CommandPaymentID.Valid {
+		cpid := pgUUIDToString(model.CommandPaymentID)
+		commandPaymentID = &cpid
+	}
+
 	conta := &entity.ContaReceber{
-		ID:              pgUUIDToString(model.ID),
-		TenantID: pgtypeToEntityUUID(model.TenantID),
-		Origem:          origem,
-		AssinaturaID:    assinaturaID,
-		DescricaoOrigem: model.Descricao,
-		Valor:           rawDecimalToMoney(model.Valor),
-		ValorPago:       numericToMoney(model.ValorPago),
-		ValorAberto:     valueobject.Zero(), // Calculado no domínio
-		DataVencimento:  dateToTime(model.DataVencimento),
-		DataRecebimento: dataRecebimento,
-		Status:          status,
-		Observacoes:     observacoes,
-		CriadoEm:        timestamptzToTime(model.CriadoEm),
-		AtualizadoEm:    timestamptzToTime(model.AtualizadoEm),
+		ID:               pgUUIDToString(model.ID),
+		TenantID:         pgtypeToEntityUUID(model.TenantID),
+		Origem:           origem,
+		AssinaturaID:     assinaturaID,
+		DescricaoOrigem:  model.Descricao,
+		Valor:            rawDecimalToMoney(model.Valor),
+		ValorPago:        numericToMoney(model.ValorPago),
+		ValorAberto:      valueobject.Zero(), // Calculado no domínio
+		DataVencimento:   dateToTime(model.DataVencimento),
+		DataRecebimento:  dataRecebimento,
+		Status:           status,
+		Observacoes:      observacoes,
+		CommandID:        commandID,
+		CommandPaymentID: commandPaymentID,
+		CriadoEm:         timestamptzToTime(model.CriadoEm),
+		AtualizadoEm:     timestamptzToTime(model.AtualizadoEm),
 	}
 
 	// Calcular valor em aberto
@@ -345,6 +403,22 @@ func (r *ContaReceberRepository) toDomainList(models []db.ContasAReceber) ([]*en
 		result = append(result, conta)
 	}
 	return result, nil
+}
+
+// ListByCommandID lista contas vinculadas a uma comanda (para idempotência/estorno).
+func (r *ContaReceberRepository) ListByCommandID(ctx context.Context, tenantID, commandID string) ([]*entity.ContaReceber, error) {
+	tenantUUID := uuidStringToPgtype(tenantID)
+	commandUUID := uuidStringToPgtype(commandID)
+
+	results, err := r.queries.ListContasReceberByCommandID(ctx, db.ListContasReceberByCommandIDParams{
+		TenantID:  tenantUUID,
+		CommandID: commandUUID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar contas por comanda: %w", err)
+	}
+
+	return r.toDomainList(results)
 }
 
 // ============================================================================
@@ -438,7 +512,7 @@ func (r *ContaReceberRepository) SumByCompetencia(ctx context.Context, tenantID,
 	tenantUUID := uuidStringToPgtype(tenantID)
 
 	if status != nil {
-		statusStr := string(*status)
+		statusStr := mapContaReceberStatusToDB(*status)
 		result, err := r.queries.SumContasReceberByCompetenciaAndStatus(ctx, db.SumContasReceberByCompetenciaAndStatusParams{
 			TenantID:       tenantUUID,
 			CompetenciaMes: &competenciaMes,
@@ -458,6 +532,23 @@ func (r *ContaReceberRepository) SumByCompetencia(ctx context.Context, tenantID,
 		return valueobject.Zero(), fmt.Errorf("erro ao somar por competência: %w", err)
 	}
 	return rawDecimalToMoney(result.TotalBruto), nil
+}
+
+// mapContaReceberStatusToDB converte status do domínio para o status esperado no banco.
+// Mantém compatibilidade com código legado que ainda usa "PAGO" para contas a receber.
+func mapContaReceberStatusToDB(status valueobject.StatusConta) string {
+	if status == valueobject.StatusContaPago {
+		return string(valueobject.StatusContaRecebido)
+	}
+	return string(status)
+}
+
+// mapContaReceberStatusFromDB converte status do banco para status canônico do domínio.
+func mapContaReceberStatusFromDB(status string) valueobject.StatusConta {
+	if status == string(valueobject.StatusContaPago) {
+		return valueobject.StatusContaRecebido
+	}
+	return valueobject.StatusConta(status)
 }
 
 // MarcarRecebidaViaAsaas quita conta quando webhook RECEIVED chegar

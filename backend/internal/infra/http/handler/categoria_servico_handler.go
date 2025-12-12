@@ -6,6 +6,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoria"
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
+	"github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
@@ -64,12 +65,11 @@ func (h *CategoriaServicoHandler) Create(c echo.Context) error {
 		})
 	}
 
-	// Extrair unit_id do contexto
-	unitID, ok := c.Get("unit_id").(string)
-	if !ok || unitID == "" {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "Unit ID não encontrado",
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
 		})
 	}
 
@@ -143,11 +143,11 @@ func (h *CategoriaServicoHandler) GetByID(c echo.Context) error {
 		})
 	}
 
-	unitID, ok := c.Get("unit_id").(string)
-	if !ok || unitID == "" {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "Unit ID não encontrado",
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
 		})
 	}
 
@@ -201,11 +201,11 @@ func (h *CategoriaServicoHandler) List(c echo.Context) error {
 		})
 	}
 
-	unitID, ok := c.Get("unit_id").(string)
-	if !ok || unitID == "" {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "Unit ID não encontrado",
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
 		})
 	}
 
@@ -257,11 +257,11 @@ func (h *CategoriaServicoHandler) Update(c echo.Context) error {
 		})
 	}
 
-	unitID, ok := c.Get("unit_id").(string)
-	if !ok || unitID == "" {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "Unit ID não encontrado",
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
 		})
 	}
 
@@ -347,11 +347,11 @@ func (h *CategoriaServicoHandler) Delete(c echo.Context) error {
 		})
 	}
 
-	unitID, ok := c.Get("unit_id").(string)
-	if !ok || unitID == "" {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error:   "unauthorized",
-			Message: "Unit ID não encontrado",
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
 		})
 	}
 

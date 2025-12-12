@@ -9,6 +9,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
+	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
 	"go.uber.org/zap"
 )
 
@@ -22,18 +23,21 @@ type MarcarCompensacaoInput struct {
 // MarcarCompensacaoUseCase marca compensações como confirmadas/compensadas
 // Este use case é executado manualmente ou por cron job diário
 type MarcarCompensacaoUseCase struct {
-	repo   port.CompensacaoBancariaRepository
-	logger *zap.Logger
+	repo             port.CompensacaoBancariaRepository
+	contaReceberRepo port.ContaReceberRepository
+	logger           *zap.Logger
 }
 
 // NewMarcarCompensacaoUseCase cria nova instância do use case
 func NewMarcarCompensacaoUseCase(
 	repo port.CompensacaoBancariaRepository,
+	contaReceberRepo port.ContaReceberRepository,
 	logger *zap.Logger,
 ) *MarcarCompensacaoUseCase {
 	return &MarcarCompensacaoUseCase{
-		repo:   repo,
-		logger: logger,
+		repo:             repo,
+		contaReceberRepo: contaReceberRepo,
+		logger:           logger,
 	}
 }
 
@@ -85,6 +89,9 @@ func (uc *MarcarCompensacaoUseCase) Execute(ctx context.Context, input MarcarCom
 		zap.String("data_compensado", comp.DataCompensado.Format("2006-01-02")),
 	)
 
+	// Atualizar conta a receber vinculada (quando receita_id aponta para contas_a_receber)
+	uc.atualizarContaReceberCompensada(ctx, input.TenantID, comp)
+
 	return comp, nil
 }
 
@@ -123,6 +130,7 @@ func (uc *MarcarCompensacaoUseCase) ExecuteBatch(ctx context.Context, tenantID s
 			continue
 		}
 
+		uc.atualizarContaReceberCompensada(ctx, tenantID, comp)
 		count++
 	}
 
@@ -133,4 +141,50 @@ func (uc *MarcarCompensacaoUseCase) ExecuteBatch(ctx context.Context, tenantID s
 	)
 
 	return count, nil
+}
+
+// atualizarContaReceberCompensada marca a conta vinculada como recebida quando a compensação liquida.
+func (uc *MarcarCompensacaoUseCase) atualizarContaReceberCompensada(ctx context.Context, tenantID string, comp *entity.CompensacaoBancaria) {
+	if uc.contaReceberRepo == nil || comp == nil || comp.ReceitaID == "" {
+		return
+	}
+
+	conta, err := uc.contaReceberRepo.FindByID(ctx, tenantID, comp.ReceitaID)
+	if err != nil || conta == nil {
+		uc.logger.Debug("conta a receber vinculada não encontrada para compensação",
+			zap.String("tenant_id", tenantID),
+			zap.String("receita_id", comp.ReceitaID),
+			zap.Error(err),
+		)
+		return
+	}
+
+	if conta.Status == valueobject.StatusContaRecebido ||
+		conta.Status == valueobject.StatusContaEstornado ||
+		conta.Status == valueobject.StatusContaCancelado {
+		return
+	}
+
+	dataRecebimento := time.Now()
+	if comp.DataCompensado != nil {
+		dataRecebimento = *comp.DataCompensado
+	}
+
+	if err := conta.MarcarComoRecebido(dataRecebimento); err != nil {
+		uc.logger.Warn("erro ao marcar conta a receber como recebida via compensação",
+			zap.String("tenant_id", tenantID),
+			zap.String("conta_receber_id", conta.ID),
+			zap.Error(err),
+		)
+		return
+	}
+
+	conta.ReceivedAt = &dataRecebimento
+	if err := uc.contaReceberRepo.Update(ctx, conta); err != nil {
+		uc.logger.Warn("erro ao atualizar conta a receber após compensação",
+			zap.String("tenant_id", tenantID),
+			zap.String("conta_receber_id", conta.ID),
+			zap.Error(err),
+		)
+	}
 }

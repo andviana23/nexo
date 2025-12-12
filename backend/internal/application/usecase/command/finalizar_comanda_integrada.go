@@ -46,6 +46,7 @@ type FinalizarComandaIntegradaUseCase struct {
 	appointmentRepo    port.AppointmentRepository
 	meioPagamentoRepo  port.MeioPagamentoRepository
 	contaReceberRepo   port.ContaReceberRepository
+	compensacaoRepo    port.CompensacaoBancariaRepository
 	caixaRepo          port.CaixaDiarioRepository
 	produtoRepo        port.ProdutoRepository
 	movimentacaoRepo   port.MovimentacaoEstoqueRepository
@@ -64,6 +65,7 @@ func NewFinalizarComandaIntegradaUseCase(
 	appointmentRepo port.AppointmentRepository,
 	meioPagamentoRepo port.MeioPagamentoRepository,
 	contaReceberRepo port.ContaReceberRepository,
+	compensacaoRepo port.CompensacaoBancariaRepository,
 	caixaRepo port.CaixaDiarioRepository,
 	produtoRepo port.ProdutoRepository,
 	movimentacaoRepo port.MovimentacaoEstoqueRepository,
@@ -80,6 +82,7 @@ func NewFinalizarComandaIntegradaUseCase(
 		appointmentRepo:    appointmentRepo,
 		meioPagamentoRepo:  meioPagamentoRepo,
 		contaReceberRepo:   contaReceberRepo,
+		compensacaoRepo:    compensacaoRepo,
 		caixaRepo:          caixaRepo,
 		produtoRepo:        produtoRepo,
 		movimentacaoRepo:   movimentacaoRepo,
@@ -153,12 +156,16 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 		TotalComissoes:       decimal.Zero,
 	}
 
+	// Totais por tipo de item para rateio das receitas por origem
+	var totalServicos decimal.Decimal
+	var totalProdutos decimal.Decimal
+
 	// Buscar profissional do appointment (para comissões)
 	var professionalID string
 	var professionalInfo *port.ProfessionalInfo
 	var appointmentDate *time.Time // Data do agendamento para reference_date
 	if command.AppointmentID != nil {
-		appointment, err := uc.appointmentRepo.FindByID(ctx, input.TenantID.String(), command.AppointmentID.String())
+		appointment, err := uc.appointmentRepo.FindByID(ctx, input.TenantID.String(), "", command.AppointmentID.String())
 		if err == nil && appointment != nil {
 			professionalID = appointment.ProfessionalID
 			// COM-001: Buscar info completa do profissional (inclui comissão)
@@ -179,6 +186,7 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 	for _, item := range command.Items {
 		switch item.Tipo {
 		case entity.CommandItemTypeProduto:
+			totalProdutos = totalProdutos.Add(decimal.NewFromFloat(item.PrecoFinal))
 			// T-EST-002: Abater estoque para produtos
 			if err := uc.processarEstoqueProduto(ctx, input.TenantID, input.UserID, &item, output); err != nil {
 				uc.logger.Warn("erro ao abater estoque do produto",
@@ -215,6 +223,7 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 			}
 
 		case entity.CommandItemTypeServico:
+			totalServicos = totalServicos.Add(decimal.NewFromFloat(item.PrecoFinal))
 			// COM-001: Buscar regra usando hierarquia de 5 níveis
 			if professionalID != "" {
 				ruleResult := uc.buscarRegraComissaoHierarquica(
@@ -243,6 +252,33 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 						zap.String("item_id", item.ID.String()),
 						zap.String("servico_id", item.ItemID.String()),
 						zap.String("profissional_id", professionalID))
+				}
+			}
+		}
+	}
+
+	// Calcular proporção de serviços vs produtos para rateio das receitas por pagamento
+	totalItens := totalServicos.Add(totalProdutos)
+	ratioServicos := decimal.NewFromInt(1)
+	if !totalItens.IsZero() {
+		if totalServicos.IsZero() {
+			ratioServicos = decimal.Zero
+		} else if totalProdutos.IsZero() {
+			ratioServicos = decimal.NewFromInt(1)
+		} else {
+			ratioServicos = totalServicos.Div(totalItens)
+		}
+	}
+
+	// Mapear contas já criadas por pagamento+origem para idempotência
+	existingByPaymentOrigem := make(map[string]struct{})
+	if uc.contaReceberRepo != nil {
+		existing, err := uc.contaReceberRepo.ListByCommandID(ctx, input.TenantID.String(), command.ID.String())
+		if err == nil {
+			for _, c := range existing {
+				if c.CommandPaymentID != nil {
+					key := *c.CommandPaymentID + "|" + c.Origem
+					existingByPaymentOrigem[key] = struct{}{}
 				}
 			}
 		}
@@ -307,41 +343,140 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 			zap.String("tipo", string(meioPagamento.Tipo)),
 			zap.String("valor", valorRecebido.String()))
 
-		// Para pagamentos com D+ > 0 (cartões, boletos), também criar conta a receber
-		// como controle de quando o dinheiro será compensado na conta bancária
-		if meioPagamento.DMais > 0 {
-			valorMoney := valueobject.NewMoneyFromDecimal(valorRecebido)
-			dataVencimento := time.Now().AddDate(0, 0, meioPagamento.DMais)
-			descricao := fmt.Sprintf("Compensação - Comanda #%s - %s (D+%d)", command.ID.String()[:8], nomeDescricao, meioPagamento.DMais)
+		// Gerar contas a receber por origem (SERVICO/PRODUTO) para este pagamento.
+		// - Pagamentos D+0: status RECEBIDO no ato
+		// - Pagamentos D+N: status CONFIRMADO aguardando compensação bancária
+		if uc.contaReceberRepo != nil {
+			now := time.Now()
+			competencia := now.Format("2006-01")
 
-			contaReceber, err := entity.NewContaReceber(
-				input.TenantID,
-				"SERVICO",
-				nil,
-				descricao,
-				valorMoney,
-				dataVencimento,
-			)
-			if err != nil {
-				uc.logger.Warn("erro ao criar conta a receber para compensação", zap.Error(err))
-				continue
+			// Rateio proporcional do valor deste pagamento entre serviços e produtos
+			valorServicos := valorRecebido.Mul(ratioServicos).Round(2)
+			valorProdutos := valorRecebido.Sub(valorServicos)
+
+			splits := []struct {
+				origem string
+				valor  decimal.Decimal
+			}{
+				{origem: "SERVICO", valor: valorServicos},
+				{origem: "PRODUTO", valor: valorProdutos},
 			}
 
-			competencia := time.Now().Format("2006-01")
-			contaReceber.CompetenciaMes = &competencia
+			for _, sp := range splits {
+				if sp.valor.IsZero() || sp.valor.IsNegative() {
+					continue
+				}
 
-			if err := uc.contaReceberRepo.Create(ctx, contaReceber); err != nil {
-				uc.logger.Warn("erro ao persistir conta a receber para compensação", zap.Error(err))
-				continue
+				paymentIDStr := payment.ID.String()
+				key := paymentIDStr + "|" + sp.origem
+				if _, exists := existingByPaymentOrigem[key]; exists {
+					continue
+				}
+
+				valorMoney := valueobject.NewMoneyFromDecimal(sp.valor)
+				dataVencimento := now
+				status := valueobject.StatusContaRecebido
+				var dataRecebimento *time.Time
+
+				if meioPagamento.DMais > 0 {
+					dataVencimento = now.AddDate(0, 0, meioPagamento.DMais)
+					status = valueobject.StatusContaConfirmado
+				} else {
+					dataRecebimento = &now
+				}
+
+				descricaoConta := fmt.Sprintf("Comanda #%s - %s (%s)", command.ID.String()[:8], nomeDescricao, sp.origem)
+				contaReceber, err := entity.NewContaReceber(
+					input.TenantID,
+					sp.origem,
+					nil,
+					descricaoConta,
+					valorMoney,
+					dataVencimento,
+				)
+				if err != nil {
+					uc.logger.Warn("erro ao criar conta a receber da comanda", zap.Error(err))
+					continue
+				}
+
+				commandIDStr := command.ID.String()
+				contaReceber.CommandID = &commandIDStr
+				contaReceber.CommandPaymentID = &paymentIDStr
+				contaReceber.CompetenciaMes = &competencia
+				contaReceber.Status = status
+
+				if status == valueobject.StatusContaRecebido {
+					contaReceber.ValorPago = valorMoney
+					contaReceber.ValorAberto = valueobject.Zero()
+					contaReceber.DataRecebimento = dataRecebimento
+					contaReceber.ReceivedAt = dataRecebimento
+				} else {
+					contaReceber.ValorPago = valueobject.Zero()
+					contaReceber.ValorAberto = valorMoney
+					contaReceber.ConfirmedAt = &now
+				}
+
+				if err := uc.contaReceberRepo.Create(ctx, contaReceber); err != nil {
+					uc.logger.Warn("erro ao persistir conta a receber da comanda", zap.Error(err))
+					continue
+				}
+
+				existingByPaymentOrigem[key] = struct{}{}
+				output.ContasReceber = append(output.ContasReceber, contaReceber.ID)
+				output.TotalContasReceber = output.TotalContasReceber.Add(sp.valor)
+
+				uc.logger.Info("conta a receber criada para comanda",
+					zap.String("conta_receber_id", contaReceber.ID),
+					zap.String("origem", sp.origem),
+					zap.String("valor", sp.valor.String()),
+					zap.Int("d_mais", meioPagamento.DMais))
+
+				// Gerar compensação bancária automática para pagamentos D+
+				if uc.compensacaoRepo != nil && meioPagamento.DMais > 0 {
+					// Idempotência: evitar criar compensação duplicada
+					if existingComp, err := uc.compensacaoRepo.FindByReceitaID(ctx, input.TenantID.String(), contaReceber.ID); err == nil && existingComp != nil {
+						continue
+					}
+
+					taxaPercentual := valueobject.NewPercentageUnsafe(meioPagamento.Taxa)
+
+					taxaFixaDec := meioPagamento.TaxaFixa
+					if !taxaFixaDec.IsZero() && !valorRecebido.IsZero() {
+						ratio := sp.valor.Div(valorRecebido)
+						taxaFixaDec = meioPagamento.TaxaFixa.Mul(ratio).Round(2)
+					}
+
+					taxaFixaMoney := valueobject.NewMoneyFromDecimal(taxaFixaDec)
+					dMaisVO := valueobject.NewDMaisUnsafe(meioPagamento.DMais)
+
+					comp, err := entity.NewCompensacaoBancaria(
+						input.TenantID,
+						contaReceber.ID,
+						payment.MeioPagamentoID.String(),
+						now,
+						valorMoney,
+						taxaPercentual,
+						taxaFixaMoney,
+						dMaisVO,
+					)
+					if err != nil {
+						uc.logger.Warn("erro ao criar compensação bancária automática", zap.Error(err))
+						continue
+					}
+
+					_ = comp.MarcarComoConfirmado()
+					if err := uc.compensacaoRepo.Create(ctx, comp); err != nil {
+						uc.logger.Warn("erro ao persistir compensação bancária automática", zap.Error(err))
+						continue
+					}
+
+					uc.logger.Info("compensação bancária criada para pagamento D+",
+						zap.String("compensacao_id", comp.ID),
+						zap.String("receita_id", comp.ReceitaID),
+						zap.Int("d_mais", meioPagamento.DMais),
+						zap.String("data_compensacao", comp.DataCompensacao.Format("2006-01-02")))
+				}
 			}
-
-			output.ContasReceber = append(output.ContasReceber, contaReceber.ID)
-			output.TotalContasReceber = output.TotalContasReceber.Add(valorRecebido)
-
-			uc.logger.Info("conta a receber de compensação criada",
-				zap.String("conta_receber_id", contaReceber.ID),
-				zap.String("valor", valorRecebido.String()),
-				zap.Int("d_mais", meioPagamento.DMais))
 		}
 	}
 
@@ -357,7 +492,7 @@ func (uc *FinalizarComandaIntegradaUseCase) Execute(ctx context.Context, input F
 
 	// Atualizar status do appointment para DONE (se houver)
 	if command.AppointmentID != nil {
-		appointment, err := uc.appointmentRepo.FindByID(ctx, input.TenantID.String(), command.AppointmentID.String())
+		appointment, err := uc.appointmentRepo.FindByID(ctx, input.TenantID.String(), "", command.AppointmentID.String())
 		if err == nil && appointment != nil {
 			appointment.Status = valueobject.AppointmentStatusDone
 			if err := uc.appointmentRepo.Update(ctx, appointment); err != nil {

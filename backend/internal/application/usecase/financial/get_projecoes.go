@@ -79,6 +79,7 @@ func (uc *GetProjecoesUseCase) Execute(ctx context.Context, input ProjecoesInput
 	}
 
 	hoje := time.Now()
+	statusRecebido := valueobject.StatusContaRecebido
 	statusPago := valueobject.StatusContaPago
 
 	// 1. Buscar histórico dos últimos 3 meses
@@ -90,7 +91,7 @@ func (uc *GetProjecoesUseCase) Execute(ctx context.Context, input ProjecoesInput
 		inicio := time.Date(mesRef.Year(), mesRef.Month(), 1, 0, 0, 0, 0, time.UTC)
 		fim := inicio.AddDate(0, 1, 0).Add(-time.Nanosecond)
 
-		receita, err := uc.contaReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
+		receita, err := uc.contaReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusRecebido)
 		if err != nil {
 			uc.logger.Warn("erro ao buscar receita do histórico", zap.Error(err), zap.Int("mes", i))
 			receita = valueobject.Zero()

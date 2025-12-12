@@ -3,8 +3,8 @@ package financial
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"fmt"
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
@@ -76,8 +76,8 @@ func (uc *GenerateFluxoDiarioUseCase) Execute(ctx context.Context, input Generat
 	}
 
 	// Calcular entradas confirmadas (contas recebidas)
-	statusPago := valueobject.StatusContaPago
-	entradasConfirmadas, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, input.Data, input.Data, &statusPago)
+	statusRecebido := valueobject.StatusContaRecebido
+	entradasConfirmadas, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, input.Data, input.Data, &statusRecebido)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao calcular entradas confirmadas: %w", err)
 	}
@@ -109,6 +109,7 @@ func (uc *GenerateFluxoDiarioUseCase) Execute(ctx context.Context, input Generat
 	fluxo.EntradasConfirmadas = entradasConfirmadas
 
 	// Calcular saídas pagas (contas pagas)
+	statusPago := valueobject.StatusContaPago
 	saidasPagas, err := uc.contasPagarRepo.SumByPeriod(ctx, input.TenantID, input.Data, input.Data, &statusPago)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao calcular saídas pagas: %w", err)

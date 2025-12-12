@@ -3,8 +3,8 @@ package financial
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"fmt"
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
@@ -27,6 +27,7 @@ type GenerateFluxoDiarioV2UseCase struct {
 	fluxoRepo         port.FluxoCaixaDiarioRepository
 	contasPagarRepo   port.ContaPagarRepository
 	contasReceberRepo port.ContaReceberRepository
+	compensacaoRepo   port.CompensacaoBancariaRepository
 	logger            *zap.Logger
 }
 
@@ -35,12 +36,14 @@ func NewGenerateFluxoDiarioV2UseCase(
 	fluxoRepo port.FluxoCaixaDiarioRepository,
 	contasPagarRepo port.ContaPagarRepository,
 	contasReceberRepo port.ContaReceberRepository,
+	compensacaoRepo port.CompensacaoBancariaRepository,
 	logger *zap.Logger,
 ) *GenerateFluxoDiarioV2UseCase {
 	return &GenerateFluxoDiarioV2UseCase{
 		fluxoRepo:         fluxoRepo,
 		contasPagarRepo:   contasPagarRepo,
 		contasReceberRepo: contasReceberRepo,
+		compensacaoRepo:   compensacaoRepo,
 		logger:            logger,
 	}
 }
@@ -92,18 +95,10 @@ func (uc *GenerateFluxoDiarioV2UseCase) Execute(ctx context.Context, input Gener
 	}
 
 	// 2. Entradas tradicionais (contas recebidas no dia)
-	statusPago := valueobject.StatusContaPago
-	entradasTradicionais, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, data, data, &statusPago)
+	statusRecebido := valueobject.StatusContaRecebido
+	entradasTradicionais, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, data, data, &statusRecebido)
 	if err != nil {
 		uc.logger.Warn("erro ao calcular entradas tradicionais", zap.Error(err))
-	}
-
-	// Combinar (evitar duplicação - usar o maior valor ou somar inteligentemente)
-	// Por segurança, usar entradas Asaas se disponível, senão tradicional
-	if entradasAsaas.IsPositive() {
-		fluxo.EntradasConfirmadas = entradasAsaas
-	} else {
-		fluxo.EntradasConfirmadas = entradasTradicionais
 	}
 
 	// 3. Entradas previstas (contas pendentes para o dia)
@@ -112,10 +107,36 @@ func (uc *GenerateFluxoDiarioV2UseCase) Execute(ctx context.Context, input Gener
 	if err != nil {
 		uc.logger.Warn("erro ao calcular entradas previstas", zap.Error(err))
 	}
+
+	// Combinar entradas confirmadas (evitar duplicação)
+	entradasConfirmadas := entradasTradicionais
+	if entradasAsaas.IsPositive() {
+		entradasConfirmadas = entradasAsaas
+	}
+
+	// 3.b Incluir compensações bancárias previstas/confirmadas/compensadas no dia
+	if uc.compensacaoRepo != nil {
+		comps, err := uc.compensacaoRepo.ListByDateRange(ctx, input.TenantID, data, data)
+		if err != nil {
+			uc.logger.Warn("erro ao listar compensações para fluxo diário V2", zap.Error(err))
+		} else {
+			for _, comp := range comps {
+				switch comp.Status {
+				case valueobject.StatusCompensacaoPrevisto, valueobject.StatusCompensacaoConfirmado:
+					entradasPrevistas = entradasPrevistas.Add(comp.ValorLiquido)
+				case valueobject.StatusCompensacaoCompensado:
+					entradasConfirmadas = entradasConfirmadas.Add(comp.ValorLiquido)
+				}
+			}
+		}
+	}
+
 	fluxo.EntradasPrevistas = entradasPrevistas
+	fluxo.EntradasConfirmadas = entradasConfirmadas
 
 	// ===== SAÍDAS =====
 	// 4. Saídas pagas (contas pagas no dia)
+	statusPago := valueobject.StatusContaPago
 	saidasPagas, err := uc.contasPagarRepo.SumByPeriod(ctx, input.TenantID, data, data, &statusPago)
 	if err != nil {
 		uc.logger.Warn("erro ao calcular saídas pagas", zap.Error(err))

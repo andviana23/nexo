@@ -31,7 +31,8 @@ func (r *ServicoRepository) Create(ctx context.Context, servico *entity.Servico)
 	params := db.CreateServicoParams{
 		ID:               stringToUUID(servico.ID.String()),
 		TenantID:         stringToUUID(servico.TenantID.String()),
-		CategoriaID:      stringToUUIDNullable(servico.CategoriaID),
+		UnitID:           stringToUUIDNullable(servico.UnitID.String()),
+		CategoriaID:      stringToUUIDNullable(servico.CategoriaID.String()),
 		Nome:             servico.Nome,
 		Descricao:        strPtrToPgText(servico.Descricao),
 		Preco:            servico.Preco,
@@ -54,10 +55,11 @@ func (r *ServicoRepository) Create(ctx context.Context, servico *entity.Servico)
 // =============================================================================
 
 // FindByID busca serviço por ID
-func (r *ServicoRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.Servico, error) {
+func (r *ServicoRepository) FindByID(ctx context.Context, tenantID, unitID, id string) (*entity.Servico, error) {
 	params := db.GetServicoByIDParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUIDNullable(unitID),
 	}
 
 	row, err := r.queries.GetServicoByID(ctx, params)
@@ -69,13 +71,15 @@ func (r *ServicoRepository) FindByID(ctx context.Context, tenantID, id string) (
 }
 
 // List lista todos os serviços com filtros
-func (r *ServicoRepository) List(ctx context.Context, tenantID string, filter port.ServicoFilter) ([]*entity.Servico, error) {
+func (r *ServicoRepository) List(ctx context.Context, tenantID, unitID string, filter port.ServicoFilter) ([]*entity.Servico, error) {
 	tenantUUID := stringToUUID(tenantID)
+	unitUUID := stringToUUIDNullable(unitID)
 
 	// Seleção baseada nos filtros
 	if filter.Search != "" {
 		params := db.SearchServicosParams{
 			TenantID:   tenantUUID,
+			UnitID:     unitUUID,
 			SearchTerm: filter.Search,
 		}
 		rows, err := r.queries.SearchServicos(ctx, params)
@@ -88,6 +92,7 @@ func (r *ServicoRepository) List(ctx context.Context, tenantID string, filter po
 	if filter.CategoriaID != "" {
 		params := db.ListServicosByCategoriaParams{
 			TenantID:    tenantUUID,
+			UnitID:      unitUUID,
 			CategoriaID: stringToUUID(filter.CategoriaID),
 		}
 		rows, err := r.queries.ListServicosByCategoria(ctx, params)
@@ -100,6 +105,7 @@ func (r *ServicoRepository) List(ctx context.Context, tenantID string, filter po
 	if filter.ProfissionalID != "" {
 		params := db.ListServicosByProfissionalParams{
 			TenantID:       tenantUUID,
+			UnitID:         unitUUID,
 			ProfissionalID: stringToUUID(filter.ProfissionalID),
 		}
 		rows, err := r.queries.ListServicosByProfissional(ctx, params)
@@ -110,7 +116,11 @@ func (r *ServicoRepository) List(ctx context.Context, tenantID string, filter po
 	}
 
 	if filter.ApenasAtivos {
-		rows, err := r.queries.ListServicosAtivos(ctx, tenantUUID)
+		params := db.ListServicosAtivosParams{
+			TenantID: tenantUUID,
+			UnitID:   unitUUID,
+		}
+		rows, err := r.queries.ListServicosAtivos(ctx, params)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao listar serviços ativos: %w", err)
 		}
@@ -118,7 +128,11 @@ func (r *ServicoRepository) List(ctx context.Context, tenantID string, filter po
 	}
 
 	// Listagem padrão
-	rows, err := r.queries.ListServicos(ctx, tenantUUID)
+	params := db.ListServicosParams{
+		TenantID: tenantUUID,
+		UnitID:   unitUUID,
+	}
+	rows, err := r.queries.ListServicos(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar serviços: %w", err)
 	}
@@ -126,9 +140,10 @@ func (r *ServicoRepository) List(ctx context.Context, tenantID string, filter po
 }
 
 // ListByCategoria lista serviços de uma categoria específica
-func (r *ServicoRepository) ListByCategoria(ctx context.Context, tenantID, categoriaID string) ([]*entity.Servico, error) {
+func (r *ServicoRepository) ListByCategoria(ctx context.Context, tenantID, unitID, categoriaID string) ([]*entity.Servico, error) {
 	params := db.ListServicosByCategoriaParams{
 		TenantID:    stringToUUID(tenantID),
+		UnitID:      stringToUUIDNullable(unitID),
 		CategoriaID: stringToUUID(categoriaID),
 	}
 
@@ -141,9 +156,10 @@ func (r *ServicoRepository) ListByCategoria(ctx context.Context, tenantID, categ
 }
 
 // ListByProfissional lista serviços que um profissional pode realizar
-func (r *ServicoRepository) ListByProfissional(ctx context.Context, tenantID, profissionalID string) ([]*entity.Servico, error) {
+func (r *ServicoRepository) ListByProfissional(ctx context.Context, tenantID, unitID, profissionalID string) ([]*entity.Servico, error) {
 	params := db.ListServicosByProfissionalParams{
 		TenantID:       stringToUUID(tenantID),
+		UnitID:         stringToUUIDNullable(unitID),
 		ProfissionalID: stringToUUID(profissionalID),
 	}
 
@@ -156,7 +172,7 @@ func (r *ServicoRepository) ListByProfissional(ctx context.Context, tenantID, pr
 }
 
 // FindByIDs busca múltiplos serviços por IDs
-func (r *ServicoRepository) FindByIDs(ctx context.Context, tenantID string, ids []string) ([]*entity.Servico, error) {
+func (r *ServicoRepository) FindByIDs(ctx context.Context, tenantID, unitID string, ids []string) ([]*entity.Servico, error) {
 	idsUUID := make([]pgtype.UUID, 0, len(ids))
 	for _, id := range ids {
 		idsUUID = append(idsUUID, stringToUUID(id))
@@ -184,7 +200,7 @@ func (r *ServicoRepository) Update(ctx context.Context, servico *entity.Servico)
 	params := db.UpdateServicoParams{
 		ID:               stringToUUID(servico.ID.String()),
 		TenantID:         stringToUUID(servico.TenantID.String()),
-		CategoriaID:      stringToUUIDNullable(servico.CategoriaID),
+		CategoriaID:      stringToUUIDNullable(servico.CategoriaID.String()),
 		Nome:             servico.Nome,
 		Descricao:        strPtrToPgText(servico.Descricao),
 		Preco:            servico.Preco,
@@ -195,6 +211,7 @@ func (r *ServicoRepository) Update(ctx context.Context, servico *entity.Servico)
 		ProfissionaisIds: uuidSliceToDBSlice(servico.ProfissionaisIDs),
 		Observacoes:      strPtrToPgText(servico.Observacoes),
 		Tags:             servico.Tags,
+		UnitID:           stringToUUIDNullable(servico.UnitID.String()),
 	}
 
 	_, err := r.queries.UpdateServico(ctx, params)
@@ -206,7 +223,7 @@ func (r *ServicoRepository) Update(ctx context.Context, servico *entity.Servico)
 }
 
 // ToggleStatus ativa/desativa um serviço
-func (r *ServicoRepository) ToggleStatus(ctx context.Context, tenantID, id string, ativo bool) error {
+func (r *ServicoRepository) ToggleStatus(ctx context.Context, tenantID, unitID, id string, ativo bool) error {
 	params := db.ToggleServicoStatusParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
@@ -222,7 +239,7 @@ func (r *ServicoRepository) ToggleStatus(ctx context.Context, tenantID, id strin
 }
 
 // UpdateCategoria atualiza a categoria de um serviço
-func (r *ServicoRepository) UpdateCategoria(ctx context.Context, tenantID, id, categoriaID string) error {
+func (r *ServicoRepository) UpdateCategoria(ctx context.Context, tenantID, unitID, id, categoriaID string) error {
 	params := db.UpdateServicoCategoriaParams{
 		ID:          stringToUUID(id),
 		TenantID:    stringToUUID(tenantID),
@@ -238,7 +255,7 @@ func (r *ServicoRepository) UpdateCategoria(ctx context.Context, tenantID, id, c
 }
 
 // UpdateProfissionais atualiza a lista de profissionais de um serviço
-func (r *ServicoRepository) UpdateProfissionais(ctx context.Context, tenantID, id string, profissionaisIDs []string) error {
+func (r *ServicoRepository) UpdateProfissionais(ctx context.Context, tenantID, unitID, id string, profissionaisIDs []string) error {
 	uuids := make([]uuid.UUID, 0, len(profissionaisIDs))
 	for _, pid := range profissionaisIDs {
 		if uid, err := uuid.Parse(pid); err == nil {
@@ -265,7 +282,7 @@ func (r *ServicoRepository) UpdateProfissionais(ctx context.Context, tenantID, i
 // =============================================================================
 
 // Delete deleta um serviço
-func (r *ServicoRepository) Delete(ctx context.Context, tenantID, id string) error {
+func (r *ServicoRepository) Delete(ctx context.Context, tenantID, unitID, id string) error {
 	params := db.DeleteServicoParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
@@ -280,7 +297,7 @@ func (r *ServicoRepository) Delete(ctx context.Context, tenantID, id string) err
 }
 
 // DeleteByCategoria deleta todos os serviços de uma categoria
-func (r *ServicoRepository) DeleteByCategoria(ctx context.Context, tenantID, categoriaID string) error {
+func (r *ServicoRepository) DeleteByCategoria(ctx context.Context, tenantID, unitID, categoriaID string) error {
 	params := db.DeleteServicosByCategoriaParams{
 		CategoriaID: stringToUUID(categoriaID),
 		TenantID:    stringToUUID(tenantID),
@@ -299,7 +316,7 @@ func (r *ServicoRepository) DeleteByCategoria(ctx context.Context, tenantID, cat
 // =============================================================================
 
 // CheckNomeExists verifica se já existe serviço com o mesmo nome
-func (r *ServicoRepository) CheckNomeExists(ctx context.Context, tenantID, nome, excludeID string) (bool, error) {
+func (r *ServicoRepository) CheckNomeExists(ctx context.Context, tenantID, unitID, nome, excludeID string) (bool, error) {
 	var idUUID pgtype.UUID
 
 	if excludeID != "" {
@@ -310,6 +327,7 @@ func (r *ServicoRepository) CheckNomeExists(ctx context.Context, tenantID, nome,
 
 	params := db.CheckServicoNomeExistsParams{
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUIDNullable(unitID),
 		Lower:    nome,
 		ID:       idUUID,
 	}
@@ -323,8 +341,12 @@ func (r *ServicoRepository) CheckNomeExists(ctx context.Context, tenantID, nome,
 }
 
 // GetStats retorna estatísticas dos serviços
-func (r *ServicoRepository) GetStats(ctx context.Context, tenantID string) (*port.ServicoStats, error) {
-	row, err := r.queries.GetServicosStats(ctx, stringToUUID(tenantID))
+func (r *ServicoRepository) GetStats(ctx context.Context, tenantID, unitID string) (*port.ServicoStats, error) {
+	params := db.GetServicosStatsParams{
+		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUIDNullable(unitID),
+	}
+	row, err := r.queries.GetServicosStats(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar estatísticas: %w", err)
 	}
@@ -340,8 +362,12 @@ func (r *ServicoRepository) GetStats(ctx context.Context, tenantID string) (*por
 }
 
 // Count conta total de serviços do tenant
-func (r *ServicoRepository) Count(ctx context.Context, tenantID string) (int64, error) {
-	count, err := r.queries.CountServicosByTenant(ctx, stringToUUID(tenantID))
+func (r *ServicoRepository) Count(ctx context.Context, tenantID, unitID string) (int64, error) {
+	params := db.CountServicosByTenantParams{
+		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUIDNullable(unitID),
+	}
+	count, err := r.queries.CountServicosByTenant(ctx, params)
 	if err != nil {
 		return 0, fmt.Errorf("erro ao contar serviços: %w", err)
 	}
@@ -349,8 +375,12 @@ func (r *ServicoRepository) Count(ctx context.Context, tenantID string) (int64, 
 }
 
 // CountAtivos conta total de serviços ativos do tenant
-func (r *ServicoRepository) CountAtivos(ctx context.Context, tenantID string) (int64, error) {
-	count, err := r.queries.CountServicosAtivosByTenant(ctx, stringToUUID(tenantID))
+func (r *ServicoRepository) CountAtivos(ctx context.Context, tenantID, unitID string) (int64, error) {
+	params := db.CountServicosAtivosByTenantParams{
+		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUIDNullable(unitID),
+	}
+	count, err := r.queries.CountServicosAtivosByTenant(ctx, params)
 	if err != nil {
 		return 0, fmt.Errorf("erro ao contar serviços ativos: %w", err)
 	}
@@ -361,12 +391,16 @@ func (r *ServicoRepository) CountAtivos(ctx context.Context, tenantID string) (i
 // HELPERS
 // =============================================================================
 
-// stringToUUIDNullable converte uuid.UUID para pgtype.UUID nullable
-func stringToUUIDNullable(id uuid.UUID) pgtype.UUID {
-	if id == uuid.Nil {
+// stringToUUIDNullable converte string para pgtype.UUID nullable
+func stringToUUIDNullable(id string) pgtype.UUID {
+	if id == "" {
 		return pgtype.UUID{Valid: false}
 	}
-	return pgtype.UUID{Bytes: id, Valid: true}
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return pgtype.UUID{Valid: false}
+	}
+	return pgtype.UUID{Bytes: uid, Valid: true}
 }
 
 // uuidSliceToDBSlice converte []uuid.UUID para []pgtype.UUID

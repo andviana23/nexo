@@ -196,10 +196,19 @@ func (r *CompensacaoBancariaRepository) ListByStatus(ctx context.Context, tenant
 
 // ListPendentesCompensacao lista compensações pendentes de compensação (data <= hoje).
 func (r *CompensacaoBancariaRepository) ListPendentesCompensacao(ctx context.Context, tenantID string) ([]*entity.CompensacaoBancaria, error) {
-	status := valueobject.StatusCompensacaoConfirmado
-	compensacoes, err := r.ListByStatus(ctx, tenantID, status)
-	if err != nil {
-		return nil, err
+	statuses := []valueobject.StatusCompensacao{
+		valueobject.StatusCompensacaoPrevisto,
+		valueobject.StatusCompensacaoConfirmado,
+	}
+
+	// Buscar compensações previstas ou confirmadas
+	var compensacoes []*entity.CompensacaoBancaria
+	for _, st := range statuses {
+		items, err := r.ListByStatus(ctx, tenantID, st)
+		if err != nil {
+			return nil, err
+		}
+		compensacoes = append(compensacoes, items...)
 	}
 
 	// Filtrar apenas as que têm data_compensacao <= hoje
@@ -250,7 +259,7 @@ func (r *CompensacaoBancariaRepository) toDomain(model *db.CompensacoesBancaria)
 
 	comp := &entity.CompensacaoBancaria{
 		ID:              pgUUIDToString(model.ID),
-		TenantID: pgtypeToEntityUUID(model.TenantID),
+		TenantID:        pgtypeToEntityUUID(model.TenantID),
 		ReceitaID:       pgUUIDToString(model.ReceitaID),
 		DataTransacao:   dateToTime(model.DataTransacao),
 		DataCompensacao: dateToTime(model.DataCompensacao),

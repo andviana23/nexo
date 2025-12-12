@@ -28,16 +28,26 @@ func (s StatusCompensacao) String() string {
 type StatusConta string
 
 const (
-	StatusContaPendente  StatusConta = "PENDENTE"
-	StatusContaPago      StatusConta = "PAGO"
-	StatusContaCancelado StatusConta = "CANCELADO"
-	StatusContaAtrasado  StatusConta = "ATRASADO"
+	// Status canônicos (Domínio)
+	StatusContaPendente   StatusConta = "PENDENTE"   // Conta criada, ainda não confirmada/quitada
+	StatusContaConfirmado StatusConta = "CONFIRMADO" // Pagamento confirmado (ex.: cartão/Asaas), aguardando compensação
+	StatusContaRecebido   StatusConta = "RECEBIDO"   // Receita recebida/compensada
+	StatusContaPago       StatusConta = "PAGO"       // Despesa paga
+	StatusContaEstornado  StatusConta = "ESTORNADO"  // Receita estornada/refund
+	StatusContaCancelado  StatusConta = "CANCELADO"  // Conta cancelada/sem efeito
+	StatusContaAtrasado   StatusConta = "ATRASADO"   // Vencida sem quitação
 )
 
 // IsValid verifica se o status é válido
 func (s StatusConta) IsValid() bool {
 	switch s {
-	case StatusContaPendente, StatusContaPago, StatusContaCancelado, StatusContaAtrasado:
+	case StatusContaPendente,
+		StatusContaConfirmado,
+		StatusContaRecebido,
+		StatusContaPago,
+		StatusContaEstornado,
+		StatusContaCancelado,
+		StatusContaAtrasado:
 		return true
 	}
 	return false

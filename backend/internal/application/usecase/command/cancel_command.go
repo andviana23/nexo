@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
 	"github.com/andviana23/barber-analytics-backend/internal/application/mapper"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/repository"
+	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
@@ -39,6 +41,8 @@ type CancelCommandUseCase struct {
 	produtoRepo        port.ProdutoRepository
 	movimentacaoRepo   port.MovimentacaoEstoqueRepository
 	commissionItemRepo repository.CommissionItemRepository
+	contaReceberRepo   port.ContaReceberRepository
+	caixaRepo          port.CaixaDiarioRepository
 	mapper             *mapper.CommandMapper
 	logger             *zap.Logger
 }
@@ -49,6 +53,8 @@ func NewCancelCommandUseCase(
 	produtoRepo port.ProdutoRepository,
 	movimentacaoRepo port.MovimentacaoEstoqueRepository,
 	commissionItemRepo repository.CommissionItemRepository,
+	contaReceberRepo port.ContaReceberRepository,
+	caixaRepo port.CaixaDiarioRepository,
 	mapper *mapper.CommandMapper,
 	logger *zap.Logger,
 ) *CancelCommandUseCase {
@@ -57,6 +63,8 @@ func NewCancelCommandUseCase(
 		produtoRepo:        produtoRepo,
 		movimentacaoRepo:   movimentacaoRepo,
 		commissionItemRepo: commissionItemRepo,
+		contaReceberRepo:   contaReceberRepo,
+		caixaRepo:          caixaRepo,
 		mapper:             mapper,
 		logger:             logger,
 	}
@@ -177,9 +185,17 @@ func (uc *CancelCommandUseCase) Execute(ctx context.Context, input CancelCommand
 				zap.Error(err),
 			)
 		}
+
+		// 6. Estornar lançamentos financeiros vinculados à comanda fechada
+		if err := uc.estornarFinanceiro(ctx, command, input); err != nil {
+			uc.logger.Warn("Erro ao estornar financeiro da comanda",
+				zap.String("command_id", command.ID.String()),
+				zap.Error(err),
+			)
+		}
 	}
 
-	// 6. Cancelar a comanda
+	// 7. Cancelar a comanda
 	// Se a comanda estava fechada, precisamos alterar diretamente o status
 	if command.Status == entity.CommandStatusClosed {
 		command.Status = entity.CommandStatusCanceled
@@ -190,7 +206,7 @@ func (uc *CancelCommandUseCase) Execute(ctx context.Context, input CancelCommand
 		}
 	}
 
-	// 7. Persistir comanda cancelada
+	// 8. Persistir comanda cancelada
 	if err := uc.commandRepo.Update(ctx, command); err != nil {
 		return nil, fmt.Errorf("erro ao salvar comanda cancelada: %w", err)
 	}
@@ -224,6 +240,89 @@ func (uc *CancelCommandUseCase) deleteCommissionItems(ctx context.Context, comma
 				zap.String("item_id", item.ID),
 				zap.Error(err),
 			)
+		}
+	}
+
+	return nil
+}
+
+// estornarFinanceiro cancela/estorna contas a receber e cria operação inversa no caixa.
+func (uc *CancelCommandUseCase) estornarFinanceiro(ctx context.Context, command *entity.Command, input CancelCommandInput) error {
+	// 1) Estornar contas a receber vinculadas
+	if uc.contaReceberRepo != nil {
+		contas, err := uc.contaReceberRepo.ListByCommandID(ctx, input.TenantID.String(), command.ID.String())
+		if err != nil {
+			return err
+		}
+
+		for _, conta := range contas {
+			if conta.Status == valueobject.StatusContaEstornado || conta.Status == valueobject.StatusContaCancelado {
+				continue
+			}
+			conta.Status = valueobject.StatusContaEstornado
+			conta.ValorAberto = valueobject.Zero()
+			conta.AtualizadoEm = time.Now()
+
+			obs := fmt.Sprintf("Estornada por cancelamento da comanda %s", command.ID.String()[:8])
+			if input.Motivo != "" {
+				obs = fmt.Sprintf("%s - Motivo: %s", obs, input.Motivo)
+			}
+			conta.AddObservacao(obs)
+
+			if err := uc.contaReceberRepo.Update(ctx, conta); err != nil {
+				uc.logger.Warn("erro ao estornar conta a receber",
+					zap.String("conta_receber_id", conta.ID),
+					zap.Error(err),
+				)
+			}
+		}
+	}
+
+	// 2) Criar operação inversa no caixa (sangria) e ajustar totais
+	if uc.caixaRepo != nil {
+		caixaAberto, err := uc.caixaRepo.FindAberto(ctx, input.TenantID)
+		if err != nil || caixaAberto == nil {
+			uc.logger.Warn("não foi possível estornar no caixa (nenhum caixa aberto)",
+				zap.String("tenant_id", input.TenantID.String()),
+				zap.String("command_id", command.ID.String()),
+			)
+			return nil
+		}
+
+		for _, payment := range command.Payments {
+			valor := decimal.NewFromFloat(payment.ValorRecebido)
+			if valor.IsZero() || valor.IsNegative() {
+				continue
+			}
+
+			descricao := fmt.Sprintf("Estorno Comanda #%s", command.ID.String()[:8])
+			if input.Motivo != "" {
+				descricao = fmt.Sprintf("%s - %s", descricao, input.Motivo)
+			}
+
+			operacao, err := entity.NewOperacaoSangria(
+				caixaAberto.ID,
+				input.TenantID,
+				input.UserID,
+				valor,
+				string(entity.DestinoOutros),
+				descricao,
+				nil,
+			)
+			if err != nil {
+				uc.logger.Warn("erro ao criar operação de estorno no caixa", zap.Error(err))
+				continue
+			}
+
+			if err := uc.caixaRepo.CreateOperacao(ctx, operacao); err != nil {
+				uc.logger.Warn("erro ao registrar estorno no caixa", zap.Error(err))
+				continue
+			}
+
+			caixaAberto.TotalSangrias = caixaAberto.TotalSangrias.Add(valor)
+			if err := uc.caixaRepo.UpdateTotais(ctx, caixaAberto.ID, input.TenantID, caixaAberto.TotalSangrias, caixaAberto.TotalReforcos, caixaAberto.TotalEntradas); err != nil {
+				uc.logger.Warn("erro ao atualizar totais do caixa após estorno", zap.Error(err))
+			}
 		}
 	}
 

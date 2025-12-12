@@ -180,7 +180,7 @@ func TestCreateMeioPagamentoUseCase_Execute(t *testing.T) {
 		assert.Equal(t, entity.ErrMeioPagamentoTipoInvalido, err)
 	})
 
-	t.Run("should fail with empty nome", func(t *testing.T) {
+	t.Run("should auto-generate nome when empty", func(t *testing.T) {
 		// Arrange
 		mockRepo := new(MockMeioPagamentoRepository)
 		useCase := meiopagamento.NewCreateMeioPagamentoUseCase(mockRepo)
@@ -193,12 +193,17 @@ func TestCreateMeioPagamentoUseCase_Execute(t *testing.T) {
 			Tipo: "PIX",
 		}
 
+		mockRepo.On("Create", ctx, mock.AnythingOfType("*entity.MeioPagamento")).Return(nil)
+
 		// Act
 		result, err := useCase.Execute(ctx, tenantID, req)
 
 		// Assert
-		assert.Error(t, err)
-		assert.Nil(t, result)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "PIX", result.Nome)
+		assert.Equal(t, "PIX", result.Tipo)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("should fail with invalid taxa over 100", func(t *testing.T) {

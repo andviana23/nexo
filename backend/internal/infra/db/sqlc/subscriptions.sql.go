@@ -271,7 +271,7 @@ INSERT INTO subscriptions (
     data_vencimento
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-RETURNING id, tenant_id, cliente_id, plano_id, asaas_customer_id, asaas_subscription_id, forma_pagamento, status, valor, link_pagamento, codigo_transacao, data_ativacao, data_vencimento, data_cancelamento, cancelado_por, servicos_utilizados, next_due_date, cycle, asaas_status, last_confirmed_at, last_sync_at, created_at, updated_at
+RETURNING id, tenant_id, unit_id, cliente_id, plano_id, asaas_customer_id, asaas_subscription_id, forma_pagamento, status, valor, link_pagamento, codigo_transacao, data_ativacao, data_vencimento, data_cancelamento, cancelado_por, servicos_utilizados, next_due_date, cycle, asaas_status, last_confirmed_at, last_sync_at, created_at, updated_at
 `
 
 type CreateSubscriptionParams struct {
@@ -312,6 +312,7 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.ClienteID,
 		&i.PlanoID,
 		&i.AsaasCustomerID,
@@ -584,7 +585,7 @@ func (q *Queries) GetPlanByID(ctx context.Context, arg GetPlanByIDParams) (Plan,
 }
 
 const getSubscriptionByAsaasID = `-- name: GetSubscriptionByAsaasID :one
-SELECT s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at, p.nome as plano_nome
+SELECT s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at, p.nome as plano_nome
 FROM subscriptions s
 JOIN plans p ON s.plano_id = p.id
 WHERE s.asaas_subscription_id = $1
@@ -593,6 +594,7 @@ WHERE s.asaas_subscription_id = $1
 type GetSubscriptionByAsaasIDRow struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`
@@ -624,6 +626,7 @@ func (q *Queries) GetSubscriptionByAsaasID(ctx context.Context, asaasSubscriptio
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.ClienteID,
 		&i.PlanoID,
 		&i.AsaasCustomerID,
@@ -652,7 +655,7 @@ func (q *Queries) GetSubscriptionByAsaasID(ctx context.Context, asaasSubscriptio
 
 const getSubscriptionByID = `-- name: GetSubscriptionByID :one
 SELECT 
-    s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
+    s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
     p.nome as plano_nome,
     p.qtd_servicos as plano_qtd_servicos,
     p.limite_uso_mensal as plano_limite_uso_mensal,
@@ -673,6 +676,7 @@ type GetSubscriptionByIDParams struct {
 type GetSubscriptionByIDRow struct {
 	ID                   pgtype.UUID        `json:"id"`
 	TenantID             pgtype.UUID        `json:"tenant_id"`
+	UnitID               pgtype.UUID        `json:"unit_id"`
 	ClienteID            pgtype.UUID        `json:"cliente_id"`
 	PlanoID              pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID      *string            `json:"asaas_customer_id"`
@@ -709,6 +713,7 @@ func (q *Queries) GetSubscriptionByID(ctx context.Context, arg GetSubscriptionBy
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.ClienteID,
 		&i.PlanoID,
 		&i.AsaasCustomerID,
@@ -935,7 +940,7 @@ func (q *Queries) ListActivePlansByTenant(ctx context.Context, tenantID pgtype.U
 
 const listExpiringSoon = `-- name: ListExpiringSoon :many
 SELECT 
-    s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
+    s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
     p.nome as plano_nome,
     c.nome as cliente_nome,
     c.telefone as cliente_telefone
@@ -955,6 +960,7 @@ type ListExpiringSoonParams struct {
 type ListExpiringSoonRow struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`
@@ -994,6 +1000,7 @@ func (q *Queries) ListExpiringSoon(ctx context.Context, arg ListExpiringSoonPara
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.ClienteID,
 			&i.PlanoID,
 			&i.AsaasCustomerID,
@@ -1031,7 +1038,7 @@ func (q *Queries) ListExpiringSoon(ctx context.Context, arg ListExpiringSoonPara
 
 const listOverdueSubscriptions = `-- name: ListOverdueSubscriptions :many
 SELECT 
-    s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
+    s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
     p.nome as plano_nome,
     c.nome as cliente_nome,
     c.id as cliente_id
@@ -1045,6 +1052,7 @@ WHERE s.status = 'ATIVO'
 type ListOverdueSubscriptionsRow struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`
@@ -1084,6 +1092,7 @@ func (q *Queries) ListOverdueSubscriptions(ctx context.Context) ([]ListOverdueSu
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.ClienteID,
 			&i.PlanoID,
 			&i.AsaasCustomerID,
@@ -1568,7 +1577,7 @@ func (q *Queries) ListSubscribers(ctx context.Context, tenantID pgtype.UUID) ([]
 }
 
 const listSubscriptionsByAsaasStatus = `-- name: ListSubscriptionsByAsaasStatus :many
-SELECT s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at, p.nome as plano_nome, c.nome as cliente_nome
+SELECT s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at, p.nome as plano_nome, c.nome as cliente_nome
 FROM subscriptions s
 JOIN plans p ON s.plano_id = p.id
 JOIN clientes c ON s.cliente_id = c.id
@@ -1587,6 +1596,7 @@ type ListSubscriptionsByAsaasStatusParams struct {
 type ListSubscriptionsByAsaasStatusRow struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`
@@ -1630,6 +1640,7 @@ func (q *Queries) ListSubscriptionsByAsaasStatus(ctx context.Context, arg ListSu
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.ClienteID,
 			&i.PlanoID,
 			&i.AsaasCustomerID,
@@ -1666,7 +1677,7 @@ func (q *Queries) ListSubscriptionsByAsaasStatus(ctx context.Context, arg ListSu
 
 const listSubscriptionsByCliente = `-- name: ListSubscriptionsByCliente :many
 SELECT 
-    s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
+    s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
     p.nome as plano_nome
 FROM subscriptions s
 JOIN plans p ON s.plano_id = p.id
@@ -1682,6 +1693,7 @@ type ListSubscriptionsByClienteParams struct {
 type ListSubscriptionsByClienteRow struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`
@@ -1719,6 +1731,7 @@ func (q *Queries) ListSubscriptionsByCliente(ctx context.Context, arg ListSubscr
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.ClienteID,
 			&i.PlanoID,
 			&i.AsaasCustomerID,
@@ -1754,7 +1767,7 @@ func (q *Queries) ListSubscriptionsByCliente(ctx context.Context, arg ListSubscr
 
 const listSubscriptionsByStatus = `-- name: ListSubscriptionsByStatus :many
 SELECT 
-    s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
+    s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
     p.nome as plano_nome,
     c.nome as cliente_nome,
     c.telefone as cliente_telefone
@@ -1773,6 +1786,7 @@ type ListSubscriptionsByStatusParams struct {
 type ListSubscriptionsByStatusRow struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`
@@ -1812,6 +1826,7 @@ func (q *Queries) ListSubscriptionsByStatus(ctx context.Context, arg ListSubscri
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.ClienteID,
 			&i.PlanoID,
 			&i.AsaasCustomerID,
@@ -1849,7 +1864,7 @@ func (q *Queries) ListSubscriptionsByStatus(ctx context.Context, arg ListSubscri
 
 const listSubscriptionsByTenant = `-- name: ListSubscriptionsByTenant :many
 SELECT 
-    s.id, s.tenant_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
+    s.id, s.tenant_id, s.unit_id, s.cliente_id, s.plano_id, s.asaas_customer_id, s.asaas_subscription_id, s.forma_pagamento, s.status, s.valor, s.link_pagamento, s.codigo_transacao, s.data_ativacao, s.data_vencimento, s.data_cancelamento, s.cancelado_por, s.servicos_utilizados, s.next_due_date, s.cycle, s.asaas_status, s.last_confirmed_at, s.last_sync_at, s.created_at, s.updated_at,
     p.nome as plano_nome,
     c.nome as cliente_nome,
     c.telefone as cliente_telefone
@@ -1863,6 +1878,7 @@ ORDER BY s.created_at DESC
 type ListSubscriptionsByTenantRow struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`
@@ -1902,6 +1918,7 @@ func (q *Queries) ListSubscriptionsByTenant(ctx context.Context, tenantID pgtype
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.ClienteID,
 			&i.PlanoID,
 			&i.AsaasCustomerID,
@@ -1938,7 +1955,7 @@ func (q *Queries) ListSubscriptionsByTenant(ctx context.Context, tenantID pgtype
 }
 
 const listSubscriptionsNeedingSync = `-- name: ListSubscriptionsNeedingSync :many
-SELECT id, tenant_id, cliente_id, plano_id, asaas_customer_id, asaas_subscription_id, forma_pagamento, status, valor, link_pagamento, codigo_transacao, data_ativacao, data_vencimento, data_cancelamento, cancelado_por, servicos_utilizados, next_due_date, cycle, asaas_status, last_confirmed_at, last_sync_at, created_at, updated_at FROM subscriptions
+SELECT id, tenant_id, unit_id, cliente_id, plano_id, asaas_customer_id, asaas_subscription_id, forma_pagamento, status, valor, link_pagamento, codigo_transacao, data_ativacao, data_vencimento, data_cancelamento, cancelado_por, servicos_utilizados, next_due_date, cycle, asaas_status, last_confirmed_at, last_sync_at, created_at, updated_at FROM subscriptions
 WHERE tenant_id = $1 
   AND status = 'ATIVO'
   AND (last_sync_at IS NULL OR last_sync_at < NOW() - INTERVAL '24 hours')
@@ -1964,6 +1981,7 @@ func (q *Queries) ListSubscriptionsNeedingSync(ctx context.Context, arg ListSubs
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.ClienteID,
 			&i.PlanoID,
 			&i.AsaasCustomerID,

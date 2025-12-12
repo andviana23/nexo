@@ -135,7 +135,9 @@ SELECT
     cs.cor AS categoria_cor
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
-WHERE s.tenant_id = $1 AND s.categoria_id = $2
+WHERE s.tenant_id = $1 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR s.unit_id = sqlc.narg(unit_id))
+  AND s.categoria_id = $2
 ORDER BY s.nome ASC;
 
 -- name: ListServicosByProfissional :many
@@ -161,6 +163,7 @@ SELECT
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
 WHERE s.tenant_id = $1 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR s.unit_id = sqlc.narg(unit_id))
   AND s.ativo = true
   AND @profissional_id::uuid = ANY(s.profissionais_ids)
 ORDER BY s.nome ASC;
@@ -170,6 +173,7 @@ SELECT EXISTS(
     SELECT 1 
     FROM servicos 
     WHERE tenant_id = $1 
+      AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
       AND LOWER(nome) = LOWER($2)
       AND id != COALESCE($3, '00000000-0000-0000-0000-000000000000'::uuid)
 ) AS exists;
@@ -197,6 +201,7 @@ SELECT
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
 WHERE s.tenant_id = $1 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR s.unit_id = sqlc.narg(unit_id))
   AND (
       LOWER(s.nome) LIKE LOWER('%' || @search_term::text || '%')
       OR LOWER(s.descricao) LIKE LOWER('%' || @search_term::text || '%')
@@ -266,12 +271,15 @@ WHERE categoria_id = $1 AND tenant_id = $2;
 -- name: CountServicosByTenant :one
 SELECT COUNT(*) AS total
 FROM servicos
-WHERE tenant_id = $1;
+WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id));
 
 -- name: CountServicosAtivosByTenant :one
 SELECT COUNT(*) AS total
 FROM servicos
-WHERE tenant_id = $1 AND ativo = true;
+WHERE tenant_id = $1 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
+  AND ativo = true;
 
 -- name: GetServicosStats :one
 SELECT 
@@ -282,7 +290,8 @@ SELECT
     COALESCE(AVG(duracao), 0) AS duracao_media,
     COALESCE(AVG(comissao), 0) AS comissao_media
 FROM servicos
-WHERE tenant_id = $1;
+WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id));
 
 -- name: ListServicosComCategoria :many
 SELECT 

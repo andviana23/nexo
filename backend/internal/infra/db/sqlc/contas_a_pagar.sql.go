@@ -44,6 +44,7 @@ func (q *Queries) CountContasPagarByTenant(ctx context.Context, tenantID pgtype.
 const createContaPagar = `-- name: CreateContaPagar :one
 INSERT INTO contas_a_pagar (
     tenant_id,
+    unit_id,
     descricao,
     categoria_id,
     fornecedor,
@@ -58,12 +59,13 @@ INSERT INTO contas_a_pagar (
     pix_code,
     observacoes
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-) RETURNING id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+) RETURNING id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em
 `
 
 type CreateContaPagarParams struct {
 	TenantID       pgtype.UUID     `json:"tenant_id"`
+	UnitID         pgtype.UUID     `json:"unit_id"`
 	Descricao      string          `json:"descricao"`
 	CategoriaID    pgtype.UUID     `json:"categoria_id"`
 	Fornecedor     *string         `json:"fornecedor"`
@@ -82,6 +84,7 @@ type CreateContaPagarParams struct {
 func (q *Queries) CreateContaPagar(ctx context.Context, arg CreateContaPagarParams) (ContasAPagar, error) {
 	row := q.db.QueryRow(ctx, createContaPagar,
 		arg.TenantID,
+		arg.UnitID,
 		arg.Descricao,
 		arg.CategoriaID,
 		arg.Fornecedor,
@@ -110,6 +113,7 @@ func (q *Queries) CreateContaPagar(ctx context.Context, arg CreateContaPagarPara
 		&i.DataVencimento,
 		&i.DataPagamento,
 		&i.Status,
+		&i.UnitID,
 		&i.ComprovanteUrl,
 		&i.PixCode,
 		&i.Observacoes,
@@ -135,7 +139,7 @@ func (q *Queries) DeleteContaPagar(ctx context.Context, arg DeleteContaPagarPara
 }
 
 const getContaPagarByID = `-- name: GetContaPagarByID :one
-SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
 WHERE id = $1 AND tenant_id = $2
 `
 
@@ -160,6 +164,7 @@ func (q *Queries) GetContaPagarByID(ctx context.Context, arg GetContaPagarByIDPa
 		&i.DataVencimento,
 		&i.DataPagamento,
 		&i.Status,
+		&i.UnitID,
 		&i.ComprovanteUrl,
 		&i.PixCode,
 		&i.Observacoes,
@@ -170,8 +175,9 @@ func (q *Queries) GetContaPagarByID(ctx context.Context, arg GetContaPagarByIDPa
 }
 
 const listContasPagarByPeriod = `-- name: ListContasPagarByPeriod :many
-SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND ($4::uuid IS NULL OR unit_id = $4)
   AND data_vencimento >= $2
   AND data_vencimento <= $3
 ORDER BY data_vencimento ASC
@@ -181,10 +187,16 @@ type ListContasPagarByPeriodParams struct {
 	TenantID         pgtype.UUID `json:"tenant_id"`
 	DataVencimento   pgtype.Date `json:"data_vencimento"`
 	DataVencimento_2 pgtype.Date `json:"data_vencimento_2"`
+	UnitID           pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) ListContasPagarByPeriod(ctx context.Context, arg ListContasPagarByPeriodParams) ([]ContasAPagar, error) {
-	rows, err := q.db.Query(ctx, listContasPagarByPeriod, arg.TenantID, arg.DataVencimento, arg.DataVencimento_2)
+	rows, err := q.db.Query(ctx, listContasPagarByPeriod,
+		arg.TenantID,
+		arg.DataVencimento,
+		arg.DataVencimento_2,
+		arg.UnitID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +217,81 @@ func (q *Queries) ListContasPagarByPeriod(ctx context.Context, arg ListContasPag
 			&i.DataVencimento,
 			&i.DataPagamento,
 			&i.Status,
+			&i.UnitID,
+			&i.ComprovanteUrl,
+			&i.PixCode,
+			&i.Observacoes,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContasPagarFiltered = `-- name: ListContasPagarFiltered :many
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+WHERE tenant_id = $1
+  AND ($4::uuid IS NULL OR unit_id = $4)
+  AND ($5::text IS NULL OR status = $5)
+  AND ($6::text IS NULL OR tipo = $6)
+  AND ($7::uuid IS NULL OR categoria_id = $7)
+  AND ($8::date IS NULL OR data_vencimento >= $8)
+  AND ($9::date IS NULL OR data_vencimento <= $9)
+ORDER BY data_vencimento DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListContasPagarFilteredParams struct {
+	TenantID    pgtype.UUID `json:"tenant_id"`
+	Limit       int32       `json:"limit"`
+	Offset      int32       `json:"offset"`
+	UnitID      pgtype.UUID `json:"unit_id"`
+	Status      *string     `json:"status"`
+	Tipo        *string     `json:"tipo"`
+	CategoriaID pgtype.UUID `json:"categoria_id"`
+	DataInicio  pgtype.Date `json:"data_inicio"`
+	DataFim     pgtype.Date `json:"data_fim"`
+}
+
+func (q *Queries) ListContasPagarFiltered(ctx context.Context, arg ListContasPagarFilteredParams) ([]ContasAPagar, error) {
+	rows, err := q.db.Query(ctx, listContasPagarFiltered,
+		arg.TenantID,
+		arg.Limit,
+		arg.Offset,
+		arg.UnitID,
+		arg.Status,
+		arg.Tipo,
+		arg.CategoriaID,
+		arg.DataInicio,
+		arg.DataFim,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContasAPagar{}
+	for rows.Next() {
+		var i ContasAPagar
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Descricao,
+			&i.CategoriaID,
+			&i.Fornecedor,
+			&i.Valor,
+			&i.Tipo,
+			&i.Recorrente,
+			&i.Periodicidade,
+			&i.DataVencimento,
+			&i.DataPagamento,
+			&i.Status,
+			&i.UnitID,
 			&i.ComprovanteUrl,
 			&i.PixCode,
 			&i.Observacoes,
@@ -222,8 +309,10 @@ func (q *Queries) ListContasPagarByPeriod(ctx context.Context, arg ListContasPag
 }
 
 const listContasPagarByStatus = `-- name: ListContasPagarByStatus :many
-SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
-WHERE tenant_id = $1 AND status = $2
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+WHERE tenant_id = $1
+  AND ($5::uuid IS NULL OR unit_id = $5)
+  AND status = $2
 ORDER BY data_vencimento ASC
 LIMIT $3 OFFSET $4
 `
@@ -233,6 +322,7 @@ type ListContasPagarByStatusParams struct {
 	Status   *string     `json:"status"`
 	Limit    int32       `json:"limit"`
 	Offset   int32       `json:"offset"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) ListContasPagarByStatus(ctx context.Context, arg ListContasPagarByStatusParams) ([]ContasAPagar, error) {
@@ -241,6 +331,7 @@ func (q *Queries) ListContasPagarByStatus(ctx context.Context, arg ListContasPag
 		arg.Status,
 		arg.Limit,
 		arg.Offset,
+		arg.UnitID,
 	)
 	if err != nil {
 		return nil, err
@@ -262,6 +353,7 @@ func (q *Queries) ListContasPagarByStatus(ctx context.Context, arg ListContasPag
 			&i.DataVencimento,
 			&i.DataPagamento,
 			&i.Status,
+			&i.UnitID,
 			&i.ComprovanteUrl,
 			&i.PixCode,
 			&i.Observacoes,
@@ -279,8 +371,9 @@ func (q *Queries) ListContasPagarByStatus(ctx context.Context, arg ListContasPag
 }
 
 const listContasPagarByTenant = `-- name: ListContasPagarByTenant :many
-SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND ($4::uuid IS NULL OR unit_id = $4)
 ORDER BY data_vencimento DESC
 LIMIT $2 OFFSET $3
 `
@@ -289,10 +382,16 @@ type ListContasPagarByTenantParams struct {
 	TenantID pgtype.UUID `json:"tenant_id"`
 	Limit    int32       `json:"limit"`
 	Offset   int32       `json:"offset"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) ListContasPagarByTenant(ctx context.Context, arg ListContasPagarByTenantParams) ([]ContasAPagar, error) {
-	rows, err := q.db.Query(ctx, listContasPagarByTenant, arg.TenantID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listContasPagarByTenant,
+		arg.TenantID,
+		arg.Limit,
+		arg.Offset,
+		arg.UnitID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -313,6 +412,7 @@ func (q *Queries) ListContasPagarByTenant(ctx context.Context, arg ListContasPag
 			&i.DataVencimento,
 			&i.DataPagamento,
 			&i.Status,
+			&i.UnitID,
 			&i.ComprovanteUrl,
 			&i.PixCode,
 			&i.Observacoes,
@@ -330,7 +430,7 @@ func (q *Queries) ListContasPagarByTenant(ctx context.Context, arg ListContasPag
 }
 
 const listContasPagarRecorrentes = `-- name: ListContasPagarRecorrentes :many
-SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
 WHERE tenant_id = $1 AND recorrente = true
 ORDER BY data_vencimento DESC
 `
@@ -357,6 +457,7 @@ func (q *Queries) ListContasPagarRecorrentes(ctx context.Context, tenantID pgtyp
 			&i.DataVencimento,
 			&i.DataPagamento,
 			&i.Status,
+			&i.UnitID,
 			&i.ComprovanteUrl,
 			&i.PixCode,
 			&i.Observacoes,
@@ -374,8 +475,9 @@ func (q *Queries) ListContasPagarRecorrentes(ctx context.Context, tenantID pgtyp
 }
 
 const listContasPagarVencidas = `-- name: ListContasPagarVencidas :many
-SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND ($3::uuid IS NULL OR unit_id = $3)
   AND status IN ('ABERTO', 'ATRASADO')
   AND data_vencimento < $2
 ORDER BY data_vencimento ASC
@@ -384,10 +486,11 @@ ORDER BY data_vencimento ASC
 type ListContasPagarVencidasParams struct {
 	TenantID       pgtype.UUID `json:"tenant_id"`
 	DataVencimento pgtype.Date `json:"data_vencimento"`
+	UnitID         pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) ListContasPagarVencidas(ctx context.Context, arg ListContasPagarVencidasParams) ([]ContasAPagar, error) {
-	rows, err := q.db.Query(ctx, listContasPagarVencidas, arg.TenantID, arg.DataVencimento)
+	rows, err := q.db.Query(ctx, listContasPagarVencidas, arg.TenantID, arg.DataVencimento, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -408,6 +511,7 @@ func (q *Queries) ListContasPagarVencidas(ctx context.Context, arg ListContasPag
 			&i.DataVencimento,
 			&i.DataPagamento,
 			&i.Status,
+			&i.UnitID,
 			&i.ComprovanteUrl,
 			&i.PixCode,
 			&i.Observacoes,
@@ -451,7 +555,7 @@ SET
     data_pagamento = $3,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em
+RETURNING id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em
 `
 
 type MarcarContaPagarComoPagaParams struct {
@@ -476,6 +580,7 @@ func (q *Queries) MarcarContaPagarComoPaga(ctx context.Context, arg MarcarContaP
 		&i.DataVencimento,
 		&i.DataPagamento,
 		&i.Status,
+		&i.UnitID,
 		&i.ComprovanteUrl,
 		&i.PixCode,
 		&i.Observacoes,
@@ -490,6 +595,7 @@ SELECT
     COALESCE(SUM(valor), 0) as total_a_pagar
 FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND ($4::uuid IS NULL OR unit_id = $4)
   AND data_vencimento >= $2
   AND data_vencimento <= $3
   AND status != 'CANCELADO'
@@ -499,10 +605,16 @@ type SumContasPagarByPeriodParams struct {
 	TenantID         pgtype.UUID `json:"tenant_id"`
 	DataVencimento   pgtype.Date `json:"data_vencimento"`
 	DataVencimento_2 pgtype.Date `json:"data_vencimento_2"`
+	UnitID           pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) SumContasPagarByPeriod(ctx context.Context, arg SumContasPagarByPeriodParams) (interface{}, error) {
-	row := q.db.QueryRow(ctx, sumContasPagarByPeriod, arg.TenantID, arg.DataVencimento, arg.DataVencimento_2)
+	row := q.db.QueryRow(ctx, sumContasPagarByPeriod,
+		arg.TenantID,
+		arg.DataVencimento,
+		arg.DataVencimento_2,
+		arg.UnitID,
+	)
 	var total_a_pagar interface{}
 	err := row.Scan(&total_a_pagar)
 	return total_a_pagar, err
@@ -513,6 +625,7 @@ SELECT
     COALESCE(SUM(valor), 0) as total_pago
 FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND ($4::uuid IS NULL OR unit_id = $4)
   AND data_pagamento >= $2
   AND data_pagamento <= $3
   AND status = 'PAGO'
@@ -522,10 +635,16 @@ type SumContasPagasByPeriodParams struct {
 	TenantID        pgtype.UUID `json:"tenant_id"`
 	DataPagamento   pgtype.Date `json:"data_pagamento"`
 	DataPagamento_2 pgtype.Date `json:"data_pagamento_2"`
+	UnitID          pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) SumContasPagasByPeriod(ctx context.Context, arg SumContasPagasByPeriodParams) (interface{}, error) {
-	row := q.db.QueryRow(ctx, sumContasPagasByPeriod, arg.TenantID, arg.DataPagamento, arg.DataPagamento_2)
+	row := q.db.QueryRow(ctx, sumContasPagasByPeriod,
+		arg.TenantID,
+		arg.DataPagamento,
+		arg.DataPagamento_2,
+		arg.UnitID,
+	)
 	var total_pago interface{}
 	err := row.Scan(&total_pago)
 	return total_pago, err
@@ -547,9 +666,10 @@ SET
     comprovante_url = $13,
     pix_code = $14,
     observacoes = $15,
+    unit_id = COALESCE($16, unit_id),
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, comprovante_url, pix_code, observacoes, criado_em, atualizado_em
+RETURNING id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em
 `
 
 type UpdateContaPagarParams struct {
@@ -568,6 +688,7 @@ type UpdateContaPagarParams struct {
 	ComprovanteUrl *string         `json:"comprovante_url"`
 	PixCode        *string         `json:"pix_code"`
 	Observacoes    *string         `json:"observacoes"`
+	UnitID         pgtype.UUID     `json:"unit_id"`
 }
 
 func (q *Queries) UpdateContaPagar(ctx context.Context, arg UpdateContaPagarParams) (ContasAPagar, error) {
@@ -587,6 +708,7 @@ func (q *Queries) UpdateContaPagar(ctx context.Context, arg UpdateContaPagarPara
 		arg.ComprovanteUrl,
 		arg.PixCode,
 		arg.Observacoes,
+		arg.UnitID,
 	)
 	var i ContasAPagar
 	err := row.Scan(
@@ -602,6 +724,7 @@ func (q *Queries) UpdateContaPagar(ctx context.Context, arg UpdateContaPagarPara
 		&i.DataVencimento,
 		&i.DataPagamento,
 		&i.Status,
+		&i.UnitID,
 		&i.ComprovanteUrl,
 		&i.PixCode,
 		&i.Observacoes,

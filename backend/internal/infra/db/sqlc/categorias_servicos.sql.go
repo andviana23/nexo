@@ -60,6 +60,7 @@ func (q *Queries) CountCategoriasServicosByTenant(ctx context.Context, arg Count
 }
 
 const countServicosInCategoria = `-- name: CountServicosInCategoria :one
+
 SELECT COUNT(*) AS total
 FROM servicos
 WHERE categoria_id = $1 AND tenant_id = $2 AND unit_id = $3
@@ -392,7 +393,7 @@ UPDATE categorias_servicos SET
     ativa = $3,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, nome, descricao, cor, icone, ativa, criado_em, atualizado_em
+RETURNING id, tenant_id, unit_id, nome, descricao, cor, icone, ativa, criado_em, atualizado_em
 `
 
 type ToggleCategoriaServicoStatusParams struct {
@@ -407,6 +408,7 @@ func (q *Queries) ToggleCategoriaServicoStatus(ctx context.Context, arg ToggleCa
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Cor,
@@ -427,7 +429,7 @@ UPDATE categorias_servicos SET
     icone = $6,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, nome, descricao, cor, icone, ativa, criado_em, atualizado_em
+RETURNING id, tenant_id, unit_id, nome, descricao, cor, icone, ativa, criado_em, atualizado_em
 `
 
 type UpdateCategoriaServicoParams struct {
@@ -455,6 +457,7 @@ func (q *Queries) UpdateCategoriaServico(ctx context.Context, arg UpdateCategori
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Cor,

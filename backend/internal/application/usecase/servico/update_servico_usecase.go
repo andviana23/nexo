@@ -34,20 +34,22 @@ func NewUpdateServicoUseCase(
 func (uc *UpdateServicoUseCase) Execute(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	servicoID string,
 	req dto.UpdateServicoRequest,
 ) (*dto.ServicoResponse, error) {
 	// Buscar serviço existente
-	servico, err := uc.repo.FindByID(ctx, tenantID, servicoID)
+	servico, err := uc.repo.FindByID(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		return nil, domain.ErrServicoNotFound
 	}
 
 	// Verificar duplicidade de nome (excluindo o próprio serviço)
-	exists, err := uc.repo.CheckNomeExists(ctx, tenantID, req.Nome, servicoID)
+	exists, err := uc.repo.CheckNomeExists(ctx, tenantID, unitID, req.Nome, servicoID)
 	if err != nil {
 		uc.logger.Error("Erro ao verificar nome duplicado",
 			zap.String("tenant_id", tenantID),
+			zap.String("unit_id", unitID),
 			zap.String("servico_id", servicoID),
 			zap.String("nome", req.Nome),
 			zap.Error(err),
@@ -61,7 +63,7 @@ func (uc *UpdateServicoUseCase) Execute(
 
 	// Se foi informada uma categoria, verificar se existe
 	if req.CategoriaID != nil {
-		categoria, err := uc.catRepo.FindByID(ctx, tenantID, *req.CategoriaID)
+		categoria, err := uc.catRepo.FindByID(ctx, tenantID, unitID, *req.CategoriaID)
 		if err != nil || categoria == nil {
 			return nil, domain.ErrCategoriaNotFound
 		}
@@ -109,10 +111,11 @@ func NewToggleServicoStatusUseCase(repo port.ServicoRepository, logger *zap.Logg
 func (uc *ToggleServicoStatusUseCase) Execute(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	servicoID string,
 ) (*dto.ServicoResponse, error) {
 	// Verificar se serviço existe
-	servico, err := uc.repo.FindByID(ctx, tenantID, servicoID)
+	servico, err := uc.repo.FindByID(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		return nil, domain.ErrServicoNotFound
 	}
@@ -121,7 +124,7 @@ func (uc *ToggleServicoStatusUseCase) Execute(
 	novoStatus := !servico.Ativo
 
 	// Alterar status no repositório
-	if err := uc.repo.ToggleStatus(ctx, tenantID, servicoID, novoStatus); err != nil {
+	if err := uc.repo.ToggleStatus(ctx, tenantID, servico.UnitID.String(), servicoID, novoStatus); err != nil {
 		uc.logger.Error("Erro ao alterar status do serviço",
 			zap.String("tenant_id", tenantID),
 			zap.String("servico_id", servicoID),

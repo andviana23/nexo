@@ -43,6 +43,7 @@ type Appointment struct {
 	CanceledReason        *string            `json:"canceled_reason"`
 	GoogleCalendarEventID *string            `json:"google_calendar_event_id"`
 	CommandID             pgtype.UUID        `json:"command_id"`
+	UnitID                pgtype.UUID        `json:"unit_id"`
 	CheckedInAt           pgtype.Timestamptz `json:"checked_in_at"`
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	FinishedAt            pgtype.Timestamptz `json:"finished_at"`
@@ -181,8 +182,7 @@ type CategoriasServico struct {
 	ID pgtype.UUID `json:"id"`
 	// Isolamento multi-tenant - OBRIGATÓRIO em todas as queries
 	TenantID pgtype.UUID `json:"tenant_id"`
-	// ID da Unidade (Isolamento Multi-Unidade)
-	UnitID pgtype.UUID `json:"unit_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 	// Nome da categoria (ex: Cortes de Cabelo, Barba, Tratamentos Capilares)
 	Nome      string  `json:"nome"`
 	Descricao *string `json:"descricao"`
@@ -383,6 +383,7 @@ type ContasAPagar struct {
 	DataVencimento pgtype.Date        `json:"data_vencimento"`
 	DataPagamento  pgtype.Date        `json:"data_pagamento"`
 	Status         *string            `json:"status"`
+	UnitID         pgtype.UUID        `json:"unit_id"`
 	ComprovanteUrl *string            `json:"comprovante_url"`
 	PixCode        *string            `json:"pix_code"`
 	Observacoes    *string            `json:"observacoes"`
@@ -392,25 +393,27 @@ type ContasAPagar struct {
 
 // Contas a receber de assinaturas e serviços com alertas de inadimplência
 type ContasAReceber struct {
-	ID              pgtype.UUID        `json:"id"`
-	TenantID        pgtype.UUID        `json:"tenant_id"`
-	Origem          *string            `json:"origem"`
-	AssinaturaID    pgtype.UUID        `json:"assinatura_id"`
-	ServicoID       pgtype.UUID        `json:"servico_id"`
-	Descricao       string             `json:"descricao"`
-	Valor           decimal.Decimal    `json:"valor"`
-	ValorPago       pgtype.Numeric     `json:"valor_pago"`
-	DataVencimento  pgtype.Date        `json:"data_vencimento"`
-	DataRecebimento pgtype.Date        `json:"data_recebimento"`
-	Status          *string            `json:"status"`
-	Observacoes     *string            `json:"observacoes"`
-	SubscriptionID  pgtype.UUID        `json:"subscription_id"`
-	AsaasPaymentID  *string            `json:"asaas_payment_id"`
-	CompetenciaMes  *string            `json:"competencia_mes"`
-	ConfirmedAt     pgtype.Timestamptz `json:"confirmed_at"`
-	ReceivedAt      pgtype.Timestamptz `json:"received_at"`
-	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
-	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	ID               pgtype.UUID        `json:"id"`
+	TenantID         pgtype.UUID        `json:"tenant_id"`
+	Origem           *string            `json:"origem"`
+	AssinaturaID     pgtype.UUID        `json:"assinatura_id"`
+	ServicoID        pgtype.UUID        `json:"servico_id"`
+	Descricao        string             `json:"descricao"`
+	Valor            decimal.Decimal    `json:"valor"`
+	ValorPago        pgtype.Numeric     `json:"valor_pago"`
+	DataVencimento   pgtype.Date        `json:"data_vencimento"`
+	DataRecebimento  pgtype.Date        `json:"data_recebimento"`
+	Status           *string            `json:"status"`
+	Observacoes      *string            `json:"observacoes"`
+	SubscriptionID   pgtype.UUID        `json:"subscription_id"`
+	AsaasPaymentID   *string            `json:"asaas_payment_id"`
+	CompetenciaMes   *string            `json:"competencia_mes"`
+	ConfirmedAt      pgtype.Timestamptz `json:"confirmed_at"`
+	ReceivedAt       pgtype.Timestamptz `json:"received_at"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
+	CommandID        pgtype.UUID        `json:"command_id"`
+	CommandPaymentID pgtype.UUID        `json:"command_payment_id"`
 }
 
 // Despesas fixas recorrentes que geram contas a pagar mensalmente
@@ -727,6 +730,7 @@ type ProdutoFornecedor struct {
 type Profissionai struct {
 	ID              pgtype.UUID        `json:"id"`
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	UserID          pgtype.UUID        `json:"user_id"`
 	Nome            string             `json:"nome"`
 	Email           string             `json:"email"`
@@ -768,6 +772,7 @@ type RequisicoesCompra struct {
 type Servico struct {
 	ID               pgtype.UUID        `json:"id"`
 	TenantID         pgtype.UUID        `json:"tenant_id"`
+	UnitID           pgtype.UUID        `json:"unit_id"`
 	CategoriaID      pgtype.UUID        `json:"categoria_id"`
 	Nome             string             `json:"nome"`
 	Descricao        *string            `json:"descricao"`
@@ -787,6 +792,7 @@ type Servico struct {
 type Subscription struct {
 	ID                  pgtype.UUID        `json:"id"`
 	TenantID            pgtype.UUID        `json:"tenant_id"`
+	UnitID              pgtype.UUID        `json:"unit_id"`
 	ClienteID           pgtype.UUID        `json:"cliente_id"`
 	PlanoID             pgtype.UUID        `json:"plano_id"`
 	AsaasCustomerID     *string            `json:"asaas_customer_id"`

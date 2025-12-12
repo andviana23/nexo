@@ -36,6 +36,7 @@ func (r *CategoriaProdutoRepository) Create(ctx context.Context, categoria *enti
 	params := db.CreateCategoriaProdutoParams{
 		ID:          uuidToPgUUID(categoria.ID),
 		TenantID:    uuidToPgUUID(categoria.TenantID),
+		UnitID:      uuidToPgUUID(categoria.UnitID),
 		Nome:        categoria.Nome,
 		Descricao:   strPtr(categoria.Descricao),
 		Cor:         strPtr(categoria.Cor),
@@ -56,10 +57,11 @@ func (r *CategoriaProdutoRepository) Create(ctx context.Context, categoria *enti
 // =============================================================================
 
 // FindByID busca categoria por ID
-func (r *CategoriaProdutoRepository) FindByID(ctx context.Context, tenantID, id uuid.UUID) (*entity.CategoriaProdutoEntity, error) {
+func (r *CategoriaProdutoRepository) FindByID(ctx context.Context, tenantID, unitID, id uuid.UUID) (*entity.CategoriaProdutoEntity, error) {
 	params := db.GetCategoriaProdutoByIDParams{
 		ID:       uuidToPgUUID(id),
 		TenantID: uuidToPgUUID(tenantID),
+		UnitID:   uuidToPgUUID(unitID),
 	}
 
 	row, err := r.queries.GetCategoriaProdutoByID(ctx, params)
@@ -74,9 +76,10 @@ func (r *CategoriaProdutoRepository) FindByID(ctx context.Context, tenantID, id 
 }
 
 // FindByNome busca categoria por nome (único por tenant)
-func (r *CategoriaProdutoRepository) FindByNome(ctx context.Context, tenantID uuid.UUID, nome string) (*entity.CategoriaProdutoEntity, error) {
+func (r *CategoriaProdutoRepository) FindByNome(ctx context.Context, tenantID, unitID uuid.UUID, nome string) (*entity.CategoriaProdutoEntity, error) {
 	params := db.GetCategoriaProdutoByNomeParams{
 		TenantID: uuidToPgUUID(tenantID),
+		UnitID:   uuidToPgUUID(unitID),
 		Lower:    nome,
 	}
 
@@ -92,8 +95,11 @@ func (r *CategoriaProdutoRepository) FindByNome(ctx context.Context, tenantID uu
 }
 
 // ListAll lista todas as categorias do tenant
-func (r *CategoriaProdutoRepository) ListAll(ctx context.Context, tenantID uuid.UUID) ([]*entity.CategoriaProdutoEntity, error) {
-	rows, err := r.queries.ListCategoriasProdutos(ctx, uuidToPgUUID(tenantID))
+func (r *CategoriaProdutoRepository) ListAll(ctx context.Context, tenantID, unitID uuid.UUID) ([]*entity.CategoriaProdutoEntity, error) {
+	rows, err := r.queries.ListCategoriasProdutos(ctx, db.ListCategoriasProdutosParams{
+		TenantID: uuidToPgUUID(tenantID),
+		UnitID:   uuidToPgUUID(unitID),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar categorias: %w", err)
 	}
@@ -107,8 +113,11 @@ func (r *CategoriaProdutoRepository) ListAll(ctx context.Context, tenantID uuid.
 }
 
 // ListAtivas lista apenas categorias ativas do tenant
-func (r *CategoriaProdutoRepository) ListAtivas(ctx context.Context, tenantID uuid.UUID) ([]*entity.CategoriaProdutoEntity, error) {
-	rows, err := r.queries.ListCategoriasProdutosAtivas(ctx, uuidToPgUUID(tenantID))
+func (r *CategoriaProdutoRepository) ListAtivas(ctx context.Context, tenantID, unitID uuid.UUID) ([]*entity.CategoriaProdutoEntity, error) {
+	rows, err := r.queries.ListCategoriasProdutosAtivas(ctx, db.ListCategoriasProdutosAtivasParams{
+		TenantID: uuidToPgUUID(tenantID),
+		UnitID:   uuidToPgUUID(unitID),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar categorias ativas: %w", err)
 	}
@@ -131,6 +140,7 @@ func (r *CategoriaProdutoRepository) Update(ctx context.Context, categoria *enti
 	params := db.UpdateCategoriaProdutoParams{
 		ID:          uuidToPgUUID(categoria.ID),
 		TenantID:    uuidToPgUUID(categoria.TenantID),
+		UnitID:      uuidToPgUUID(categoria.UnitID),
 		Nome:        categoria.Nome,
 		Descricao:   strPtr(categoria.Descricao),
 		Cor:         strPtr(categoria.Cor),
@@ -152,10 +162,11 @@ func (r *CategoriaProdutoRepository) Update(ctx context.Context, categoria *enti
 // =============================================================================
 
 // Delete remove uma categoria
-func (r *CategoriaProdutoRepository) Delete(ctx context.Context, tenantID, id uuid.UUID) error {
+func (r *CategoriaProdutoRepository) Delete(ctx context.Context, tenantID, unitID, id uuid.UUID) error {
 	params := db.DeleteCategoriaProdutoParams{
 		ID:       uuidToPgUUID(id),
 		TenantID: uuidToPgUUID(tenantID),
+		UnitID:   uuidToPgUUID(unitID),
 	}
 
 	err := r.queries.DeleteCategoriaProduto(ctx, params)
@@ -171,7 +182,7 @@ func (r *CategoriaProdutoRepository) Delete(ctx context.Context, tenantID, id uu
 // =============================================================================
 
 // ExistsWithNome verifica se já existe categoria com o nome (para validação de duplicidade)
-func (r *CategoriaProdutoRepository) ExistsWithNome(ctx context.Context, tenantID uuid.UUID, nome string, excludeID *uuid.UUID) (bool, error) {
+func (r *CategoriaProdutoRepository) ExistsWithNome(ctx context.Context, tenantID, unitID uuid.UUID, nome string, excludeID *uuid.UUID) (bool, error) {
 	var idUUID pgtype.UUID
 
 	if excludeID != nil {
@@ -182,6 +193,7 @@ func (r *CategoriaProdutoRepository) ExistsWithNome(ctx context.Context, tenantI
 
 	params := db.CheckCategoriaProdutoNomeExistsParams{
 		TenantID: uuidToPgUUID(tenantID),
+		UnitID:   uuidToPgUUID(unitID),
 		Lower:    nome,
 		ID:       idUUID,
 	}
@@ -195,9 +207,10 @@ func (r *CategoriaProdutoRepository) ExistsWithNome(ctx context.Context, tenantI
 }
 
 // CountProdutosVinculados conta quantos produtos estão vinculados à categoria
-func (r *CategoriaProdutoRepository) CountProdutosVinculados(ctx context.Context, tenantID, categoriaID uuid.UUID) (int64, error) {
+func (r *CategoriaProdutoRepository) CountProdutosVinculados(ctx context.Context, tenantID, unitID, categoriaID uuid.UUID) (int64, error) {
 	params := db.CountProdutosByCategoriaParams{
 		TenantID:           uuidToPgUUID(tenantID),
+		UnitID:             uuidToPgUUID(unitID),
 		CategoriaProdutoID: uuidToPgUUID(categoriaID),
 	}
 
@@ -218,6 +231,7 @@ func (r *CategoriaProdutoRepository) toDomain(row db.CategoriasProduto) *entity.
 	return &entity.CategoriaProdutoEntity{
 		ID:           pgUUIDToUUID(row.ID),
 		TenantID:     pgUUIDToUUID(row.TenantID),
+		UnitID:       pgUUIDToUUID(row.UnitID),
 		Nome:         row.Nome,
 		Descricao:    derefString(row.Descricao),
 		Cor:          derefStringDefault(row.Cor, "#6B7280"),

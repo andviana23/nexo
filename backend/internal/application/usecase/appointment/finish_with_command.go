@@ -14,6 +14,7 @@ import (
 // FinishServiceWithCommandInput dados de entrada para finalizar serviço
 type FinishServiceWithCommandInput struct {
 	TenantID      string
+	UnitID        string
 	AppointmentID string
 }
 
@@ -49,12 +50,15 @@ func (uc *FinishServiceWithCommandUseCase) Execute(ctx context.Context, input Fi
 	if input.TenantID == "" {
 		return nil, domain.ErrTenantIDRequired
 	}
+	if input.UnitID == "" {
+		return nil, domain.ErrUnitIDRequired
+	}
 	if input.AppointmentID == "" {
 		return nil, domain.ErrInvalidID
 	}
 
 	// 1. Buscar agendamento
-	appointment, err := uc.appointmentRepo.FindByID(ctx, input.TenantID, input.AppointmentID)
+	appointment, err := uc.appointmentRepo.FindByID(ctx, input.TenantID, input.UnitID, input.AppointmentID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar agendamento: %w", err)
 	}

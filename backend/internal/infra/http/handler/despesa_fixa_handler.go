@@ -10,6 +10,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/financial"
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
+	mw "github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
@@ -508,14 +509,14 @@ func (h *DespesaFixaHandler) GenerateContas(c echo.Context) error {
 // RegisterRoutes registra as rotas de despesas fixas
 func (h *DespesaFixaHandler) RegisterRoutes(g *echo.Group) {
 	// CRUD básico
-	g.POST("/fixed-expenses", h.Create)
-	g.GET("/fixed-expenses", h.List)
-	g.GET("/fixed-expenses/summary", h.GetSummary)
-	g.GET("/fixed-expenses/:id", h.GetByID)
-	g.PUT("/fixed-expenses/:id", h.Update)
-	g.PATCH("/fixed-expenses/:id/toggle", h.Toggle)
-	g.DELETE("/fixed-expenses/:id", h.Delete)
+	g.POST("/fixed-expenses", h.Create, mw.RequireOwnerOrManager(h.logger))
+	g.GET("/fixed-expenses", h.List, mw.RequireAdminAccess(h.logger))
+	g.GET("/fixed-expenses/summary", h.GetSummary, mw.RequireAdminAccess(h.logger))
+	g.GET("/fixed-expenses/:id", h.GetByID, mw.RequireAdminAccess(h.logger))
+	g.PUT("/fixed-expenses/:id", h.Update, mw.RequireOwnerOrManager(h.logger))
+	g.PATCH("/fixed-expenses/:id/toggle", h.Toggle, mw.RequireOwnerOrManager(h.logger))
+	g.DELETE("/fixed-expenses/:id", h.Delete, mw.RequireOwnerOrManager(h.logger))
 
 	// Geração automática
-	g.POST("/fixed-expenses/generate", h.GenerateContas)
+	g.POST("/fixed-expenses/generate", h.GenerateContas, mw.RequireOwnerOrManager(h.logger))
 }

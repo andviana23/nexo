@@ -91,7 +91,7 @@ type Querier interface {
 	CountAppointmentsByStatus(ctx context.Context, arg CountAppointmentsByStatusParams) (int64, error)
 	CountBarbersTurnList(ctx context.Context, tenantID pgtype.UUID) (CountBarbersTurnListRow, error)
 	CountCaixaDiarioHistorico(ctx context.Context, arg CountCaixaDiarioHistoricoParams) (int64, error)
-	CountCategoriasServicosByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
+	CountCategoriasServicosByTenant(ctx context.Context, arg CountCategoriasServicosByTenantParams) (int64, error)
 	CountCommands(ctx context.Context, arg CountCommandsParams) (int64, error)
 	CountCommissionItemsByStatus(ctx context.Context, tenantID pgtype.UUID) (CountCommissionItemsByStatusRow, error)
 	CountCommissionRulesByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
@@ -119,11 +119,11 @@ type Querier interface {
 	CountPaymentsByStatus(ctx context.Context, tenantID pgtype.UUID) (CountPaymentsByStatusRow, error)
 	CountProdutosByCategoria(ctx context.Context, arg CountProdutosByCategoriaParams) (int64, error)
 	CountProfessionals(ctx context.Context, arg CountProfessionalsParams) (int64, error)
-	CountServicosAtivosByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
+	CountServicosAtivosByTenant(ctx context.Context, arg CountServicosAtivosByTenantParams) (int64, error)
 	// ============================================================================
 	// QUERIES AUXILIARES
 	// ============================================================================
-	CountServicosByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error)
+	CountServicosByTenant(ctx context.Context, arg CountServicosByTenantParams) (int64, error)
 	// ============================================================================
 	// QUERIES AUXILIARES
 	// ============================================================================
@@ -407,7 +407,7 @@ type Querier interface {
 	// READ
 	// ============================================================================
 	GetCategoriaServicoByID(ctx context.Context, arg GetCategoriaServicoByIDParams) (CategoriasServico, error)
-	GetCategoriasServicosComServicos(ctx context.Context, tenantID pgtype.UUID) ([]GetCategoriasServicosComServicosRow, error)
+	GetCategoriasServicosComServicos(ctx context.Context, arg GetCategoriasServicosComServicosParams) ([]GetCategoriasServicosComServicosRow, error)
 	// Buscar cliente pelo ID do Asaas (para unificação - RN-CLI-002)
 	GetClienteByAsaasID(ctx context.Context, arg GetClienteByAsaasIDParams) (Cliente, error)
 	// Buscar cliente por nome e telefone (para busca no Asaas - AS-001)
@@ -522,7 +522,7 @@ type Querier interface {
 	// ============================================================================
 	GetServicoByID(ctx context.Context, arg GetServicoByIDParams) (GetServicoByIDRow, error)
 	GetServicosByIDs(ctx context.Context, arg GetServicosByIDsParams) ([]GetServicosByIDsRow, error)
-	GetServicosStats(ctx context.Context, tenantID pgtype.UUID) (GetServicosStatsRow, error)
+	GetServicosStats(ctx context.Context, arg GetServicosStatsParams) (GetServicosStatsRow, error)
 	// Buscar assinatura pelo ID do Asaas (para webhooks)
 	GetSubscriptionByAsaasID(ctx context.Context, asaasSubscriptionID *string) (GetSubscriptionByAsaasIDRow, error)
 	// Buscar assinatura por ID com dados de plano e cliente (JOIN)
@@ -578,7 +578,7 @@ type Querier interface {
 	ListAppointmentsByProfessionalAndDateRange(ctx context.Context, arg ListAppointmentsByProfessionalAndDateRangeParams) ([]ListAppointmentsByProfessionalAndDateRangeRow, error)
 	ListApprovedAdvancesForProfessional(ctx context.Context, arg ListApprovedAdvancesForProfessionalParams) ([]Advance, error)
 	ListApprovedAdvancesNotDeducted(ctx context.Context, tenantID pgtype.UUID) ([]ListApprovedAdvancesNotDeductedRow, error)
-	ListBarbers(ctx context.Context, tenantID pgtype.UUID) ([]ListBarbersRow, error)
+	ListBarbers(ctx context.Context, arg ListBarbersParams) ([]ListBarbersRow, error)
 	// Lista todos os barbeiros na fila ordenados por pontuação
 	// Menor pontuação = topo da fila
 	// Critério de desempate: last_turn_at mais antigo ou nulo (nunca atendeu) → topo
@@ -590,8 +590,8 @@ type Querier interface {
 	ListCaixaDiarioHistorico(ctx context.Context, arg ListCaixaDiarioHistoricoParams) ([]ListCaixaDiarioHistoricoRow, error)
 	ListCategoriasProdutos(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasProduto, error)
 	ListCategoriasProdutosAtivas(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasProduto, error)
-	ListCategoriasServicos(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasServico, error)
-	ListCategoriasServicosAtivas(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasServico, error)
+	ListCategoriasServicos(ctx context.Context, arg ListCategoriasServicosParams) ([]CategoriasServico, error)
+	ListCategoriasServicosAtivas(ctx context.Context, arg ListCategoriasServicosAtivasParams) ([]CategoriasServico, error)
 	ListCommands(ctx context.Context, arg ListCommandsParams) ([]Command, error)
 	ListCommissionItemsByDateRange(ctx context.Context, arg ListCommissionItemsByDateRangeParams) ([]ListCommissionItemsByDateRangeRow, error)
 	ListCommissionItemsByPeriod(ctx context.Context, arg ListCommissionItemsByPeriodParams) ([]ListCommissionItemsByPeriodRow, error)
@@ -616,6 +616,7 @@ type Querier interface {
 	ListContasPagarRecorrentes(ctx context.Context, tenantID pgtype.UUID) ([]ContasAPagar, error)
 	ListContasPagarVencidas(ctx context.Context, arg ListContasPagarVencidasParams) ([]ContasAPagar, error)
 	ListContasReceberByAssinatura(ctx context.Context, arg ListContasReceberByAssinaturaParams) ([]ContasAReceber, error)
+	ListContasReceberByCommandID(ctx context.Context, arg ListContasReceberByCommandIDParams) ([]ContasAReceber, error)
 	// Listar contas por competência
 	ListContasReceberByCompetencia(ctx context.Context, arg ListContasReceberByCompetenciaParams) ([]ContasAReceber, error)
 	ListContasReceberByOrigem(ctx context.Context, arg ListContasReceberByOrigemParams) ([]ContasAReceber, error)
@@ -696,12 +697,12 @@ type Querier interface {
 	ListProfessionals(ctx context.Context, arg ListProfessionalsParams) ([]ListProfessionalsRow, error)
 	// Listar logs de conciliação
 	ListReconciliationLogs(ctx context.Context, arg ListReconciliationLogsParams) ([]AsaasReconciliationLog, error)
-	ListServicos(ctx context.Context, tenantID pgtype.UUID) ([]ListServicosRow, error)
-	ListServicosAtivos(ctx context.Context, tenantID pgtype.UUID) ([]ListServicosAtivosRow, error)
+	ListServicos(ctx context.Context, arg ListServicosParams) ([]ListServicosRow, error)
+	ListServicosAtivos(ctx context.Context, arg ListServicosAtivosParams) ([]ListServicosAtivosRow, error)
 	ListServicosByCategoria(ctx context.Context, arg ListServicosByCategoriaParams) ([]ListServicosByCategoriaRow, error)
 	ListServicosByProfissional(ctx context.Context, arg ListServicosByProfissionalParams) ([]ListServicosByProfissionalRow, error)
 	ListServicosComCategoria(ctx context.Context, tenantID pgtype.UUID) ([]ListServicosComCategoriaRow, error)
-	ListServicosSemCategoria(ctx context.Context, tenantID pgtype.UUID) ([]Servico, error)
+	ListServicosSemCategoria(ctx context.Context, tenantID pgtype.UUID) ([]ListServicosSemCategoriaRow, error)
 	ListSimulacoesByItem(ctx context.Context, arg ListSimulacoesByItemParams) ([]PrecificacaoSimulaco, error)
 	ListSimulacoesByTenant(ctx context.Context, arg ListSimulacoesByTenantParams) ([]PrecificacaoSimulaco, error)
 	ListSimulacoesByTipoItem(ctx context.Context, arg ListSimulacoesByTipoItemParams) ([]PrecificacaoSimulaco, error)
@@ -809,6 +810,7 @@ type Querier interface {
 	// Somar por data de confirmação (para DRE regime competência)
 	SumContasReceberByConfirmedDate(ctx context.Context, arg SumContasReceberByConfirmedDateParams) (decimal.Decimal, error)
 	SumContasReceberByPeriod(ctx context.Context, arg SumContasReceberByPeriodParams) (interface{}, error)
+	SumContasReceberByOrigem(ctx context.Context, arg SumContasReceberByOrigemParams) (interface{}, error)
 	// Somar por data de recebimento (para fluxo de caixa)
 	SumContasReceberByReceivedDate(ctx context.Context, arg SumContasReceberByReceivedDateParams) (decimal.Decimal, error)
 	SumContasRecebidasByPeriod(ctx context.Context, arg SumContasRecebidasByPeriodParams) (interface{}, error)

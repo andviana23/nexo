@@ -277,15 +277,29 @@ func (uc *ReconcileAsaasUseCase) createContaReceberFromPayment(ctx context.Conte
 	competencia := dataVencimento.Format("2006-01")
 	conta.CompetenciaMes = &competencia
 
-	// Se já confirmado, atualizar status e data
-	if payment.Status == entity.PaymentStatusConfirmado || payment.Status == entity.PaymentStatusRecebido {
-		conta.Status = valueobject.StatusContaPago
+	// Se já confirmado/recebido, atualizar status e datas
+	if payment.Status == entity.PaymentStatusConfirmado {
+		conta.Status = valueobject.StatusContaConfirmado
+		if payment.ConfirmedDate != nil {
+			conta.ConfirmedAt = payment.ConfirmedDate
+		} else {
+			now := time.Now()
+			conta.ConfirmedAt = &now
+		}
+		conta.ValorPago = valueobject.Zero()
+		conta.ValorAberto = valor
+	} else if payment.Status == entity.PaymentStatusRecebido {
+		conta.Status = valueobject.StatusContaRecebido
 		if payment.ConfirmedDate != nil {
 			conta.ConfirmedAt = payment.ConfirmedDate
 		}
 		if payment.DataPagamento != nil {
 			conta.DataRecebimento = payment.DataPagamento
 			conta.ReceivedAt = payment.DataPagamento
+		} else {
+			now := time.Now()
+			conta.DataRecebimento = &now
+			conta.ReceivedAt = &now
 		}
 		conta.ValorPago = valor
 		conta.ValorAberto = valueobject.Zero()

@@ -137,8 +137,17 @@ func CreateServicoRequestToEntity(req *dto.CreateServicoRequest, tenantID uuid.U
 		return nil, fmt.Errorf("preço inválido: %w", err)
 	}
 
+	// Parse unit_id
+	var unitID uuid.UUID
+	if req.UnitID != nil {
+		unitID, err = uuid.Parse(*req.UnitID)
+		if err != nil {
+			return nil, fmt.Errorf("unit_id inválido: %w", err)
+		}
+	}
+
 	// Criar entidade base
-	servico, err := entity.NewServico(tenantID, req.Nome, preco, req.Duracao)
+	servico, err := entity.NewServico(tenantID, unitID, req.Nome, preco, req.Duracao)
 	if err != nil {
 		return nil, err
 	}

@@ -31,7 +31,9 @@ type UpdateContaPagarRequest struct {
 
 // ListContasPagarRequest representa filtros para listagem de contas a pagar
 type ListContasPagarRequest struct {
-	Status      *string `query:"status" validate:"omitempty,oneof=PENDENTE PAGO VENCIDO CANCELADO"`
+	// Status canônicos: PENDENTE, PAGO, ATRASADO, CANCELADO
+	// Legado (compat): ABERTO, VENCIDO
+	Status      *string `query:"status" validate:"omitempty,oneof=PENDENTE ABERTO PAGO ATRASADO VENCIDO CANCELADO"`
 	CategoriaID *string `query:"categoria_id" validate:"omitempty,uuid"`
 	DataInicio  *string `query:"data_inicio"`
 	DataFim     *string `query:"data_fim"`
@@ -82,7 +84,9 @@ type UpdateContaReceberRequest struct {
 
 // ListContasReceberRequest representa filtros para listagem de contas a receber
 type ListContasReceberRequest struct {
-	Status     *string `query:"status" validate:"omitempty,oneof=PENDENTE PARCIAL RECEBIDO CANCELADO"`
+	// Status canônicos: PENDENTE, CONFIRMADO, RECEBIDO, ATRASADO, ESTORNADO, CANCELADO
+	// Legado (compat): PAGO
+	Status     *string `query:"status" validate:"omitempty,oneof=PENDENTE CONFIRMADO RECEBIDO ATRASADO ESTORNADO CANCELADO PAGO"`
 	Origem     *string `query:"origem"`
 	DataInicio *string `query:"data_inicio"`
 	DataFim    *string `query:"data_fim"`
@@ -150,7 +154,7 @@ type CompensacaoBancariaResponse struct {
 
 // ListCompensacoesRequest representa filtros para listagem de compensações
 type ListCompensacoesRequest struct {
-	Status     *string `query:"status" validate:"omitempty,oneof=PENDENTE COMPENSADO"`
+	Status     *string `query:"status" validate:"omitempty,oneof=PREVISTO CONFIRMADO COMPENSADO CANCELADO"`
 	DataInicio *string `query:"data_inicio"`
 	DataFim    *string `query:"data_fim"`
 	Page       int     `query:"page" validate:"min=1"`

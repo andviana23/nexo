@@ -14,6 +14,7 @@ import (
 // RescheduleAppointmentInput dados de entrada para reagendar
 type RescheduleAppointmentInput struct {
 	TenantID       string
+	UnitID         string
 	AppointmentID  string
 	NewStartTime   time.Time
 	ProfessionalID string // Opcional: trocar de profissional
@@ -52,7 +53,7 @@ func (uc *RescheduleAppointmentUseCase) Execute(ctx context.Context, input Resch
 	}
 
 	// Buscar agendamento
-	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.AppointmentID)
+	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.UnitID, input.AppointmentID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar agendamento: %w", err)
 	}
@@ -86,6 +87,7 @@ func (uc *RescheduleAppointmentUseCase) Execute(ctx context.Context, input Resch
 	hasConflict, err := uc.repo.CheckConflict(
 		ctx,
 		input.TenantID,
+		appointment.UnitID.String(),
 		professionalID,
 		appointment.StartTime,
 		appointment.EndTime,
@@ -102,6 +104,7 @@ func (uc *RescheduleAppointmentUseCase) Execute(ctx context.Context, input Resch
 	hasBlockedConflict, err := uc.repo.CheckBlockedTimeConflict(
 		ctx,
 		input.TenantID,
+		appointment.UnitID.String(),
 		professionalID,
 		appointment.StartTime,
 		appointment.EndTime,
@@ -118,6 +121,7 @@ func (uc *RescheduleAppointmentUseCase) Execute(ctx context.Context, input Resch
 	hasIntervalConflict, err := uc.repo.CheckMinimumIntervalConflict(
 		ctx,
 		input.TenantID,
+		appointment.UnitID.String(),
 		professionalID,
 		appointment.StartTime,
 		appointment.EndTime,

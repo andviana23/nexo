@@ -1,6 +1,7 @@
 export interface Service {
   id: string;
   tenant_id: string;
+  unit_id?: string;
   categoria_id?: string;
   categoria_nome?: string;
   categoria_cor?: string;
@@ -33,6 +34,7 @@ export interface CreateServiceDTO {
   profissionais_ids?: string[];
   observacoes?: string;
   tags?: string[];
+  unit_id?: string;
 }
 
 export type UpdateServiceDTO = Partial<CreateServiceDTO> & {
@@ -45,6 +47,7 @@ export interface ServiceFilters {
   profissional_id?: string;
   search?: string;
   order_by?: string;
+  unit_id?: string;
 }
 
 export interface ServiceListResponse {

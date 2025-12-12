@@ -263,13 +263,15 @@ func main() {
 	getCompensacaoUC := financial.NewGetCompensacaoUseCase(compensacaoRepo, logger)
 	listCompensacoesUC := financial.NewListCompensacoesUseCase(compensacaoRepo, logger)
 	deleteCompensacaoUC := financial.NewDeleteCompensacaoUseCase(compensacaoRepo, logger)
-	marcarCompensacaoUC := financial.NewMarcarCompensacaoUseCase(compensacaoRepo, logger)
+	marcarCompensacaoUC := financial.NewMarcarCompensacaoUseCase(compensacaoRepo, contaReceberRepo, logger)
 	// FluxoCaixa (com dependências de ContaPagar, ContaReceber e Compensacao)
 	generateFluxoDiarioUC := financial.NewGenerateFluxoDiarioUseCase(fluxoCaixaRepo, contaPagarRepo, contaReceberRepo, compensacaoRepo, logger)
+	generateFluxoDiarioV2UC := financial.NewGenerateFluxoDiarioV2UseCase(fluxoCaixaRepo, contaPagarRepo, contaReceberRepo, compensacaoRepo, logger)
 	getFluxoCaixaUC := financial.NewGetFluxoCaixaUseCase(fluxoCaixaRepo, logger)
 	listFluxoCaixaUC := financial.NewListFluxoCaixaUseCase(fluxoCaixaRepo, logger)
 	// DRE (com dependências de ContaPagar, ContaReceber e CommissionItem)
 	generateDREUC := financial.NewGenerateDREUseCase(dreRepo, contaPagarRepo, contaReceberRepo, commissionItemRepo, logger)
+	generateDREV2UC := financial.NewGenerateDREV2UseCase(dreRepo, contaPagarRepo, contaReceberRepo, subscriptionPaymentRepo, logger)
 	getDREUC := financial.NewGetDREUseCase(dreRepo, logger)
 	listDREUC := financial.NewListDREUseCase(dreRepo, logger)
 	// DespesaFixa (7 use cases)
@@ -342,6 +344,7 @@ func main() {
 		appointmentRepo,
 		meioPagamentoRepo,
 		contaReceberRepo,
+		compensacaoRepo,
 		caixaDiarioRepo,
 		produtoRepo,
 		movimentacaoRepo,
@@ -358,6 +361,8 @@ func main() {
 		produtoRepo,
 		movimentacaoRepo,
 		commissionItemRepo,
+		contaReceberRepo,
+		caixaDiarioRepo,
 		commandMapper,
 		logger,
 	)
@@ -528,7 +533,9 @@ func main() {
 	// Register financial cron jobs
 	financialDeps := scheduler.FinancialJobDeps{
 		GenerateDRE:              generateDREUC,
+		GenerateDREV2:            generateDREV2UC,
 		GenerateFluxoDiario:      generateFluxoDiarioUC,
+		GenerateFluxoDiarioV2:    generateFluxoDiarioV2UC,
 		MarcarCompensacoes:       marcarCompensacaoUC,
 		GerarContasDespesasFixas: gerarContasFromDespesasUC,
 	}
@@ -978,6 +985,7 @@ func main() {
 	// - Apenas OWNER e MANAGER podem alterar status para DONE e NO_SHOW
 	// - T-ASAAS-003: Requer assinatura ativa (grupo guarded)
 	appointmentsGroup := guarded.Group("/appointments")
+	appointmentsGroup.Use(mw.UnitMiddleware())
 	// Rotas com acesso geral (todos os roles autenticados podem acessar, mas BARBER tem escopo limitado)
 	appointmentsGroup.POST("", appointmentHandler.CreateAppointment, mw.RequireAnyRole(logger))
 	appointmentsGroup.GET("", appointmentHandler.ListAppointments, mw.RequireAnyRole(logger))
@@ -1030,6 +1038,7 @@ func main() {
 
 	// Professional routes - 8 endpoints (PROTEGIDAS com JWT)
 	professionalsGroup := protected.Group("/professionals")
+	professionalsGroup.Use(mw.UnitMiddleware())
 	professionalsGroup.GET("", professionalHandler.ListProfessionals)
 	professionalsGroup.POST("", professionalHandler.CreateProfessional)
 	professionalsGroup.GET("/check-email", professionalHandler.CheckEmailExists)
@@ -1108,6 +1117,7 @@ func main() {
 
 	// Categoria Servico routes - 5 endpoints (PROTEGIDAS com JWT)
 	categoriasGroup := protected.Group("/categorias-servicos")
+	categoriasGroup.Use(mw.UnitMiddleware())
 	categoriasGroup.POST("", categoriaServicoHandler.Create)       // POST /api/v1/categorias-servicos
 	categoriasGroup.GET("", categoriaServicoHandler.List)          // GET /api/v1/categorias-servicos
 	categoriasGroup.GET("/:id", categoriaServicoHandler.GetByID)   // GET /api/v1/categorias-servicos/:id
@@ -1116,6 +1126,7 @@ func main() {
 
 	// Categoria Produto routes - 6 endpoints (PROTEGIDAS com JWT)
 	categoriasProdutosGroup := protected.Group("/categorias-produtos")
+	categoriasProdutosGroup.Use(mw.UnitMiddleware())
 	categoriasProdutosGroup.POST("", categoriaProdutoHandler.Create)             // POST /api/v1/categorias-produtos
 	categoriasProdutosGroup.GET("", categoriaProdutoHandler.List)                // GET /api/v1/categorias-produtos
 	categoriasProdutosGroup.GET("/:id", categoriaProdutoHandler.GetByID)         // GET /api/v1/categorias-produtos/:id
@@ -1125,6 +1136,7 @@ func main() {
 
 	// Servicos routes - 9 endpoints (PROTEGIDAS com JWT)
 	servicosGroup := protected.Group("/servicos")
+	servicosGroup.Use(mw.UnitMiddleware())
 	servicosGroup.POST("", servicoHandler.Create)                          // POST /api/v1/servicos
 	servicosGroup.GET("", servicoHandler.List)                             // GET /api/v1/servicos
 	servicosGroup.GET("/stats", servicoHandler.GetStats)                   // GET /api/v1/servicos/stats

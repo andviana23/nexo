@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     canceled_reason TEXT,
     google_calendar_event_id VARCHAR(255),
     command_id UUID REFERENCES commands(id) ON DELETE SET NULL,
+    unit_id UUID REFERENCES units(id) ON DELETE RESTRICT,
     checked_in_at TIMESTAMPTZ,
     started_at TIMESTAMPTZ,
     finished_at TIMESTAMPTZ,

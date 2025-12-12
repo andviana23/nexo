@@ -13,6 +13,7 @@ import (
 // CancelAppointmentInput dados de entrada para cancelar agendamento
 type CancelAppointmentInput struct {
 	TenantID      string
+	UnitID        string
 	AppointmentID string
 	Reason        string
 }
@@ -39,12 +40,15 @@ func (uc *CancelAppointmentUseCase) Execute(ctx context.Context, input CancelApp
 	if input.TenantID == "" {
 		return nil, domain.ErrTenantIDRequired
 	}
+	if input.UnitID == "" {
+		return nil, domain.ErrUnitIDRequired
+	}
 	if input.AppointmentID == "" {
 		return nil, domain.ErrInvalidID
 	}
 
 	// Buscar agendamento
-	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.AppointmentID)
+	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.UnitID, input.AppointmentID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar agendamento: %w", err)
 	}

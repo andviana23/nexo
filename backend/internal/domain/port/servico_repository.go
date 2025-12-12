@@ -13,6 +13,7 @@ type ServicoFilter struct {
 	ProfissionalID string
 	Search         string
 	OrderBy        string // "nome", "preco", "duracao", "criado_em"
+	UnitID         string
 }
 
 // ServicoStats contém estatísticas de serviços

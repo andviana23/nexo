@@ -4,6 +4,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
@@ -532,7 +533,7 @@ func (h *FinancialHandler) ListContasPagar(c echo.Context) error {
 	}
 
 	// Parse datas
-	var dataInicio, dataFim time.Time
+	var dataInicioPtr, dataFimPtr *time.Time
 	if req.DataInicio != nil {
 		parsed, err := time.Parse("2006-01-02", *req.DataInicio)
 		if err != nil {
@@ -541,7 +542,7 @@ func (h *FinancialHandler) ListContasPagar(c echo.Context) error {
 				Message: "Data início inválida (use YYYY-MM-DD)",
 			})
 		}
-		dataInicio = parsed
+		dataInicioPtr = &parsed
 	}
 	if req.DataFim != nil {
 		parsed, err := time.Parse("2006-01-02", *req.DataFim)
@@ -551,14 +552,44 @@ func (h *FinancialHandler) ListContasPagar(c echo.Context) error {
 				Message: "Data fim inválida (use YYYY-MM-DD)",
 			})
 		}
-		dataFim = parsed
+		dataFimPtr = &parsed
+	}
+
+	// Parse status/tipo
+	var statusVO *valueobject.StatusConta
+	if req.Status != nil && *req.Status != "" {
+		st, ok := parseContaPagarStatus(*req.Status)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+				Error:   "bad_request",
+				Message: "Status inválido",
+			})
+		}
+		statusVO = &st
+	}
+
+	var tipoVO *valueobject.TipoCusto
+	if req.Tipo != nil && *req.Tipo != "" {
+		t := valueobject.TipoCusto(strings.ToUpper(strings.TrimSpace(*req.Tipo)))
+		if !t.IsValid() {
+			return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+				Error:   "bad_request",
+				Message: "Tipo inválido",
+			})
+		}
+		tipoVO = &t
 	}
 
 	// Executar use case
 	contas, err := h.listContasPagarUC.Execute(ctx, financial.ListContasPagarInput{
-		TenantID:   tenantID,
-		DataInicio: dataInicio,
-		DataFim:    dataFim,
+		TenantID:    tenantID,
+		Status:      statusVO,
+		CategoriaID: req.CategoriaID,
+		Tipo:        tipoVO,
+		DataInicio:  dataInicioPtr,
+		DataFim:     dataFimPtr,
+		Page:        req.Page,
+		PageSize:    req.PageSize,
 	})
 	if err != nil {
 		h.logger.Error("Erro ao listar contas a pagar", zap.Error(err))
@@ -783,7 +814,7 @@ func (h *FinancialHandler) ListContasReceber(c echo.Context) error {
 		req.PageSize = 20
 	}
 
-	var dataInicio, dataFim time.Time
+	var dataInicioPtr, dataFimPtr *time.Time
 	if req.DataInicio != nil {
 		parsed, err := time.Parse("2006-01-02", *req.DataInicio)
 		if err != nil {
@@ -792,7 +823,7 @@ func (h *FinancialHandler) ListContasReceber(c echo.Context) error {
 				Message: "Data início inválida",
 			})
 		}
-		dataInicio = parsed
+		dataInicioPtr = &parsed
 	}
 	if req.DataFim != nil {
 		parsed, err := time.Parse("2006-01-02", *req.DataFim)
@@ -802,13 +833,35 @@ func (h *FinancialHandler) ListContasReceber(c echo.Context) error {
 				Message: "Data fim inválida",
 			})
 		}
-		dataFim = parsed
+		dataFimPtr = &parsed
+	}
+
+	var statusVO *valueobject.StatusConta
+	if req.Status != nil && *req.Status != "" {
+		st, ok := parseContaReceberStatus(*req.Status)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+				Error:   "bad_request",
+				Message: "Status inválido",
+			})
+		}
+		statusVO = &st
+	}
+
+	var origemVO *string
+	if req.Origem != nil && *req.Origem != "" {
+		o := strings.ToUpper(strings.TrimSpace(*req.Origem))
+		origemVO = &o
 	}
 
 	contas, err := h.listContasReceberUC.Execute(ctx, financial.ListContasReceberInput{
 		TenantID:   tenantID,
-		DataInicio: dataInicio,
-		DataFim:    dataFim,
+		Status:     statusVO,
+		Origem:     origemVO,
+		DataInicio: dataInicioPtr,
+		DataFim:    dataFimPtr,
+		Page:       req.Page,
+		PageSize:   req.PageSize,
 	})
 	if err != nil {
 		h.logger.Error("Erro ao listar contas a receber", zap.Error(err))
@@ -1442,4 +1495,40 @@ func parseIntParam(s string) (int, error) {
 	d, _ := decimal.NewFromString(s)
 	result = int(d.IntPart())
 	return result, nil
+}
+
+func parseContaPagarStatus(raw string) (valueobject.StatusConta, bool) {
+	switch strings.ToUpper(strings.TrimSpace(raw)) {
+	case "PENDENTE", "ABERTO":
+		return valueobject.StatusContaPendente, true
+	case "PAGO":
+		return valueobject.StatusContaPago, true
+	case "ATRASADO", "VENCIDO":
+		return valueobject.StatusContaAtrasado, true
+	case "CANCELADO":
+		return valueobject.StatusContaCancelado, true
+	default:
+		return "", false
+	}
+}
+
+func parseContaReceberStatus(raw string) (valueobject.StatusConta, bool) {
+	switch strings.ToUpper(strings.TrimSpace(raw)) {
+	case "PENDENTE":
+		return valueobject.StatusContaPendente, true
+	case "CONFIRMADO":
+		return valueobject.StatusContaConfirmado, true
+	case "RECEBIDO":
+		return valueobject.StatusContaRecebido, true
+	case "PAGO":
+		return valueobject.StatusContaPago, true // legado -> mapeado para RECEBIDO no repo
+	case "ATRASADO":
+		return valueobject.StatusContaAtrasado, true
+	case "ESTORNADO":
+		return valueobject.StatusContaEstornado, true
+	case "CANCELADO":
+		return valueobject.StatusContaCancelado, true
+	default:
+		return "", false
+	}
 }

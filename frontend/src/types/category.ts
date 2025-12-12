@@ -1,6 +1,7 @@
 export interface Category {
   id: string;
   tenant_id: string;
+  unit_id?: string;
   nome: string;
   descricao?: string;
   cor?: string;
@@ -15,6 +16,7 @@ export interface CreateCategoryDTO {
   descricao?: string;
   cor?: string;
   icone?: string;
+  unit_id?: string;
 }
 
 export interface UpdateCategoryDTO {
@@ -23,9 +25,11 @@ export interface UpdateCategoryDTO {
   cor?: string;
   icone?: string;
   ativa?: boolean;
+  unit_id?: string;
 }
 
 export interface CategoryFilters {
   apenas_ativas?: boolean;
   order_by?: string;
+  unit_id?: string;
 }

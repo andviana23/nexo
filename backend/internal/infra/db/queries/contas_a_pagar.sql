@@ -46,6 +46,18 @@ WHERE tenant_id = $1
   AND data_vencimento <= $3
 ORDER BY data_vencimento ASC;
 
+-- name: ListContasPagarFiltered :many
+SELECT * FROM contas_a_pagar
+WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
+  AND (sqlc.narg(status)::text IS NULL OR status = sqlc.narg(status))
+  AND (sqlc.narg(tipo)::text IS NULL OR tipo = sqlc.narg(tipo))
+  AND (sqlc.narg(categoria_id)::uuid IS NULL OR categoria_id = sqlc.narg(categoria_id))
+  AND (sqlc.narg(data_inicio)::date IS NULL OR data_vencimento >= sqlc.narg(data_inicio))
+  AND (sqlc.narg(data_fim)::date IS NULL OR data_vencimento <= sqlc.narg(data_fim))
+ORDER BY data_vencimento DESC
+LIMIT $2 OFFSET $3;
+
 -- name: ListContasPagarVencidas :many
 SELECT * FROM contas_a_pagar
 WHERE tenant_id = $1

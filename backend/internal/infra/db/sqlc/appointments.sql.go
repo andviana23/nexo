@@ -16,6 +16,7 @@ const checkAppointmentConflict = `-- name: CheckAppointmentConflict :one
 SELECT EXISTS (
     SELECT 1 FROM appointments
     WHERE tenant_id = $1
+      AND ($6::uuid IS NULL OR unit_id = $6)
       AND professional_id = $2
       AND id != $3
       AND status NOT IN ('CANCELED', 'NO_SHOW')
@@ -30,6 +31,7 @@ type CheckAppointmentConflictParams struct {
 	ID             pgtype.UUID        `json:"id"`
 	EndTime        pgtype.Timestamptz `json:"end_time"`
 	StartTime      pgtype.Timestamptz `json:"start_time"`
+	UnitID         pgtype.UUID        `json:"unit_id"`
 }
 
 // Verifica conflito com agendamentos existentes
@@ -41,6 +43,7 @@ func (q *Queries) CheckAppointmentConflict(ctx context.Context, arg CheckAppoint
 		arg.ID,
 		arg.EndTime,
 		arg.StartTime,
+		arg.UnitID,
 	)
 	var has_conflict bool
 	err := row.Scan(&has_conflict)
@@ -51,14 +54,16 @@ const checkBlockedTimeConflictForAppointment = `-- name: CheckBlockedTimeConflic
 SELECT EXISTS (
     SELECT 1 FROM blocked_times
     WHERE tenant_id = $1::uuid
-      AND professional_id = $2::uuid
-      AND start_time < $3::timestamptz
-      AND end_time > $4::timestamptz
+      AND ($2::uuid IS NULL OR unit_id = $2)
+      AND professional_id = $3::uuid
+      AND start_time < $4::timestamptz
+      AND end_time > $5::timestamptz
 ) as has_blocked_conflict
 `
 
 type CheckBlockedTimeConflictForAppointmentParams struct {
 	TenantID       pgtype.UUID        `json:"tenant_id"`
+	UnitID         pgtype.UUID        `json:"unit_id"`
 	ProfessionalID pgtype.UUID        `json:"professional_id"`
 	EndTime        pgtype.Timestamptz `json:"end_time"`
 	StartTime      pgtype.Timestamptz `json:"start_time"`
@@ -68,6 +73,7 @@ type CheckBlockedTimeConflictForAppointmentParams struct {
 func (q *Queries) CheckBlockedTimeConflictForAppointment(ctx context.Context, arg CheckBlockedTimeConflictForAppointmentParams) (bool, error) {
 	row := q.db.QueryRow(ctx, checkBlockedTimeConflictForAppointment,
 		arg.TenantID,
+		arg.UnitID,
 		arg.ProfessionalID,
 		arg.EndTime,
 		arg.StartTime,
@@ -85,7 +91,7 @@ SET
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
   AND status IN ('CREATED', 'CONFIRMED')
-RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, checked_in_at, started_at, finished_at, created_at, updated_at
+RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, unit_id, checked_in_at, started_at, finished_at, created_at, updated_at
 `
 
 type CheckInAppointmentParams struct {
@@ -110,6 +116,7 @@ func (q *Queries) CheckInAppointment(ctx context.Context, arg CheckInAppointment
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,
@@ -123,21 +130,23 @@ const checkMinimumIntervalConflict = `-- name: CheckMinimumIntervalConflict :one
 SELECT EXISTS (
     SELECT 1 FROM appointments
     WHERE tenant_id = $1::uuid
-      AND professional_id = $2::uuid
-      AND id != $3::uuid
+      AND ($2::uuid IS NULL OR unit_id = $2)
+      AND professional_id = $3::uuid
+      AND id != $4::uuid
       AND status NOT IN ('CANCELED', 'NO_SHOW')
       AND (
           -- Agendamento existente termina menos de X minutos antes do novo início
-          (end_time > $4::timestamptz - ($5::int * interval '1 minute') AND end_time <= $4::timestamptz)
+          (end_time > $5::timestamptz - ($6::int * interval '1 minute') AND end_time <= $5::timestamptz)
           OR
           -- Novo agendamento termina menos de X minutos antes do início existente
-          ($6::timestamptz > start_time - ($5::int * interval '1 minute') AND $6::timestamptz <= start_time)
+          ($7::timestamptz > start_time - ($6::int * interval '1 minute') AND $7::timestamptz <= start_time)
       )
 ) as has_interval_conflict
 `
 
 type CheckMinimumIntervalConflictParams struct {
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	ProfessionalID  pgtype.UUID        `json:"professional_id"`
 	ExcludeID       pgtype.UUID        `json:"exclude_id"`
 	StartTime       pgtype.Timestamptz `json:"start_time"`
@@ -151,6 +160,7 @@ type CheckMinimumIntervalConflictParams struct {
 func (q *Queries) CheckMinimumIntervalConflict(ctx context.Context, arg CheckMinimumIntervalConflictParams) (bool, error) {
 	row := q.db.QueryRow(ctx, checkMinimumIntervalConflict,
 		arg.TenantID,
+		arg.UnitID,
 		arg.ProfessionalID,
 		arg.ExcludeID,
 		arg.StartTime,
@@ -169,7 +179,7 @@ SET
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
   AND status = 'AWAITING_PAYMENT'
-RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, checked_in_at, started_at, finished_at, created_at, updated_at
+RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, unit_id, checked_in_at, started_at, finished_at, created_at, updated_at
 `
 
 type CompleteAppointmentParams struct {
@@ -194,6 +204,7 @@ func (q *Queries) CompleteAppointment(ctx context.Context, arg CompleteAppointme
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,
@@ -207,6 +218,7 @@ const countAppointments = `-- name: CountAppointments :one
 SELECT COUNT(*)
 FROM appointments a
 WHERE a.tenant_id = $1
+  AND ($7::uuid IS NULL OR a.unit_id = $7)
   AND ($2::uuid IS NULL OR a.professional_id = $2)
   AND ($3::uuid IS NULL OR a.customer_id = $3)
   AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR a.status = ANY($4::text[]))
@@ -221,6 +233,7 @@ type CountAppointmentsParams struct {
 	Column4  []string           `json:"column_4"`
 	Column5  pgtype.Timestamptz `json:"column_5"`
 	Column6  pgtype.Timestamptz `json:"column_6"`
+	UnitID   pgtype.UUID        `json:"unit_id"`
 }
 
 func (q *Queries) CountAppointments(ctx context.Context, arg CountAppointmentsParams) (int64, error) {
@@ -231,6 +244,7 @@ func (q *Queries) CountAppointments(ctx context.Context, arg CountAppointmentsPa
 		arg.Column4,
 		arg.Column5,
 		arg.Column6,
+		arg.UnitID,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -240,16 +254,19 @@ func (q *Queries) CountAppointments(ctx context.Context, arg CountAppointmentsPa
 const countAppointmentsByStatus = `-- name: CountAppointmentsByStatus :one
 SELECT COUNT(*)
 FROM appointments
-WHERE tenant_id = $1 AND status = $2
+WHERE tenant_id = $1 
+  AND ($3::uuid IS NULL OR unit_id = $3)
+  AND status = $2
 `
 
 type CountAppointmentsByStatusParams struct {
 	TenantID pgtype.UUID `json:"tenant_id"`
 	Status   string      `json:"status"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) CountAppointmentsByStatus(ctx context.Context, arg CountAppointmentsByStatusParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countAppointmentsByStatus, arg.TenantID, arg.Status)
+	row := q.db.QueryRow(ctx, countAppointmentsByStatus, arg.TenantID, arg.Status, arg.UnitID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -260,6 +277,7 @@ const createAppointment = `-- name: CreateAppointment :one
 INSERT INTO appointments (
     id,
     tenant_id,
+    unit_id,
     professional_id,
     customer_id,
     start_time,
@@ -271,13 +289,14 @@ INSERT INTO appointments (
     google_calendar_event_id,
     command_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-) RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, checked_in_at, started_at, finished_at, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+) RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, unit_id, checked_in_at, started_at, finished_at, created_at, updated_at
 `
 
 type CreateAppointmentParams struct {
 	ID                    pgtype.UUID        `json:"id"`
 	TenantID              pgtype.UUID        `json:"tenant_id"`
+	UnitID                pgtype.UUID        `json:"unit_id"`
 	ProfessionalID        pgtype.UUID        `json:"professional_id"`
 	CustomerID            pgtype.UUID        `json:"customer_id"`
 	StartTime             pgtype.Timestamptz `json:"start_time"`
@@ -298,6 +317,7 @@ func (q *Queries) CreateAppointment(ctx context.Context, arg CreateAppointmentPa
 	row := q.db.QueryRow(ctx, createAppointment,
 		arg.ID,
 		arg.TenantID,
+		arg.UnitID,
 		arg.ProfessionalID,
 		arg.CustomerID,
 		arg.StartTime,
@@ -323,6 +343,7 @@ func (q *Queries) CreateAppointment(ctx context.Context, arg CreateAppointmentPa
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,
@@ -386,15 +407,17 @@ SET
     canceled_reason = 'Removido pelo sistema',
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
+  AND ($3::uuid IS NULL OR unit_id = $3)
 `
 
 type DeleteAppointmentParams struct {
 	ID       pgtype.UUID `json:"id"`
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) DeleteAppointment(ctx context.Context, arg DeleteAppointmentParams) error {
-	_, err := q.db.Exec(ctx, deleteAppointment, arg.ID, arg.TenantID)
+	_, err := q.db.Exec(ctx, deleteAppointment, arg.ID, arg.TenantID, arg.UnitID)
 	return err
 }
 
@@ -416,7 +439,7 @@ SET
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
   AND status = 'IN_SERVICE'
-RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, checked_in_at, started_at, finished_at, created_at, updated_at
+RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, unit_id, checked_in_at, started_at, finished_at, created_at, updated_at
 `
 
 type FinishAppointmentParams struct {
@@ -441,6 +464,7 @@ func (q *Queries) FinishAppointment(ctx context.Context, arg FinishAppointmentPa
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,
@@ -452,7 +476,7 @@ func (q *Queries) FinishAppointment(ctx context.Context, arg FinishAppointmentPa
 
 const getAppointmentByID = `-- name: GetAppointmentByID :one
 SELECT 
-    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
+    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.unit_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
     p.nome as professional_name,
     c.nome as customer_name,
     c.telefone as customer_phone
@@ -460,11 +484,13 @@ FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
 WHERE a.id = $1 AND a.tenant_id = $2
+  AND ($3::uuid IS NULL OR a.unit_id = $3)
 `
 
 type GetAppointmentByIDParams struct {
 	ID       pgtype.UUID `json:"id"`
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 type GetAppointmentByIDRow struct {
@@ -480,6 +506,7 @@ type GetAppointmentByIDRow struct {
 	CanceledReason        *string            `json:"canceled_reason"`
 	GoogleCalendarEventID *string            `json:"google_calendar_event_id"`
 	CommandID             pgtype.UUID        `json:"command_id"`
+	UnitID                pgtype.UUID        `json:"unit_id"`
 	CheckedInAt           pgtype.Timestamptz `json:"checked_in_at"`
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	FinishedAt            pgtype.Timestamptz `json:"finished_at"`
@@ -491,7 +518,7 @@ type GetAppointmentByIDRow struct {
 }
 
 func (q *Queries) GetAppointmentByID(ctx context.Context, arg GetAppointmentByIDParams) (GetAppointmentByIDRow, error) {
-	row := q.db.QueryRow(ctx, getAppointmentByID, arg.ID, arg.TenantID)
+	row := q.db.QueryRow(ctx, getAppointmentByID, arg.ID, arg.TenantID, arg.UnitID)
 	var i GetAppointmentByIDRow
 	err := row.Scan(
 		&i.ID,
@@ -506,6 +533,7 @@ func (q *Queries) GetAppointmentByID(ctx context.Context, arg GetAppointmentByID
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,
@@ -602,6 +630,7 @@ SELECT
     COALESCE(SUM(total_price) FILTER (WHERE status = 'DONE'), 0) as total_revenue
 FROM appointments
 WHERE tenant_id = $1
+  AND ($4::uuid IS NULL OR unit_id = $4)
   AND start_time >= $2
   AND start_time < $3
 `
@@ -610,6 +639,7 @@ type GetDailyAppointmentStatsParams struct {
 	TenantID    pgtype.UUID        `json:"tenant_id"`
 	StartTime   pgtype.Timestamptz `json:"start_time"`
 	StartTime_2 pgtype.Timestamptz `json:"start_time_2"`
+	UnitID      pgtype.UUID        `json:"unit_id"`
 }
 
 type GetDailyAppointmentStatsRow struct {
@@ -621,7 +651,12 @@ type GetDailyAppointmentStatsRow struct {
 }
 
 func (q *Queries) GetDailyAppointmentStats(ctx context.Context, arg GetDailyAppointmentStatsParams) (GetDailyAppointmentStatsRow, error) {
-	row := q.db.QueryRow(ctx, getDailyAppointmentStats, arg.TenantID, arg.StartTime, arg.StartTime_2)
+	row := q.db.QueryRow(ctx, getDailyAppointmentStats,
+		arg.TenantID,
+		arg.StartTime,
+		arg.StartTime_2,
+		arg.UnitID,
+	)
 	var i GetDailyAppointmentStatsRow
 	err := row.Scan(
 		&i.TotalAppointments,
@@ -843,7 +878,7 @@ func (q *Queries) ListActiveProfessionals(ctx context.Context, tenantID pgtype.U
 
 const listAppointments = `-- name: ListAppointments :many
 SELECT 
-    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
+    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.unit_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
     p.nome as professional_name,
     c.nome as customer_name,
     c.telefone as customer_phone
@@ -851,6 +886,7 @@ FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
 WHERE a.tenant_id = $1
+  AND ($9::uuid IS NULL OR a.unit_id = $9)
   AND ($2::uuid IS NULL OR a.professional_id = $2)
   AND ($3::uuid IS NULL OR a.customer_id = $3)
   AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR a.status = ANY($4::text[]))
@@ -869,6 +905,7 @@ type ListAppointmentsParams struct {
 	Column6  pgtype.Timestamptz `json:"column_6"`
 	Limit    int32              `json:"limit"`
 	Offset   int32              `json:"offset"`
+	UnitID   pgtype.UUID        `json:"unit_id"`
 }
 
 type ListAppointmentsRow struct {
@@ -884,6 +921,7 @@ type ListAppointmentsRow struct {
 	CanceledReason        *string            `json:"canceled_reason"`
 	GoogleCalendarEventID *string            `json:"google_calendar_event_id"`
 	CommandID             pgtype.UUID        `json:"command_id"`
+	UnitID                pgtype.UUID        `json:"unit_id"`
 	CheckedInAt           pgtype.Timestamptz `json:"checked_in_at"`
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	FinishedAt            pgtype.Timestamptz `json:"finished_at"`
@@ -904,6 +942,7 @@ func (q *Queries) ListAppointments(ctx context.Context, arg ListAppointmentsPara
 		arg.Column6,
 		arg.Limit,
 		arg.Offset,
+		arg.UnitID,
 	)
 	if err != nil {
 		return nil, err
@@ -925,6 +964,7 @@ func (q *Queries) ListAppointments(ctx context.Context, arg ListAppointmentsPara
 			&i.CanceledReason,
 			&i.GoogleCalendarEventID,
 			&i.CommandID,
+			&i.UnitID,
 			&i.CheckedInAt,
 			&i.StartedAt,
 			&i.FinishedAt,
@@ -946,7 +986,7 @@ func (q *Queries) ListAppointments(ctx context.Context, arg ListAppointmentsPara
 
 const listAppointmentsByCustomer = `-- name: ListAppointmentsByCustomer :many
 SELECT 
-    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
+    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.unit_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
     p.nome as professional_name,
     c.nome as customer_name,
     c.telefone as customer_phone
@@ -954,6 +994,7 @@ FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
 WHERE a.tenant_id = $1
+  AND ($3::uuid IS NULL OR a.unit_id = $3)
   AND a.customer_id = $2
 ORDER BY a.start_time DESC
 LIMIT 50
@@ -962,6 +1003,7 @@ LIMIT 50
 type ListAppointmentsByCustomerParams struct {
 	TenantID   pgtype.UUID `json:"tenant_id"`
 	CustomerID pgtype.UUID `json:"customer_id"`
+	UnitID     pgtype.UUID `json:"unit_id"`
 }
 
 type ListAppointmentsByCustomerRow struct {
@@ -977,6 +1019,7 @@ type ListAppointmentsByCustomerRow struct {
 	CanceledReason        *string            `json:"canceled_reason"`
 	GoogleCalendarEventID *string            `json:"google_calendar_event_id"`
 	CommandID             pgtype.UUID        `json:"command_id"`
+	UnitID                pgtype.UUID        `json:"unit_id"`
 	CheckedInAt           pgtype.Timestamptz `json:"checked_in_at"`
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	FinishedAt            pgtype.Timestamptz `json:"finished_at"`
@@ -988,7 +1031,7 @@ type ListAppointmentsByCustomerRow struct {
 }
 
 func (q *Queries) ListAppointmentsByCustomer(ctx context.Context, arg ListAppointmentsByCustomerParams) ([]ListAppointmentsByCustomerRow, error) {
-	rows, err := q.db.Query(ctx, listAppointmentsByCustomer, arg.TenantID, arg.CustomerID)
+	rows, err := q.db.Query(ctx, listAppointmentsByCustomer, arg.TenantID, arg.CustomerID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -1009,6 +1052,7 @@ func (q *Queries) ListAppointmentsByCustomer(ctx context.Context, arg ListAppoin
 			&i.CanceledReason,
 			&i.GoogleCalendarEventID,
 			&i.CommandID,
+			&i.UnitID,
 			&i.CheckedInAt,
 			&i.StartedAt,
 			&i.FinishedAt,
@@ -1030,7 +1074,7 @@ func (q *Queries) ListAppointmentsByCustomer(ctx context.Context, arg ListAppoin
 
 const listAppointmentsByProfessionalAndDateRange = `-- name: ListAppointmentsByProfessionalAndDateRange :many
 SELECT 
-    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
+    a.id, a.tenant_id, a.professional_id, a.customer_id, a.start_time, a.end_time, a.status, a.total_price, a.notes, a.canceled_reason, a.google_calendar_event_id, a.command_id, a.unit_id, a.checked_in_at, a.started_at, a.finished_at, a.created_at, a.updated_at,
     p.nome as professional_name,
     c.nome as customer_name,
     c.telefone as customer_phone
@@ -1038,6 +1082,7 @@ FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
 WHERE a.tenant_id = $1
+  AND ($5::uuid IS NULL OR a.unit_id = $5)
   AND a.professional_id = $2
   AND a.start_time >= $3
   AND a.start_time < $4
@@ -1050,6 +1095,7 @@ type ListAppointmentsByProfessionalAndDateRangeParams struct {
 	ProfessionalID pgtype.UUID        `json:"professional_id"`
 	StartTime      pgtype.Timestamptz `json:"start_time"`
 	StartTime_2    pgtype.Timestamptz `json:"start_time_2"`
+	UnitID         pgtype.UUID        `json:"unit_id"`
 }
 
 type ListAppointmentsByProfessionalAndDateRangeRow struct {
@@ -1065,6 +1111,7 @@ type ListAppointmentsByProfessionalAndDateRangeRow struct {
 	CanceledReason        *string            `json:"canceled_reason"`
 	GoogleCalendarEventID *string            `json:"google_calendar_event_id"`
 	CommandID             pgtype.UUID        `json:"command_id"`
+	UnitID                pgtype.UUID        `json:"unit_id"`
 	CheckedInAt           pgtype.Timestamptz `json:"checked_in_at"`
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	FinishedAt            pgtype.Timestamptz `json:"finished_at"`
@@ -1081,6 +1128,7 @@ func (q *Queries) ListAppointmentsByProfessionalAndDateRange(ctx context.Context
 		arg.ProfessionalID,
 		arg.StartTime,
 		arg.StartTime_2,
+		arg.UnitID,
 	)
 	if err != nil {
 		return nil, err
@@ -1102,6 +1150,7 @@ func (q *Queries) ListAppointmentsByProfessionalAndDateRange(ctx context.Context
 			&i.CanceledReason,
 			&i.GoogleCalendarEventID,
 			&i.CommandID,
+			&i.UnitID,
 			&i.CheckedInAt,
 			&i.StartedAt,
 			&i.FinishedAt,
@@ -1171,7 +1220,7 @@ SET
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
   AND status = 'CHECKED_IN'
-RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, checked_in_at, started_at, finished_at, created_at, updated_at
+RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, unit_id, checked_in_at, started_at, finished_at, created_at, updated_at
 `
 
 type StartAppointmentParams struct {
@@ -1196,6 +1245,7 @@ func (q *Queries) StartAppointment(ctx context.Context, arg StartAppointmentPara
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,
@@ -1222,7 +1272,7 @@ SET
     command_id = $14,
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, checked_in_at, started_at, finished_at, created_at, updated_at
+RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, unit_id, checked_in_at, started_at, finished_at, created_at, updated_at
 `
 
 type UpdateAppointmentParams struct {
@@ -1273,6 +1323,7 @@ func (q *Queries) UpdateAppointment(ctx context.Context, arg UpdateAppointmentPa
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,
@@ -1289,7 +1340,7 @@ SET
     canceled_reason = $4,
     updated_at = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, checked_in_at, started_at, finished_at, created_at, updated_at
+RETURNING id, tenant_id, professional_id, customer_id, start_time, end_time, status, total_price, notes, canceled_reason, google_calendar_event_id, command_id, unit_id, checked_in_at, started_at, finished_at, created_at, updated_at
 `
 
 type UpdateAppointmentStatusParams struct {
@@ -1320,6 +1371,7 @@ func (q *Queries) UpdateAppointmentStatus(ctx context.Context, arg UpdateAppoint
 		&i.CanceledReason,
 		&i.GoogleCalendarEventID,
 		&i.CommandID,
+		&i.UnitID,
 		&i.CheckedInAt,
 		&i.StartedAt,
 		&i.FinishedAt,

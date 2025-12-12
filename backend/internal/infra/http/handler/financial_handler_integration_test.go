@@ -48,7 +48,7 @@ func setupFinancialHandler() (*handler.FinancialHandler, *echo.Echo) {
 	getCompensacaoUC := financial.NewGetCompensacaoUseCase(compensacaoRepo, testLogger)
 	listCompensacoesUC := financial.NewListCompensacoesUseCase(compensacaoRepo, testLogger)
 	deleteCompensacaoUC := financial.NewDeleteCompensacaoUseCase(compensacaoRepo, testLogger)
-	marcarCompensacaoUC := financial.NewMarcarCompensacaoUseCase(compensacaoRepo, testLogger)
+	marcarCompensacaoUC := financial.NewMarcarCompensacaoUseCase(compensacaoRepo, contaReceberRepo, testLogger)
 
 	// Use cases - FluxoCaixa e DRE
 	generateFluxoDiarioUC := financial.NewGenerateFluxoDiarioUseCase(fluxoCaixaRepo, contaPagarRepo, contaReceberRepo, compensacaoRepo, testLogger)

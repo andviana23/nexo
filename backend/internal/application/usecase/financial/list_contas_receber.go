@@ -9,14 +9,18 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/entity"
 	"github.com/andviana23/barber-analytics-backend/internal/domain/port"
+	"github.com/andviana23/barber-analytics-backend/internal/domain/valueobject"
 	"go.uber.org/zap"
 )
 
 type ListContasReceberInput struct {
-	TenantID    string
-	DataInicio  time.Time
-	DataFim     time.Time
-	ApenasAtivo bool
+	TenantID   string
+	Status     *valueobject.StatusConta
+	Origem     *string
+	DataInicio *time.Time
+	DataFim    *time.Time
+	Page       int
+	PageSize   int
 }
 
 type ListContasReceberUseCase struct {
@@ -33,7 +37,14 @@ func (uc *ListContasReceberUseCase) Execute(ctx context.Context, input ListConta
 		return nil, domain.ErrTenantIDRequired
 	}
 
-	contas, err := uc.repo.ListByDateRange(ctx, input.TenantID, input.DataInicio, input.DataFim)
+	contas, err := uc.repo.List(ctx, input.TenantID, port.ContaReceberListFilters{
+		Status:     input.Status,
+		Origem:     input.Origem,
+		DataInicio: input.DataInicio,
+		DataFim:    input.DataFim,
+		Page:       input.Page,
+		PageSize:   input.PageSize,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar contas a receber: %w", err)
 	}

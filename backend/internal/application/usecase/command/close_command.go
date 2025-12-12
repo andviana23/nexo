@@ -70,7 +70,7 @@ func (uc *CloseCommandUseCase) Execute(ctx context.Context, commandID, tenantID,
 	// Atualizar status do appointment para DONE (se houver appointment_id)
 	if command.AppointmentID != nil {
 		// Buscar appointment
-		appointment, err := uc.appointmentRepo.FindByID(ctx, tenantID.String(), command.AppointmentID.String())
+		appointment, err := uc.appointmentRepo.FindByID(ctx, tenantID.String(), "", command.AppointmentID.String())
 		if err == nil && appointment != nil {
 			// Atualizar status para DONE
 			newStatus := valueobject.AppointmentStatusDone

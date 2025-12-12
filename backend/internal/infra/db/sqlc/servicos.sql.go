@@ -17,6 +17,7 @@ SELECT EXISTS(
     SELECT 1 
     FROM servicos 
     WHERE tenant_id = $1 
+      AND ($4::uuid IS NULL OR unit_id = $4)
       AND LOWER(nome) = LOWER($2)
       AND id != COALESCE($3, '00000000-0000-0000-0000-000000000000'::uuid)
 ) AS exists
@@ -26,10 +27,16 @@ type CheckServicoNomeExistsParams struct {
 	TenantID pgtype.UUID `json:"tenant_id"`
 	Lower    string      `json:"lower"`
 	ID       pgtype.UUID `json:"id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) CheckServicoNomeExists(ctx context.Context, arg CheckServicoNomeExistsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkServicoNomeExists, arg.TenantID, arg.Lower, arg.ID)
+	row := q.db.QueryRow(ctx, checkServicoNomeExists,
+		arg.TenantID,
+		arg.Lower,
+		arg.ID,
+		arg.UnitID,
+	)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -38,11 +45,18 @@ func (q *Queries) CheckServicoNomeExists(ctx context.Context, arg CheckServicoNo
 const countServicosAtivosByTenant = `-- name: CountServicosAtivosByTenant :one
 SELECT COUNT(*) AS total
 FROM servicos
-WHERE tenant_id = $1 AND ativo = true
+WHERE tenant_id = $1 
+  AND ($2::uuid IS NULL OR unit_id = $2)
+  AND ativo = true
 `
 
-func (q *Queries) CountServicosAtivosByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countServicosAtivosByTenant, tenantID)
+type CountServicosAtivosByTenantParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
+
+func (q *Queries) CountServicosAtivosByTenant(ctx context.Context, arg CountServicosAtivosByTenantParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countServicosAtivosByTenant, arg.TenantID, arg.UnitID)
 	var total int64
 	err := row.Scan(&total)
 	return total, err
@@ -53,13 +67,19 @@ const countServicosByTenant = `-- name: CountServicosByTenant :one
 SELECT COUNT(*) AS total
 FROM servicos
 WHERE tenant_id = $1
+  AND ($2::uuid IS NULL OR unit_id = $2)
 `
+
+type CountServicosByTenantParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
 
 // ============================================================================
 // QUERIES AUXILIARES
 // ============================================================================
-func (q *Queries) CountServicosByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countServicosByTenant, tenantID)
+func (q *Queries) CountServicosByTenant(ctx context.Context, arg CountServicosByTenantParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countServicosByTenant, arg.TenantID, arg.UnitID)
 	var total int64
 	err := row.Scan(&total)
 	return total, err
@@ -71,6 +91,7 @@ const createServico = `-- name: CreateServico :one
 INSERT INTO servicos (
     id,
     tenant_id,
+    unit_id,
     categoria_id,
     nome,
     descricao,
@@ -86,13 +107,14 @@ INSERT INTO servicos (
     criado_em,
     atualizado_em
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW()
-) RETURNING id, tenant_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW()
+) RETURNING id, tenant_id, unit_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
 `
 
 type CreateServicoParams struct {
 	ID               pgtype.UUID     `json:"id"`
 	TenantID         pgtype.UUID     `json:"tenant_id"`
+	UnitID           pgtype.UUID     `json:"unit_id"`
 	CategoriaID      pgtype.UUID     `json:"categoria_id"`
 	Nome             string          `json:"nome"`
 	Descricao        *string         `json:"descricao"`
@@ -119,6 +141,7 @@ func (q *Queries) CreateServico(ctx context.Context, arg CreateServicoParams) (S
 	row := q.db.QueryRow(ctx, createServico,
 		arg.ID,
 		arg.TenantID,
+		arg.UnitID,
 		arg.CategoriaID,
 		arg.Nome,
 		arg.Descricao,
@@ -136,6 +159,7 @@ func (q *Queries) CreateServico(ctx context.Context, arg CreateServicoParams) (S
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.CategoriaID,
 		&i.Nome,
 		&i.Descricao,
@@ -212,11 +236,13 @@ SELECT
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
 WHERE s.id = $1 AND s.tenant_id = $2
+  AND ($3::uuid IS NULL OR s.unit_id = $3)
 `
 
 type GetServicoByIDParams struct {
 	ID       pgtype.UUID `json:"id"`
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 type GetServicoByIDRow struct {
@@ -244,7 +270,7 @@ type GetServicoByIDRow struct {
 // READ
 // ============================================================================
 func (q *Queries) GetServicoByID(ctx context.Context, arg GetServicoByIDParams) (GetServicoByIDRow, error) {
-	row := q.db.QueryRow(ctx, getServicoByID, arg.ID, arg.TenantID)
+	row := q.db.QueryRow(ctx, getServicoByID, arg.ID, arg.TenantID, arg.UnitID)
 	var i GetServicoByIDRow
 	err := row.Scan(
 		&i.ID,
@@ -370,7 +396,13 @@ SELECT
     COALESCE(AVG(comissao), 0) AS comissao_media
 FROM servicos
 WHERE tenant_id = $1
+  AND ($2::uuid IS NULL OR unit_id = $2)
 `
+
+type GetServicosStatsParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
 
 type GetServicosStatsRow struct {
 	TotalServicos    int64       `json:"total_servicos"`
@@ -381,8 +413,8 @@ type GetServicosStatsRow struct {
 	ComissaoMedia    interface{} `json:"comissao_media"`
 }
 
-func (q *Queries) GetServicosStats(ctx context.Context, tenantID pgtype.UUID) (GetServicosStatsRow, error) {
-	row := q.db.QueryRow(ctx, getServicosStats, tenantID)
+func (q *Queries) GetServicosStats(ctx context.Context, arg GetServicosStatsParams) (GetServicosStatsRow, error) {
+	row := q.db.QueryRow(ctx, getServicosStats, arg.TenantID, arg.UnitID)
 	var i GetServicosStatsRow
 	err := row.Scan(
 		&i.TotalServicos,
@@ -418,8 +450,14 @@ SELECT
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
 WHERE s.tenant_id = $1
+  AND ($2::uuid IS NULL OR s.unit_id = $2)
 ORDER BY s.nome ASC
 `
+
+type ListServicosParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
 
 type ListServicosRow struct {
 	ID               pgtype.UUID        `json:"id"`
@@ -442,8 +480,8 @@ type ListServicosRow struct {
 	CategoriaCor     *string            `json:"categoria_cor"`
 }
 
-func (q *Queries) ListServicos(ctx context.Context, tenantID pgtype.UUID) ([]ListServicosRow, error) {
-	rows, err := q.db.Query(ctx, listServicos, tenantID)
+func (q *Queries) ListServicos(ctx context.Context, arg ListServicosParams) ([]ListServicosRow, error) {
+	rows, err := q.db.Query(ctx, listServicos, arg.TenantID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -503,9 +541,16 @@ SELECT
     cs.cor AS categoria_cor
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
-WHERE s.tenant_id = $1 AND s.ativo = true
+WHERE s.tenant_id = $1
+  AND ($2::uuid IS NULL OR s.unit_id = $2)
+  AND s.ativo = true
 ORDER BY s.nome ASC
 `
+
+type ListServicosAtivosParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
 
 type ListServicosAtivosRow struct {
 	ID               pgtype.UUID        `json:"id"`
@@ -528,8 +573,8 @@ type ListServicosAtivosRow struct {
 	CategoriaCor     *string            `json:"categoria_cor"`
 }
 
-func (q *Queries) ListServicosAtivos(ctx context.Context, tenantID pgtype.UUID) ([]ListServicosAtivosRow, error) {
-	rows, err := q.db.Query(ctx, listServicosAtivos, tenantID)
+func (q *Queries) ListServicosAtivos(ctx context.Context, arg ListServicosAtivosParams) ([]ListServicosAtivosRow, error) {
+	rows, err := q.db.Query(ctx, listServicosAtivos, arg.TenantID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -589,13 +634,16 @@ SELECT
     cs.cor AS categoria_cor
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
-WHERE s.tenant_id = $1 AND s.categoria_id = $2
+WHERE s.tenant_id = $1 
+  AND ($3::uuid IS NULL OR s.unit_id = $3)
+  AND s.categoria_id = $2
 ORDER BY s.nome ASC
 `
 
 type ListServicosByCategoriaParams struct {
 	TenantID    pgtype.UUID `json:"tenant_id"`
 	CategoriaID pgtype.UUID `json:"categoria_id"`
+	UnitID      pgtype.UUID `json:"unit_id"`
 }
 
 type ListServicosByCategoriaRow struct {
@@ -620,7 +668,7 @@ type ListServicosByCategoriaRow struct {
 }
 
 func (q *Queries) ListServicosByCategoria(ctx context.Context, arg ListServicosByCategoriaParams) ([]ListServicosByCategoriaRow, error) {
-	rows, err := q.db.Query(ctx, listServicosByCategoria, arg.TenantID, arg.CategoriaID)
+	rows, err := q.db.Query(ctx, listServicosByCategoria, arg.TenantID, arg.CategoriaID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -681,13 +729,15 @@ SELECT
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
 WHERE s.tenant_id = $1 
+  AND ($2::uuid IS NULL OR s.unit_id = $2)
   AND s.ativo = true
-  AND $2::uuid = ANY(s.profissionais_ids)
+  AND $3::uuid = ANY(s.profissionais_ids)
 ORDER BY s.nome ASC
 `
 
 type ListServicosByProfissionalParams struct {
 	TenantID       pgtype.UUID `json:"tenant_id"`
+	UnitID         pgtype.UUID `json:"unit_id"`
 	ProfissionalID pgtype.UUID `json:"profissional_id"`
 }
 
@@ -713,7 +763,7 @@ type ListServicosByProfissionalRow struct {
 }
 
 func (q *Queries) ListServicosByProfissional(ctx context.Context, arg ListServicosByProfissionalParams) ([]ListServicosByProfissionalRow, error) {
-	rows, err := q.db.Query(ctx, listServicosByProfissional, arg.TenantID, arg.ProfissionalID)
+	rows, err := q.db.Query(ctx, listServicosByProfissional, arg.TenantID, arg.UnitID, arg.ProfissionalID)
 	if err != nil {
 		return nil, err
 	}
@@ -863,15 +913,34 @@ WHERE s.tenant_id = $1 AND s.categoria_id IS NULL
 ORDER BY s.nome ASC
 `
 
-func (q *Queries) ListServicosSemCategoria(ctx context.Context, tenantID pgtype.UUID) ([]Servico, error) {
+type ListServicosSemCategoriaRow struct {
+	ID               pgtype.UUID        `json:"id"`
+	TenantID         pgtype.UUID        `json:"tenant_id"`
+	CategoriaID      pgtype.UUID        `json:"categoria_id"`
+	Nome             string             `json:"nome"`
+	Descricao        *string            `json:"descricao"`
+	Preco            decimal.Decimal    `json:"preco"`
+	Duracao          int32              `json:"duracao"`
+	Comissao         pgtype.Numeric     `json:"comissao"`
+	Cor              *string            `json:"cor"`
+	Imagem           *string            `json:"imagem"`
+	ProfissionaisIds []pgtype.UUID      `json:"profissionais_ids"`
+	Observacoes      *string            `json:"observacoes"`
+	Tags             []string           `json:"tags"`
+	Ativo            *bool              `json:"ativo"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
+}
+
+func (q *Queries) ListServicosSemCategoria(ctx context.Context, tenantID pgtype.UUID) ([]ListServicosSemCategoriaRow, error) {
 	rows, err := q.db.Query(ctx, listServicosSemCategoria, tenantID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Servico{}
+	items := []ListServicosSemCategoriaRow{}
 	for rows.Next() {
-		var i Servico
+		var i ListServicosSemCategoriaRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
@@ -923,16 +992,18 @@ SELECT
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
 WHERE s.tenant_id = $1 
+  AND ($2::uuid IS NULL OR s.unit_id = $2)
   AND (
-      LOWER(s.nome) LIKE LOWER('%' || $2::text || '%')
-      OR LOWER(s.descricao) LIKE LOWER('%' || $2::text || '%')
-      OR $2::text = ANY(s.tags)
+      LOWER(s.nome) LIKE LOWER('%' || $3::text || '%')
+      OR LOWER(s.descricao) LIKE LOWER('%' || $3::text || '%')
+      OR $3::text = ANY(s.tags)
   )
 ORDER BY s.nome ASC
 `
 
 type SearchServicosParams struct {
 	TenantID   pgtype.UUID `json:"tenant_id"`
+	UnitID     pgtype.UUID `json:"unit_id"`
 	SearchTerm string      `json:"search_term"`
 }
 
@@ -958,7 +1029,7 @@ type SearchServicosRow struct {
 }
 
 func (q *Queries) SearchServicos(ctx context.Context, arg SearchServicosParams) ([]SearchServicosRow, error) {
-	rows, err := q.db.Query(ctx, searchServicos, arg.TenantID, arg.SearchTerm)
+	rows, err := q.db.Query(ctx, searchServicos, arg.TenantID, arg.UnitID, arg.SearchTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -1001,7 +1072,7 @@ UPDATE servicos SET
     ativo = $3,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, unit_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
 `
 
 type ToggleServicoStatusParams struct {
@@ -1016,6 +1087,7 @@ func (q *Queries) ToggleServicoStatus(ctx context.Context, arg ToggleServicoStat
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.CategoriaID,
 		&i.Nome,
 		&i.Descricao,
@@ -1048,9 +1120,10 @@ UPDATE servicos SET
     profissionais_ids = $11,
     observacoes = $12,
     tags = $13,
+    unit_id = COALESCE($14, unit_id),
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, unit_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
 `
 
 type UpdateServicoParams struct {
@@ -1067,6 +1140,7 @@ type UpdateServicoParams struct {
 	ProfissionaisIds []pgtype.UUID   `json:"profissionais_ids"`
 	Observacoes      *string         `json:"observacoes"`
 	Tags             []string        `json:"tags"`
+	UnitID           pgtype.UUID     `json:"unit_id"`
 }
 
 // ============================================================================
@@ -1087,11 +1161,13 @@ func (q *Queries) UpdateServico(ctx context.Context, arg UpdateServicoParams) (S
 		arg.ProfissionaisIds,
 		arg.Observacoes,
 		arg.Tags,
+		arg.UnitID,
 	)
 	var i Servico
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.CategoriaID,
 		&i.Nome,
 		&i.Descricao,
@@ -1115,7 +1191,7 @@ UPDATE servicos SET
     categoria_id = $3,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, unit_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
 `
 
 type UpdateServicoCategoriaParams struct {
@@ -1130,6 +1206,7 @@ func (q *Queries) UpdateServicoCategoria(ctx context.Context, arg UpdateServicoC
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.CategoriaID,
 		&i.Nome,
 		&i.Descricao,
@@ -1153,7 +1230,7 @@ UPDATE servicos SET
     profissionais_ids = $3,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
+RETURNING id, tenant_id, unit_id, categoria_id, nome, descricao, preco, duracao, comissao, cor, imagem, profissionais_ids, observacoes, tags, ativo, criado_em, atualizado_em
 `
 
 type UpdateServicoProfissionaisParams struct {
@@ -1168,6 +1245,7 @@ func (q *Queries) UpdateServicoProfissionais(ctx context.Context, arg UpdateServ
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.CategoriaID,
 		&i.Nome,
 		&i.Descricao,

@@ -106,9 +106,9 @@ func (uc *GetPainelMensalUseCase) Execute(ctx context.Context, input PainelMensa
 	inicio := time.Date(input.Ano, time.Month(input.Mes), 1, 0, 0, 0, 0, time.UTC)
 	fim := inicio.AddDate(0, 1, 0).Add(-time.Nanosecond) // Último instante do mês
 
-	// 2. Buscar receitas realizadas (PAGO)
-	statusPago := valueobject.StatusContaPago
-	receitaRealizada, err := uc.contaReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
+	// 2. Buscar receitas realizadas (RECEBIDO)
+	statusRecebido := valueobject.StatusContaRecebido
+	receitaRealizada, err := uc.contaReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusRecebido)
 	if err != nil {
 		uc.logger.Error("erro ao buscar receita realizada", zap.Error(err))
 		receitaRealizada = valueobject.Zero()
@@ -123,6 +123,7 @@ func (uc *GetPainelMensalUseCase) Execute(ctx context.Context, input PainelMensa
 	}
 
 	// 4. Buscar despesas pagas
+	statusPago := valueobject.StatusContaPago
 	despesasPagas, err := uc.contaPagarRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
 	if err != nil {
 		uc.logger.Error("erro ao buscar despesas pagas", zap.Error(err))

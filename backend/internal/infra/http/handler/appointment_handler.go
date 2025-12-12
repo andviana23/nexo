@@ -66,8 +66,17 @@ func (h *AppointmentHandler) enforceBarberScope(ctx context.Context, c echo.Cont
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appt, err := h.getUC.Execute(ctx, appointment.GetAppointmentInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 	})
 	if err != nil {
@@ -117,6 +126,14 @@ func (h *AppointmentHandler) CreateAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	var req dto.CreateAppointmentRequest
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error("Erro ao fazer bind", zap.Error(err))
@@ -146,6 +163,7 @@ func (h *AppointmentHandler) CreateAppointment(c echo.Context) error {
 
 	input := appointment.CreateAppointmentInput{
 		TenantID:       tenantID,
+		UnitID:         unitID,
 		ProfessionalID: req.ProfessionalID,
 		CustomerID:     req.CustomerID,
 		StartTime:      req.StartTime,
@@ -201,6 +219,14 @@ func (h *AppointmentHandler) ListAppointments(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
 			Error:   "unauthorized",
 			Message: "Tenant ID não encontrado",
+		})
+	}
+
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
 		})
 	}
 
@@ -279,6 +305,7 @@ func (h *AppointmentHandler) ListAppointments(c echo.Context) error {
 
 	input := appointment.ListAppointmentsInput{
 		TenantID:       tenantID,
+		UnitID:         unitID,
 		ProfessionalID: professionalID,
 		CustomerID:     req.CustomerID,
 		Statuses:       statuses,
@@ -328,6 +355,14 @@ func (h *AppointmentHandler) GetAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -342,6 +377,7 @@ func (h *AppointmentHandler) GetAppointment(c echo.Context) error {
 
 	input := appointment.GetAppointmentInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 	}
 
@@ -393,6 +429,14 @@ func (h *AppointmentHandler) UpdateAppointmentStatus(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -430,6 +474,7 @@ func (h *AppointmentHandler) UpdateAppointmentStatus(c echo.Context) error {
 
 	input := appointment.UpdateAppointmentStatusInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		NewStatus:     status,
 		Reason:        req.Reason,
@@ -477,6 +522,14 @@ func (h *AppointmentHandler) RescheduleAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -514,6 +567,7 @@ func (h *AppointmentHandler) RescheduleAppointment(c echo.Context) error {
 
 	input := appointment.RescheduleAppointmentInput{
 		TenantID:       tenantID,
+		UnitID:         unitID,
 		AppointmentID:  appointmentID,
 		NewStartTime:   req.NewStartTime,
 		ProfessionalID: req.ProfessionalID,
@@ -566,6 +620,14 @@ func (h *AppointmentHandler) ConfirmAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -580,6 +642,7 @@ func (h *AppointmentHandler) ConfirmAppointment(c echo.Context) error {
 
 	input := appointment.UpdateAppointmentStatusInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		NewStatus:     valueobject.AppointmentStatusConfirmed,
 		Reason:        "Agendamento confirmado",
@@ -626,6 +689,14 @@ func (h *AppointmentHandler) CancelAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -646,6 +717,7 @@ func (h *AppointmentHandler) CancelAppointment(c echo.Context) error {
 
 	input := appointment.CancelAppointmentInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		Reason:        req.Reason,
 	}
@@ -689,6 +761,14 @@ func (h *AppointmentHandler) CheckInAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -703,6 +783,7 @@ func (h *AppointmentHandler) CheckInAppointment(c echo.Context) error {
 
 	input := appointment.UpdateAppointmentStatusInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		NewStatus:     valueobject.AppointmentStatusCheckedIn,
 		Reason:        "Cliente chegou",
@@ -747,6 +828,14 @@ func (h *AppointmentHandler) StartServiceAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -761,6 +850,7 @@ func (h *AppointmentHandler) StartServiceAppointment(c echo.Context) error {
 
 	input := appointment.UpdateAppointmentStatusInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		NewStatus:     valueobject.AppointmentStatusInService,
 		Reason:        "Atendimento iniciado",
@@ -805,6 +895,14 @@ func (h *AppointmentHandler) FinishServiceAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -821,6 +919,7 @@ func (h *AppointmentHandler) FinishServiceAppointment(c echo.Context) error {
 	if h.finishWithCommandUC != nil {
 		input := appointment.FinishServiceWithCommandInput{
 			TenantID:      tenantID,
+			UnitID:        unitID,
 			AppointmentID: appointmentID,
 		}
 
@@ -849,6 +948,7 @@ func (h *AppointmentHandler) FinishServiceAppointment(c echo.Context) error {
 	// Fallback: usar o use case antigo se finishWithCommandUC não estiver configurado
 	input := appointment.UpdateAppointmentStatusInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		NewStatus:     valueobject.AppointmentStatusAwaitingPayment,
 		Reason:        "Atendimento finalizado",
@@ -893,6 +993,14 @@ func (h *AppointmentHandler) CompleteAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -907,6 +1015,7 @@ func (h *AppointmentHandler) CompleteAppointment(c echo.Context) error {
 
 	input := appointment.UpdateAppointmentStatusInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		NewStatus:     valueobject.AppointmentStatusDone,
 		Reason:        "Pagamento recebido",
@@ -951,6 +1060,14 @@ func (h *AppointmentHandler) NoShowAppointment(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	appointmentID := c.Param("id")
 	if appointmentID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -965,6 +1082,7 @@ func (h *AppointmentHandler) NoShowAppointment(c echo.Context) error {
 
 	input := appointment.UpdateAppointmentStatusInput{
 		TenantID:      tenantID,
+		UnitID:        unitID,
 		AppointmentID: appointmentID,
 		NewStatus:     valueobject.AppointmentStatusNoShow,
 		Reason:        "Cliente não compareceu",

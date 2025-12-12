@@ -22,6 +22,7 @@ type CreateServicoRequest struct {
 	ProfissionaisIDs []string `json:"profissionais_ids,omitempty" validate:"omitempty,dive,uuid"`
 	Observacoes      *string  `json:"observacoes,omitempty" validate:"omitempty,max=2000"`
 	Tags             []string `json:"tags,omitempty" validate:"omitempty,dive,min=1,max=50"`
+	UnitID           *string  `json:"unit_id,omitempty" validate:"omitempty,uuid"`
 }
 
 // UpdateServicoRequest requisição para atualizar serviço
@@ -37,6 +38,7 @@ type UpdateServicoRequest struct {
 	ProfissionaisIDs []string `json:"profissionais_ids,omitempty" validate:"omitempty,dive,uuid"`
 	Observacoes      *string  `json:"observacoes,omitempty" validate:"omitempty,max=2000"`
 	Tags             []string `json:"tags,omitempty" validate:"omitempty,dive,min=1,max=50"`
+	UnitID           *string  `json:"unit_id,omitempty" validate:"omitempty,uuid"`
 }
 
 // ListServicosRequest query params para listagem
@@ -46,6 +48,7 @@ type ListServicosRequest struct {
 	ProfissionalID string `query:"profissional_id" validate:"omitempty,uuid"`
 	Search         string `query:"search" validate:"omitempty,max=100"`
 	OrderBy        string `query:"order_by" validate:"omitempty,oneof=nome preco duracao criado_em"`
+	UnitID         string `query:"unit_id" validate:"omitempty,uuid"`
 }
 
 // ToggleServicoStatusRequest requisição para ativar/desativar serviço

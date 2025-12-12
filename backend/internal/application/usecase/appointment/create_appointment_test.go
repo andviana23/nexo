@@ -16,6 +16,7 @@ import (
 
 // Tenant de teste fixo para manter consistência
 var testTenantID = "11111111-1111-1111-1111-111111111111"
+var testUnitID = "22222222-2222-2222-2222-222222222222"
 
 func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 	logger := zap.NewNop()
@@ -38,6 +39,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -81,6 +83,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       "",
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -108,6 +111,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -135,6 +139,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -162,6 +167,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Time{}, // zero
@@ -189,6 +195,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -220,6 +227,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-not-exists",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -251,6 +259,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-not-exists",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -283,6 +292,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -301,7 +311,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 	t.Run("should fail on time conflict", func(t *testing.T) {
 		mockRepo := &MockAppointmentRepository{
-			CheckConflictFn: func(ctx context.Context, tenantID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string) (bool, error) {
+			CheckConflictFn: func(ctx context.Context, tenantID, unitID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string) (bool, error) {
 				return true, nil // Has conflict
 			},
 		}
@@ -320,6 +330,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),
@@ -355,6 +366,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 		startTime := time.Now().Add(24 * time.Hour)
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      startTime,
@@ -397,6 +409,7 @@ func TestCreateAppointmentUseCase_Execute(t *testing.T) {
 
 		input := CreateAppointmentInput{
 			TenantID:       testTenantID,
+			UnitID:         testUnitID,
 			ProfessionalID: "prof-123",
 			CustomerID:     "cust-123",
 			StartTime:      time.Now().Add(24 * time.Hour),

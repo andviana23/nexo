@@ -129,7 +129,8 @@ SET
     status = 'CANCELED',
     canceled_reason = 'Removido pelo sistema',
     updated_at = NOW()
-WHERE id = $1 AND tenant_id = $2;
+WHERE id = $1 AND tenant_id = $2
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id));
 
 -- name: DeleteAppointmentServices :exec
 DELETE FROM appointment_services
@@ -192,6 +193,7 @@ FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
 WHERE a.tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR a.unit_id = sqlc.narg(unit_id))
   AND a.customer_id = $2
 ORDER BY a.start_time DESC
 LIMIT 50;
@@ -215,6 +217,7 @@ SELECT EXISTS (
 SELECT EXISTS (
     SELECT 1 FROM blocked_times
     WHERE tenant_id = sqlc.arg(tenant_id)::uuid
+      AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
       AND professional_id = sqlc.arg(professional_id)::uuid
       AND start_time < sqlc.arg(end_time)::timestamptz
       AND end_time > sqlc.arg(start_time)::timestamptz
@@ -227,6 +230,7 @@ SELECT EXISTS (
 SELECT EXISTS (
     SELECT 1 FROM appointments
     WHERE tenant_id = sqlc.arg(tenant_id)::uuid
+      AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
       AND professional_id = sqlc.arg(professional_id)::uuid
       AND id != sqlc.arg(exclude_id)::uuid
       AND status NOT IN ('CANCELED', 'NO_SHOW')

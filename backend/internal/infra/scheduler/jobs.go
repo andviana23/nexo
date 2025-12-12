@@ -13,7 +13,9 @@ import (
 // FinancialJobDeps agrega use cases necessários para os cron jobs financeiros.
 type FinancialJobDeps struct {
 	GenerateDRE              *financial.GenerateDREUseCase
+	GenerateDREV2            *financial.GenerateDREV2UseCase
 	GenerateFluxoDiario      *financial.GenerateFluxoDiarioUseCase
+	GenerateFluxoDiarioV2    *financial.GenerateFluxoDiarioV2UseCase
 	MarcarCompensacoes       *financial.MarcarCompensacaoUseCase
 	GerarContasDespesasFixas *financial.GerarContasFromDespesasFixasUseCase
 }
@@ -26,7 +28,25 @@ type SubscriptionJobDeps struct {
 // RegisterFinancialJobs registra os cron jobs financeiros com base nas envs.
 func RegisterFinancialJobs(s *Scheduler, logger *zap.Logger, deps FinancialJobDeps, tenants []string) error {
 	// DRE mensal (mês anterior, todo dia 1 às 03:00)
-	if deps.GenerateDRE != nil {
+	if deps.GenerateDREV2 != nil {
+		if err := s.AddJob(JobConfig{
+			Name:        "GenerateDREMonthly",
+			Schedule:    getEnvSchedule("CRON_DRE_MONTHLY_SCHEDULE", "0 0 3 1 * *"),
+			Enabled:     getEnvBool("CRON_DRE_MONTHLY_ENABLED", true),
+			FeatureFlag: "FF_CRON_DRE_MONTHLY",
+			Tenants:     tenants,
+			TenantRunner: func(ctx context.Context, tenantID string) error {
+				_, err := deps.GenerateDREV2.Execute(ctx, financial.GenerateDREV2Input{
+					TenantID: tenantID,
+					MesAno:   deps.GenerateDREV2.DefaultMesAnterior(),
+					Regime:   "COMPETENCIA",
+				})
+				return err
+			},
+		}); err != nil {
+			return err
+		}
+	} else if deps.GenerateDRE != nil {
 		if err := s.AddJob(JobConfig{
 			Name:        "GenerateDREMonthly",
 			Schedule:    getEnvSchedule("CRON_DRE_MONTHLY_SCHEDULE", "0 0 3 1 * *"),
@@ -48,7 +68,24 @@ func RegisterFinancialJobs(s *Scheduler, logger *zap.Logger, deps FinancialJobDe
 	}
 
 	// Fluxo diário (00:05 todos os dias)
-	if deps.GenerateFluxoDiario != nil {
+	if deps.GenerateFluxoDiarioV2 != nil {
+		if err := s.AddJob(JobConfig{
+			Name:        "GenerateFluxoDiario",
+			Schedule:    getEnvSchedule("CRON_FLUXO_DIARIO_SCHEDULE", "0 5 0 * * *"),
+			Enabled:     getEnvBool("CRON_FLUXO_DIARIO_ENABLED", true),
+			FeatureFlag: "FF_CRON_FLUXO_DIARIO",
+			Tenants:     tenants,
+			TenantRunner: func(ctx context.Context, tenantID string) error {
+				_, err := deps.GenerateFluxoDiarioV2.Execute(ctx, financial.GenerateFluxoDiarioV2Input{
+					TenantID: tenantID,
+					Data:     time.Now(),
+				})
+				return err
+			},
+		}); err != nil {
+			return err
+		}
+	} else if deps.GenerateFluxoDiario != nil {
 		if err := s.AddJob(JobConfig{
 			Name:        "GenerateFluxoDiario",
 			Schedule:    getEnvSchedule("CRON_FLUXO_DIARIO_SCHEDULE", "0 5 0 * * *"),

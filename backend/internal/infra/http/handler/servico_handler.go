@@ -6,6 +6,7 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/servico"
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
+	"github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
@@ -70,6 +71,14 @@ func (h *ServicoHandler) Create(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	// Bind e validação
 	var req dto.CreateServicoRequest
 	if err := c.Bind(&req); err != nil {
@@ -86,6 +95,9 @@ func (h *ServicoHandler) Create(c echo.Context) error {
 			Message: err.Error(),
 		})
 	}
+
+	// Segurança: unit_id vem do contexto (JWT/Header), nunca do payload
+	req.UnitID = &unitID
 
 	// Executar use case
 	result, err := h.createUC.Execute(ctx, tenantID, req)
@@ -147,6 +159,14 @@ func (h *ServicoHandler) GetByID(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	servicoID := c.Param("id")
 	if servicoID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -155,7 +175,7 @@ func (h *ServicoHandler) GetByID(c echo.Context) error {
 		})
 	}
 
-	result, err := h.getUC.Execute(ctx, tenantID, servicoID)
+	result, err := h.getUC.Execute(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		h.logger.Error("Erro ao buscar serviço", zap.Error(err))
 
@@ -200,6 +220,14 @@ func (h *ServicoHandler) List(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	// Query params
 	var req dto.ListServicosRequest
 	if err := c.Bind(&req); err != nil {
@@ -216,6 +244,9 @@ func (h *ServicoHandler) List(c echo.Context) error {
 			Message: err.Error(),
 		})
 	}
+
+	// Segurança: forçar filtro por unit_id do contexto
+	req.UnitID = unitID
 
 	result, err := h.listUC.Execute(ctx, tenantID, req)
 	if err != nil {
@@ -255,6 +286,14 @@ func (h *ServicoHandler) Update(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	servicoID := c.Param("id")
 	if servicoID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -280,7 +319,7 @@ func (h *ServicoHandler) Update(c echo.Context) error {
 		})
 	}
 
-	result, err := h.updateUC.Execute(ctx, tenantID, servicoID, req)
+	result, err := h.updateUC.Execute(ctx, tenantID, unitID, servicoID, req)
 	if err != nil {
 		h.logger.Error("Erro ao atualizar serviço", zap.Error(err))
 
@@ -320,7 +359,7 @@ func (h *ServicoHandler) Update(c echo.Context) error {
 	}
 
 	// Buscar serviço completo com categoria para resposta consistente
-	servico, err := h.getUC.Execute(ctx, tenantID, servicoID)
+	servico, err := h.getUC.Execute(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		// Se update funcionou mas busca falhou, retorna o result do update
 		return c.JSON(http.StatusOK, result)
@@ -351,6 +390,14 @@ func (h *ServicoHandler) Delete(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	servicoID := c.Param("id")
 	if servicoID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -359,7 +406,7 @@ func (h *ServicoHandler) Delete(c echo.Context) error {
 		})
 	}
 
-	err := h.deleteUC.Execute(ctx, tenantID, servicoID)
+	err := h.deleteUC.Execute(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		h.logger.Error("Erro ao deletar serviço", zap.Error(err))
 
@@ -403,6 +450,14 @@ func (h *ServicoHandler) ToggleStatus(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	servicoID := c.Param("id")
 	if servicoID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -411,7 +466,7 @@ func (h *ServicoHandler) ToggleStatus(c echo.Context) error {
 		})
 	}
 
-	result, err := h.toggleStatusUC.Execute(ctx, tenantID, servicoID)
+	result, err := h.toggleStatusUC.Execute(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		h.logger.Error("Erro ao alterar status do serviço", zap.Error(err))
 
@@ -429,7 +484,7 @@ func (h *ServicoHandler) ToggleStatus(c echo.Context) error {
 	}
 
 	// Buscar serviço completo com categoria para resposta consistente
-	servico, err := h.getUC.Execute(ctx, tenantID, servicoID)
+	servico, err := h.getUC.Execute(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		// Se toggle funcionou mas busca falhou, retorna o result do toggle
 		return c.JSON(http.StatusOK, result)
@@ -458,7 +513,15 @@ func (h *ServicoHandler) GetStats(c echo.Context) error {
 		})
 	}
 
-	result, err := h.getStatsUC.Execute(ctx, tenantID)
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "unit_required",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
+	result, err := h.getStatsUC.Execute(ctx, tenantID, unitID)
 	if err != nil {
 		h.logger.Error("Erro ao buscar estatísticas de serviços", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

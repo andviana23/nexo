@@ -3,8 +3,8 @@ package financial
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"fmt"
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/domain"
@@ -101,8 +101,8 @@ func (uc *GenerateDREV2UseCase) Execute(ctx context.Context, input GenerateDREV2
 				zap.Error(err),
 			)
 			// Fallback: usar método antigo
-			statusPago := valueobject.StatusContaPago
-			receitaAssinaturas, _ = uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
+			statusRecebido := valueobject.StatusContaRecebido
+			receitaAssinaturas, _ = uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusRecebido)
 		}
 
 		totalReceitas = receitaAssinaturas
@@ -113,7 +113,7 @@ func (uc *GenerateDREV2UseCase) Execute(ctx context.Context, input GenerateDREV2
 			zap.Time("fim", fim),
 		)
 
-		statusRecebido := valueobject.StatusContaPago
+		statusRecebido := valueobject.StatusContaRecebido
 		totalReceitas, err = uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusRecebido)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao calcular receitas (caixa): %w", err)

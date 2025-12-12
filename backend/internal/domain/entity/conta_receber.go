@@ -23,12 +23,16 @@ type ContaReceber struct {
 
 	DataVencimento  time.Time
 	DataRecebimento *time.Time
-	Status          valueobject.StatusConta // PENDENTE, PAGO, CANCELADO, ATRASADO
+	Status          valueobject.StatusConta // PENDENTE, CONFIRMADO, RECEBIDO, ESTORNADO, CANCELADO, ATRASADO
 
 	Observacoes string
 
 	CriadoEm     time.Time
 	AtualizadoEm time.Time
+
+	// Vínculos explícitos com comanda/pagamento (Fase 1)
+	CommandID        *string // FK para commands.id
+	CommandPaymentID *string // FK para command_payments.id
 
 	// Campos de integração Asaas (Migration 041)
 	SubscriptionID *string    // FK para subscriptions (nova tabela)
@@ -78,7 +82,7 @@ func NewContaReceber(
 
 // MarcarComoRecebido marca a conta como totalmente recebida
 func (c *ContaReceber) MarcarComoRecebido(dataRecebimento time.Time) error {
-	if c.Status == valueobject.StatusContaPago {
+	if c.Status == valueobject.StatusContaRecebido {
 		return domain.ErrContaJaPaga
 	}
 	if c.Status == valueobject.StatusContaCancelado {
@@ -88,14 +92,14 @@ func (c *ContaReceber) MarcarComoRecebido(dataRecebimento time.Time) error {
 	c.DataRecebimento = &dataRecebimento
 	c.ValorPago = c.Valor
 	c.ValorAberto = valueobject.Zero()
-	c.Status = valueobject.StatusContaPago
+	c.Status = valueobject.StatusContaRecebido
 	c.AtualizadoEm = time.Now()
 	return nil
 }
 
 // RegistrarPagamentoParcial registra um pagamento parcial
 func (c *ContaReceber) RegistrarPagamentoParcial(valorPago valueobject.Money) error {
-	if c.Status == valueobject.StatusContaPago {
+	if c.Status == valueobject.StatusContaRecebido {
 		return domain.ErrContaJaPaga
 	}
 	if c.Status == valueobject.StatusContaCancelado {
@@ -111,7 +115,7 @@ func (c *ContaReceber) RegistrarPagamentoParcial(valorPago valueobject.Money) er
 	// Se pagou tudo, marca como pago
 	if c.ValorAberto.IsZero() || c.ValorAberto.IsNegative() {
 		c.ValorAberto = valueobject.Zero()
-		c.Status = valueobject.StatusContaPago
+		c.Status = valueobject.StatusContaRecebido
 		now := time.Now()
 		c.DataRecebimento = &now
 	}
@@ -122,7 +126,7 @@ func (c *ContaReceber) RegistrarPagamentoParcial(valorPago valueobject.Money) er
 
 // Cancelar cancela a conta
 func (c *ContaReceber) Cancelar() error {
-	if c.Status == valueobject.StatusContaPago {
+	if c.Status == valueobject.StatusContaRecebido {
 		return domain.ErrContaJaPaga
 	}
 	c.Status = valueobject.StatusContaCancelado
@@ -191,8 +195,12 @@ func (c *ContaReceber) Validate() error {
 		return domain.ErrDataVencimentoInvalida
 	}
 	// Validar: se origem = ASSINATURA, assinaturaID é obrigatório
-	if c.Origem == "ASSINATURA" && (c.AssinaturaID == nil || *c.AssinaturaID == "") {
-		return domain.ErrInvalidID
+	if c.Origem == "ASSINATURA" {
+		assinaturaAntigaOk := c.AssinaturaID != nil && *c.AssinaturaID != ""
+		subscriptionOk := c.SubscriptionID != nil && *c.SubscriptionID != ""
+		if !assinaturaAntigaOk && !subscriptionOk {
+			return domain.ErrInvalidID
+		}
 	}
 	return nil
 }

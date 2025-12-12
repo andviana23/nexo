@@ -4,9 +4,11 @@
 CREATE TABLE IF NOT EXISTS contas_a_receber (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
-    origem VARCHAR(30) CHECK (origem IN ('ASSINATURA', 'SERVICO', 'OUTRO')),
+    origem VARCHAR(30) CHECK (origem IN ('ASSINATURA', 'SERVICO', 'PRODUTO', 'OUTRO')),
     assinatura_id UUID,
     servico_id UUID,
+    command_id UUID REFERENCES commands(id) ON DELETE SET NULL,
+    command_payment_id UUID REFERENCES command_payments(id) ON DELETE SET NULL,
 
     descricao VARCHAR(255) NOT NULL,
     valor NUMERIC(15,2) NOT NULL CHECK (valor > 0),
@@ -39,5 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_contas_receber_status ON contas_a_receber(status,
 CREATE INDEX IF NOT EXISTS idx_contas_receber_assinatura ON contas_a_receber(assinatura_id) WHERE assinatura_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_contas_a_receber_asaas_payment_id ON contas_a_receber(tenant_id, asaas_payment_id) WHERE asaas_payment_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_contas_a_receber_competencia ON contas_a_receber(tenant_id, competencia_mes, status);
+CREATE INDEX IF NOT EXISTS idx_contas_a_receber_command ON contas_a_receber(tenant_id, command_id) WHERE command_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_contas_a_receber_command_payment ON contas_a_receber(tenant_id, command_payment_id) WHERE command_payment_id IS NOT NULL;
 
 COMMENT ON TABLE contas_a_receber IS 'Contas a receber de assinaturas e serviços com alertas de inadimplência';

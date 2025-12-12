@@ -54,6 +54,7 @@ type AppointmentRepository interface {
 	CheckConflict(
 		ctx context.Context,
 		tenantID string,
+		unitID string,
 		professionalID string,
 		startTime, endTime time.Time,
 		excludeAppointmentID string, // Para ignorar o próprio agendamento ao reagendar
@@ -64,6 +65,7 @@ type AppointmentRepository interface {
 	CheckBlockedTimeConflict(
 		ctx context.Context,
 		tenantID string,
+		unitID string,
 		professionalID string,
 		startTime, endTime time.Time,
 	) (bool, error)
@@ -73,6 +75,7 @@ type AppointmentRepository interface {
 	CheckMinimumIntervalConflict(
 		ctx context.Context,
 		tenantID string,
+		unitID string,
 		professionalID string,
 		startTime, endTime time.Time,
 		excludeAppointmentID string,

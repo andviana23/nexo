@@ -28,12 +28,14 @@ func NewGetServicoUseCase(repo port.ServicoRepository, logger *zap.Logger) *GetS
 func (uc *GetServicoUseCase) Execute(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	servicoID string,
 ) (*dto.ServicoResponse, error) {
-	servico, err := uc.repo.FindByID(ctx, tenantID, servicoID)
+	servico, err := uc.repo.FindByID(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		uc.logger.Error("Erro ao buscar serviço",
 			zap.String("tenant_id", tenantID),
+			zap.String("unit_id", unitID),
 			zap.String("servico_id", servicoID),
 			zap.Error(err),
 		)
@@ -61,11 +63,13 @@ func NewGetServicoStatsUseCase(repo port.ServicoRepository, logger *zap.Logger) 
 func (uc *GetServicoStatsUseCase) Execute(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 ) (*dto.ServicoStatsResponse, error) {
-	stats, err := uc.repo.GetStats(ctx, tenantID)
+	stats, err := uc.repo.GetStats(ctx, tenantID, unitID)
 	if err != nil {
 		uc.logger.Error("Erro ao buscar estatísticas de serviços",
 			zap.String("tenant_id", tenantID),
+			zap.String("unit_id", unitID),
 			zap.Error(err),
 		)
 		return nil, err

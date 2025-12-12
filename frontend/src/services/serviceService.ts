@@ -18,6 +18,7 @@ export const serviceService = {
       if (filters.profissional_id) params.append('profissional_id', filters.profissional_id);
       if (filters.search) params.append('search', filters.search);
       if (filters.order_by) params.append('order_by', filters.order_by);
+      if (filters.unit_id) params.append('unit_id', filters.unit_id);
     }
 
     const { data } = await api.get<ServiceListResponse>(`/servicos?${params.toString()}`);

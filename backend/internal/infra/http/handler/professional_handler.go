@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
+	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres"
 	"github.com/labstack/echo/v4"
@@ -74,6 +75,12 @@ func (h *ProfessionalHandler) ListProfessionals(c echo.Context) error {
 	}
 
 	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
 	professionals, total, err := h.repo.List(ctx, tenantID, unitID, req)
 	if err != nil {
 		h.logger.Error("Erro ao listar profissionais", zap.Error(err))
@@ -123,6 +130,12 @@ func (h *ProfessionalHandler) GetProfessional(c echo.Context) error {
 	}
 
 	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
 	professional, err := h.repo.GetByID(ctx, tenantID, unitID, id)
 	if err != nil {
 		h.logger.Error("Erro ao buscar profissional", zap.Error(err))
@@ -178,8 +191,16 @@ func (h *ProfessionalHandler) CreateProfessional(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	// Verificar se email já existe
-	emailExists, err := h.repo.CheckEmailExists(ctx, tenantID, req.Email, nil)
+	emailExists, err := h.repo.CheckEmailExists(ctx, tenantID, unitID, req.Email, nil)
 	if err != nil {
 		h.logger.Error("Erro ao verificar email", zap.Error(err))
 	}
@@ -192,7 +213,7 @@ func (h *ProfessionalHandler) CreateProfessional(c echo.Context) error {
 
 	// Verificar se CPF já existe
 	if req.CPF != "" {
-		cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, req.CPF, nil)
+		cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, unitID, req.CPF, nil)
 		if err != nil {
 			h.logger.Error("Erro ao verificar CPF", zap.Error(err))
 		}
@@ -204,7 +225,6 @@ func (h *ProfessionalHandler) CreateProfessional(c echo.Context) error {
 		}
 	}
 
-	unitID := middleware.GetUnitID(c)
 	professional, err := h.repo.Create(ctx, tenantID, unitID, req)
 	if err != nil {
 		h.logger.Error("Erro ao criar profissional", zap.Error(err))
@@ -270,8 +290,16 @@ func (h *ProfessionalHandler) UpdateProfessional(c echo.Context) error {
 		})
 	}
 
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
 	// Verificar se email já existe (excluindo o próprio)
-	emailExists, err := h.repo.CheckEmailExists(ctx, tenantID, req.Email, &id)
+	emailExists, err := h.repo.CheckEmailExists(ctx, tenantID, unitID, req.Email, &id)
 	if err != nil {
 		h.logger.Error("Erro ao verificar email", zap.Error(err))
 	}
@@ -284,7 +312,7 @@ func (h *ProfessionalHandler) UpdateProfessional(c echo.Context) error {
 
 	// Verificar se CPF já existe (se foi alterado)
 	if req.CPF != "" {
-		cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, req.CPF, &id)
+		cpfExists, err := h.repo.CheckCpfExists(ctx, tenantID, unitID, req.CPF, &id)
 		if err != nil {
 			h.logger.Error("Erro ao verificar CPF", zap.Error(err))
 		}
@@ -296,7 +324,7 @@ func (h *ProfessionalHandler) UpdateProfessional(c echo.Context) error {
 		}
 	}
 
-	professional, err := h.repo.Update(ctx, tenantID, id, req)
+	professional, err := h.repo.Update(ctx, tenantID, unitID, id, req)
 	if err != nil {
 		h.logger.Error("Erro ao atualizar profissional", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
@@ -360,7 +388,15 @@ func (h *ProfessionalHandler) UpdateProfessionalStatus(c echo.Context) error {
 		})
 	}
 
-	professional, err := h.repo.UpdateStatus(ctx, tenantID, id, req)
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
+	professional, err := h.repo.UpdateStatus(ctx, tenantID, unitID, id, req)
 	if err != nil {
 		h.logger.Error("Erro ao atualizar status", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
@@ -408,6 +444,12 @@ func (h *ProfessionalHandler) DeleteProfessional(c echo.Context) error {
 
 	// Deletar permanentemente o profissional
 	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
 	err := h.repo.Delete(ctx, tenantID, unitID, id)
 	if err != nil {
 		h.logger.Error("Erro ao deletar profissional permanentemente", zap.Error(err))
@@ -458,7 +500,15 @@ func (h *ProfessionalHandler) CheckEmailExists(c echo.Context) error {
 		excludeIDPtr = &excludeID
 	}
 
-	exists, err := h.repo.CheckEmailExists(ctx, tenantID, email, excludeIDPtr)
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
+	exists, err := h.repo.CheckEmailExists(ctx, tenantID, unitID, email, excludeIDPtr)
 	if err != nil {
 		h.logger.Error("Erro ao verificar email", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
@@ -510,7 +560,15 @@ func (h *ProfessionalHandler) CheckCpfExists(c echo.Context) error {
 		excludeIDPtr = &excludeID
 	}
 
-	exists, err := h.repo.CheckCpfExists(ctx, tenantID, cpf, excludeIDPtr)
+	unitID := middleware.GetUnitID(c)
+	if unitID == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: domain.ErrUnitIDRequired.Error(),
+		})
+	}
+
+	exists, err := h.repo.CheckCpfExists(ctx, tenantID, unitID, cpf, excludeIDPtr)
 	if err != nil {
 		h.logger.Error("Erro ao verificar CPF", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

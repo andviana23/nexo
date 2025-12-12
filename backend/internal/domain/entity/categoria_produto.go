@@ -11,6 +11,7 @@ import (
 type CategoriaProdutoEntity struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
+	UnitID       uuid.UUID
 	Nome         string
 	Descricao    string
 	Cor          string
@@ -22,9 +23,12 @@ type CategoriaProdutoEntity struct {
 }
 
 // NewCategoriaProduto cria uma nova categoria de produto
-func NewCategoriaProduto(tenantID uuid.UUID, nome string) (*CategoriaProdutoEntity, error) {
+func NewCategoriaProduto(tenantID, unitID uuid.UUID, nome string) (*CategoriaProdutoEntity, error) {
 	if tenantID == uuid.Nil {
 		return nil, errors.New("tenant_id é obrigatório")
+	}
+	if unitID == uuid.Nil {
+		return nil, errors.New("unit_id é obrigatório")
 	}
 	if nome == "" {
 		return nil, errors.New("nome é obrigatório")
@@ -37,6 +41,7 @@ func NewCategoriaProduto(tenantID uuid.UUID, nome string) (*CategoriaProdutoEnti
 	return &CategoriaProdutoEntity{
 		ID:           uuid.New(),
 		TenantID:     tenantID,
+		UnitID:       unitID,
 		Nome:         nome,
 		Cor:          "#6B7280", // Cinza padrão
 		Icone:        "package",
@@ -51,6 +56,9 @@ func NewCategoriaProduto(tenantID uuid.UUID, nome string) (*CategoriaProdutoEnti
 func (c *CategoriaProdutoEntity) Validate() error {
 	if c.TenantID == uuid.Nil {
 		return errors.New("tenant_id é obrigatório")
+	}
+	if c.UnitID == uuid.Nil {
+		return errors.New("unit_id é obrigatório")
 	}
 	if c.Nome == "" {
 		return errors.New("nome é obrigatório")

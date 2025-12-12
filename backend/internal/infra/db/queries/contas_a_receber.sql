@@ -4,6 +4,8 @@ INSERT INTO contas_a_receber (
     origem,
     assinatura_id,
     servico_id,
+    command_id,
+    command_payment_id,
     descricao,
     valor,
     valor_pago,
@@ -12,7 +14,7 @@ INSERT INTO contas_a_receber (
     status,
     observacoes
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 ) RETURNING *;
 
 -- name: GetContaReceberByID :one
@@ -38,6 +40,17 @@ WHERE tenant_id = $1
   AND data_vencimento <= $3
 ORDER BY data_vencimento ASC;
 
+-- name: ListContasReceberFiltered :many
+SELECT * FROM contas_a_receber
+WHERE tenant_id = $1
+  AND (sqlc.narg(status)::text IS NULL OR status = sqlc.narg(status))
+  AND (sqlc.narg(origem)::text IS NULL OR origem = sqlc.narg(origem))
+  AND (sqlc.narg(assinatura_id)::uuid IS NULL OR assinatura_id = sqlc.narg(assinatura_id))
+  AND (sqlc.narg(data_inicio)::date IS NULL OR data_vencimento >= sqlc.narg(data_inicio))
+  AND (sqlc.narg(data_fim)::date IS NULL OR data_vencimento <= sqlc.narg(data_fim))
+ORDER BY data_vencimento DESC
+LIMIT $2 OFFSET $3;
+
 -- name: ListContasReceberVencidas :many
 SELECT * FROM contas_a_receber
 WHERE tenant_id = $1
@@ -55,6 +68,11 @@ SELECT * FROM contas_a_receber
 WHERE tenant_id = $1 AND origem = $2
 ORDER BY data_vencimento DESC
 LIMIT $3 OFFSET $4;
+
+-- name: ListContasReceberByCommandID :many
+SELECT * FROM contas_a_receber
+WHERE tenant_id = $1 AND command_id = $2
+ORDER BY criado_em ASC;
 
 -- name: UpdateContaReceber :one
 UPDATE contas_a_receber
@@ -100,7 +118,17 @@ FROM contas_a_receber
 WHERE tenant_id = $1
   AND data_vencimento >= $2
   AND data_vencimento <= $3
-  AND status != 'CANCELADO';
+  AND status NOT IN ('CANCELADO', 'ESTORNADO');
+
+-- name: SumContasReceberByOrigem :one
+SELECT
+    COALESCE(SUM(valor), 0) as total_por_origem
+FROM contas_a_receber
+WHERE tenant_id = $1
+  AND origem = $2
+  AND data_vencimento >= $3
+  AND data_vencimento <= $4
+  AND status NOT IN ('CANCELADO', 'ESTORNADO');
 
 -- name: SumContasRecebidasByPeriod :one
 SELECT
@@ -199,7 +227,7 @@ SELECT
 FROM contas_a_receber
 WHERE tenant_id = $1 
   AND competencia_mes = $2
-  AND status != 'CANCELADO';
+  AND status NOT IN ('CANCELADO', 'ESTORNADO');
 
 -- name: SumContasReceberByCompetenciaAndStatus :one
 -- Somar por competência e status específico
@@ -259,4 +287,3 @@ WHERE tenant_id = $1
   AND confirmed_at >= $2
   AND confirmed_at < $3
   AND status IN ('CONFIRMADO', 'RECEBIDO');
-

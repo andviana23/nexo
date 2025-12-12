@@ -26,10 +26,11 @@ func NewDeleteServicoUseCase(repo port.ServicoRepository, logger *zap.Logger) *D
 func (uc *DeleteServicoUseCase) Execute(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	servicoID string,
 ) error {
 	// Verificar se serviço existe
-	_, err := uc.repo.FindByID(ctx, tenantID, servicoID)
+	servico, err := uc.repo.FindByID(ctx, tenantID, unitID, servicoID)
 	if err != nil {
 		return domain.ErrServicoNotFound
 	}
@@ -39,7 +40,7 @@ func (uc *DeleteServicoUseCase) Execute(
 	// Por ora, vamos apenas deletar
 
 	// Deletar
-	if err := uc.repo.Delete(ctx, tenantID, servicoID); err != nil {
+	if err := uc.repo.Delete(ctx, tenantID, servico.UnitID.String(), servicoID); err != nil {
 		uc.logger.Error("Erro ao deletar serviço",
 			zap.String("tenant_id", tenantID),
 			zap.String("servico_id", servicoID),

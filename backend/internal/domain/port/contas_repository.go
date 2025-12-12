@@ -51,6 +51,8 @@ type ContaPagarListFilters struct {
 	CategoriaID *string
 	Fornecedor  *string
 	Recorrente  *bool
+	DataInicio  *time.Time
+	DataFim     *time.Time
 	Page        int
 	PageSize    int
 	OrderBy     string
@@ -78,6 +80,9 @@ type ContaReceberRepository interface {
 
 	// ListByAssinatura lista contas de uma assinatura
 	ListByAssinatura(ctx context.Context, tenantID, assinaturaID string) ([]*entity.ContaReceber, error)
+
+	// ListByCommandID lista contas vinculadas a uma comanda
+	ListByCommandID(ctx context.Context, tenantID, commandID string) ([]*entity.ContaReceber, error)
 
 	// ListVencendoEm lista contas que vencem em até N dias
 	ListVencendoEm(ctx context.Context, tenantID string, dias int) ([]*entity.ContaReceber, error)
@@ -125,6 +130,8 @@ type ContaReceberListFilters struct {
 	Status       *valueobject.StatusConta
 	Origem       *string
 	AssinaturaID *string
+	DataInicio   *time.Time
+	DataFim      *time.Time
 	Page         int
 	PageSize     int
 	OrderBy      string

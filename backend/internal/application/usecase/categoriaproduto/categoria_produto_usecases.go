@@ -16,6 +16,7 @@ import (
 
 type CreateCategoriaProdutoInput struct {
 	TenantID    uuid.UUID
+	UnitID      uuid.UUID
 	Nome        string
 	Descricao   string
 	Cor         string
@@ -34,7 +35,7 @@ func NewCreateCategoriaProdutoUseCase(repo port.CategoriaProdutoRepository, logg
 
 func (uc *CreateCategoriaProdutoUseCase) Execute(ctx context.Context, input CreateCategoriaProdutoInput) (*entity.CategoriaProdutoEntity, error) {
 	// 1. Validar se nome já existe
-	exists, err := uc.repo.ExistsWithNome(ctx, input.TenantID, input.Nome, nil)
+	exists, err := uc.repo.ExistsWithNome(ctx, input.TenantID, input.UnitID, input.Nome, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func (uc *CreateCategoriaProdutoUseCase) Execute(ctx context.Context, input Crea
 	}
 
 	// 2. Criar entidade
-	categoria, err := entity.NewCategoriaProduto(input.TenantID, input.Nome)
+	categoria, err := entity.NewCategoriaProduto(input.TenantID, input.UnitID, input.Nome)
 	if err != nil {
 		return nil, err
 	}
@@ -87,11 +88,11 @@ func NewListCategoriasProdutosUseCase(repo port.CategoriaProdutoRepository, logg
 	return &ListCategoriasProdutosUseCase{repo: repo, logger: logger}
 }
 
-func (uc *ListCategoriasProdutosUseCase) Execute(ctx context.Context, tenantID uuid.UUID, apenasAtivas bool) ([]*entity.CategoriaProdutoEntity, error) {
+func (uc *ListCategoriasProdutosUseCase) Execute(ctx context.Context, tenantID, unitID uuid.UUID, apenasAtivas bool) ([]*entity.CategoriaProdutoEntity, error) {
 	if apenasAtivas {
-		return uc.repo.ListAtivas(ctx, tenantID)
+		return uc.repo.ListAtivas(ctx, tenantID, unitID)
 	}
-	return uc.repo.ListAll(ctx, tenantID)
+	return uc.repo.ListAll(ctx, tenantID, unitID)
 }
 
 // =============================================================================
@@ -107,8 +108,8 @@ func NewGetCategoriaProdutoUseCase(repo port.CategoriaProdutoRepository, logger 
 	return &GetCategoriaProdutoUseCase{repo: repo, logger: logger}
 }
 
-func (uc *GetCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, id uuid.UUID) (*entity.CategoriaProdutoEntity, error) {
-	categoria, err := uc.repo.FindByID(ctx, tenantID, id)
+func (uc *GetCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, unitID, id uuid.UUID) (*entity.CategoriaProdutoEntity, error) {
+	categoria, err := uc.repo.FindByID(ctx, tenantID, unitID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -124,6 +125,7 @@ func (uc *GetCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, id 
 
 type UpdateCategoriaProdutoInput struct {
 	TenantID    uuid.UUID
+	UnitID      uuid.UUID
 	ID          uuid.UUID
 	Nome        string
 	Descricao   string
@@ -144,7 +146,7 @@ func NewUpdateCategoriaProdutoUseCase(repo port.CategoriaProdutoRepository, logg
 
 func (uc *UpdateCategoriaProdutoUseCase) Execute(ctx context.Context, input UpdateCategoriaProdutoInput) (*entity.CategoriaProdutoEntity, error) {
 	// 1. Buscar categoria existente
-	categoria, err := uc.repo.FindByID(ctx, input.TenantID, input.ID)
+	categoria, err := uc.repo.FindByID(ctx, input.TenantID, input.UnitID, input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +156,7 @@ func (uc *UpdateCategoriaProdutoUseCase) Execute(ctx context.Context, input Upda
 
 	// 2. Validar se novo nome já existe (se mudou)
 	if categoria.Nome != input.Nome {
-		exists, err := uc.repo.ExistsWithNome(ctx, input.TenantID, input.Nome, &input.ID)
+		exists, err := uc.repo.ExistsWithNome(ctx, input.TenantID, input.UnitID, input.Nome, &input.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -200,9 +202,9 @@ func NewDeleteCategoriaProdutoUseCase(repo port.CategoriaProdutoRepository, logg
 	return &DeleteCategoriaProdutoUseCase{repo: repo, logger: logger}
 }
 
-func (uc *DeleteCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, id uuid.UUID) error {
+func (uc *DeleteCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, unitID, id uuid.UUID) error {
 	// 1. Verificar se categoria existe
-	categoria, err := uc.repo.FindByID(ctx, tenantID, id)
+	categoria, err := uc.repo.FindByID(ctx, tenantID, unitID, id)
 	if err != nil {
 		return err
 	}
@@ -211,7 +213,7 @@ func (uc *DeleteCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, 
 	}
 
 	// 2. Verificar se tem produtos vinculados
-	count, err := uc.repo.CountProdutosVinculados(ctx, tenantID, id)
+	count, err := uc.repo.CountProdutosVinculados(ctx, tenantID, unitID, id)
 	if err != nil {
 		return err
 	}
@@ -220,7 +222,7 @@ func (uc *DeleteCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, 
 	}
 
 	// 3. Deletar
-	return uc.repo.Delete(ctx, tenantID, id)
+	return uc.repo.Delete(ctx, tenantID, unitID, id)
 }
 
 // =============================================================================
@@ -236,9 +238,9 @@ func NewToggleCategoriaProdutoUseCase(repo port.CategoriaProdutoRepository, logg
 	return &ToggleCategoriaProdutoUseCase{repo: repo, logger: logger}
 }
 
-func (uc *ToggleCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, id uuid.UUID) (*entity.CategoriaProdutoEntity, error) {
+func (uc *ToggleCategoriaProdutoUseCase) Execute(ctx context.Context, tenantID, unitID, id uuid.UUID) (*entity.CategoriaProdutoEntity, error) {
 	// 1. Buscar categoria
-	categoria, err := uc.repo.FindByID(ctx, tenantID, id)
+	categoria, err := uc.repo.FindByID(ctx, tenantID, unitID, id)
 	if err != nil {
 		return nil, err
 	}

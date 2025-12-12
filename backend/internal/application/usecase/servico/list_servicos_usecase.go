@@ -35,9 +35,10 @@ func (uc *ListServicosUseCase) Execute(
 		ProfissionalID: req.ProfissionalID,
 		Search:         req.Search,
 		OrderBy:        req.OrderBy,
+		UnitID:         req.UnitID,
 	}
 
-	servicos, err := uc.repo.List(ctx, tenantID, filter)
+	servicos, err := uc.repo.List(ctx, tenantID, filter.UnitID, filter)
 	if err != nil {
 		uc.logger.Error("Erro ao listar serviços",
 			zap.String("tenant_id", tenantID),
@@ -70,12 +71,14 @@ func NewListServicosByCategoriaUseCase(repo port.ServicoRepository, logger *zap.
 func (uc *ListServicosByCategoriaUseCase) Execute(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	categoriaID string,
 ) (*dto.ListServicosResponse, error) {
-	servicos, err := uc.repo.ListByCategoria(ctx, tenantID, categoriaID)
+	servicos, err := uc.repo.ListByCategoria(ctx, tenantID, unitID, categoriaID)
 	if err != nil {
 		uc.logger.Error("Erro ao listar serviços por categoria",
 			zap.String("tenant_id", tenantID),
+			zap.String("unit_id", unitID),
 			zap.String("categoria_id", categoriaID),
 			zap.Error(err),
 		)
@@ -106,12 +109,14 @@ func NewListServicosByProfissionalUseCase(repo port.ServicoRepository, logger *z
 func (uc *ListServicosByProfissionalUseCase) Execute(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	profissionalID string,
 ) (*dto.ListServicosResponse, error) {
-	servicos, err := uc.repo.ListByProfissional(ctx, tenantID, profissionalID)
+	servicos, err := uc.repo.ListByProfissional(ctx, tenantID, unitID, profissionalID)
 	if err != nil {
 		uc.logger.Error("Erro ao listar serviços por profissional",
 			zap.String("tenant_id", tenantID),
+			zap.String("unit_id", unitID),
 			zap.String("profissional_id", profissionalID),
 			zap.Error(err),
 		)

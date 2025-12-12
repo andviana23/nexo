@@ -17,17 +17,17 @@ import (
 // MockAppointmentRepository implementa port.AppointmentRepository para testes.
 type MockAppointmentRepository struct {
 	CreateFn                         func(ctx context.Context, appointment *entity.Appointment) error
-	FindByIDFn                       func(ctx context.Context, tenantID, id string) (*entity.Appointment, error)
+	FindByIDFn                       func(ctx context.Context, tenantID, unitID, id string) (*entity.Appointment, error)
 	UpdateFn                         func(ctx context.Context, appointment *entity.Appointment) error
-	DeleteFn                         func(ctx context.Context, tenantID, id string) error
+	DeleteFn                         func(ctx context.Context, tenantID, unitID, id string) error
 	ListFn                           func(ctx context.Context, tenantID string, filter port.AppointmentFilter) ([]*entity.Appointment, int64, error)
-	ListByProfessionalAndDateRangeFn func(ctx context.Context, tenantID, professionalID string, startDate, endDate time.Time) ([]*entity.Appointment, error)
-	ListByCustomerFn                 func(ctx context.Context, tenantID, customerID string) ([]*entity.Appointment, error)
-	CheckConflictFn                  func(ctx context.Context, tenantID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string) (bool, error)
-	CheckBlockedTimeConflictFn       func(ctx context.Context, tenantID, professionalID string, startTime, endTime time.Time) (bool, error)
-	CheckMinimumIntervalConflictFn   func(ctx context.Context, tenantID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string, intervalMinutes int) (bool, error)
-	CountByStatusFn                  func(ctx context.Context, tenantID string, status valueobject.AppointmentStatus) (int64, error)
-	GetDailyStatsFn                  func(ctx context.Context, tenantID string, date time.Time) (*port.AppointmentDailyStats, error)
+	ListByProfessionalAndDateRangeFn func(ctx context.Context, tenantID, unitID, professionalID string, startDate, endDate time.Time) ([]*entity.Appointment, error)
+	ListByCustomerFn                 func(ctx context.Context, tenantID, unitID, customerID string) ([]*entity.Appointment, error)
+	CheckConflictFn                  func(ctx context.Context, tenantID, unitID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string) (bool, error)
+	CheckBlockedTimeConflictFn       func(ctx context.Context, tenantID, unitID, professionalID string, startTime, endTime time.Time) (bool, error)
+	CheckMinimumIntervalConflictFn   func(ctx context.Context, tenantID, unitID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string, intervalMinutes int) (bool, error)
+	CountByStatusFn                  func(ctx context.Context, tenantID, unitID string, status valueobject.AppointmentStatus) (int64, error)
+	GetDailyStatsFn                  func(ctx context.Context, tenantID, unitID string, date time.Time) (*port.AppointmentDailyStats, error)
 
 	// Tracking calls
 	CreateCalls   int
@@ -43,10 +43,10 @@ func (m *MockAppointmentRepository) Create(ctx context.Context, appointment *ent
 	return nil
 }
 
-func (m *MockAppointmentRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
+func (m *MockAppointmentRepository) FindByID(ctx context.Context, tenantID, unitID, id string) (*entity.Appointment, error) {
 	m.FindByIDCalls++
 	if m.FindByIDFn != nil {
-		return m.FindByIDFn(ctx, tenantID, id)
+		return m.FindByIDFn(ctx, tenantID, unitID, id)
 	}
 	return nil, nil
 }
@@ -59,9 +59,9 @@ func (m *MockAppointmentRepository) Update(ctx context.Context, appointment *ent
 	return nil
 }
 
-func (m *MockAppointmentRepository) Delete(ctx context.Context, tenantID, id string) error {
+func (m *MockAppointmentRepository) Delete(ctx context.Context, tenantID, unitID, id string) error {
 	if m.DeleteFn != nil {
-		return m.DeleteFn(ctx, tenantID, id)
+		return m.DeleteFn(ctx, tenantID, unitID, id)
 	}
 	return nil
 }
@@ -73,51 +73,51 @@ func (m *MockAppointmentRepository) List(ctx context.Context, tenantID string, f
 	return nil, 0, nil
 }
 
-func (m *MockAppointmentRepository) ListByProfessionalAndDateRange(ctx context.Context, tenantID, professionalID string, startDate, endDate time.Time) ([]*entity.Appointment, error) {
+func (m *MockAppointmentRepository) ListByProfessionalAndDateRange(ctx context.Context, tenantID, unitID, professionalID string, startDate, endDate time.Time) ([]*entity.Appointment, error) {
 	if m.ListByProfessionalAndDateRangeFn != nil {
-		return m.ListByProfessionalAndDateRangeFn(ctx, tenantID, professionalID, startDate, endDate)
+		return m.ListByProfessionalAndDateRangeFn(ctx, tenantID, unitID, professionalID, startDate, endDate)
 	}
 	return nil, nil
 }
 
-func (m *MockAppointmentRepository) ListByCustomer(ctx context.Context, tenantID, customerID string) ([]*entity.Appointment, error) {
+func (m *MockAppointmentRepository) ListByCustomer(ctx context.Context, tenantID, unitID, customerID string) ([]*entity.Appointment, error) {
 	if m.ListByCustomerFn != nil {
-		return m.ListByCustomerFn(ctx, tenantID, customerID)
+		return m.ListByCustomerFn(ctx, tenantID, unitID, customerID)
 	}
 	return nil, nil
 }
 
-func (m *MockAppointmentRepository) CheckConflict(ctx context.Context, tenantID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string) (bool, error) {
+func (m *MockAppointmentRepository) CheckConflict(ctx context.Context, tenantID, unitID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string) (bool, error) {
 	if m.CheckConflictFn != nil {
-		return m.CheckConflictFn(ctx, tenantID, professionalID, startTime, endTime, excludeAppointmentID)
+		return m.CheckConflictFn(ctx, tenantID, unitID, professionalID, startTime, endTime, excludeAppointmentID)
 	}
 	return false, nil
 }
 
-func (m *MockAppointmentRepository) CheckBlockedTimeConflict(ctx context.Context, tenantID, professionalID string, startTime, endTime time.Time) (bool, error) {
+func (m *MockAppointmentRepository) CheckBlockedTimeConflict(ctx context.Context, tenantID, unitID, professionalID string, startTime, endTime time.Time) (bool, error) {
 	if m.CheckBlockedTimeConflictFn != nil {
-		return m.CheckBlockedTimeConflictFn(ctx, tenantID, professionalID, startTime, endTime)
+		return m.CheckBlockedTimeConflictFn(ctx, tenantID, unitID, professionalID, startTime, endTime)
 	}
 	return false, nil
 }
 
-func (m *MockAppointmentRepository) CheckMinimumIntervalConflict(ctx context.Context, tenantID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string, intervalMinutes int) (bool, error) {
+func (m *MockAppointmentRepository) CheckMinimumIntervalConflict(ctx context.Context, tenantID, unitID, professionalID string, startTime, endTime time.Time, excludeAppointmentID string, intervalMinutes int) (bool, error) {
 	if m.CheckMinimumIntervalConflictFn != nil {
-		return m.CheckMinimumIntervalConflictFn(ctx, tenantID, professionalID, startTime, endTime, excludeAppointmentID, intervalMinutes)
+		return m.CheckMinimumIntervalConflictFn(ctx, tenantID, unitID, professionalID, startTime, endTime, excludeAppointmentID, intervalMinutes)
 	}
 	return false, nil
 }
 
-func (m *MockAppointmentRepository) CountByStatus(ctx context.Context, tenantID string, status valueobject.AppointmentStatus) (int64, error) {
+func (m *MockAppointmentRepository) CountByStatus(ctx context.Context, tenantID, unitID string, status valueobject.AppointmentStatus) (int64, error) {
 	if m.CountByStatusFn != nil {
-		return m.CountByStatusFn(ctx, tenantID, status)
+		return m.CountByStatusFn(ctx, tenantID, unitID, status)
 	}
 	return 0, nil
 }
 
-func (m *MockAppointmentRepository) GetDailyStats(ctx context.Context, tenantID string, date time.Time) (*port.AppointmentDailyStats, error) {
+func (m *MockAppointmentRepository) GetDailyStats(ctx context.Context, tenantID, unitID string, date time.Time) (*port.AppointmentDailyStats, error) {
 	if m.GetDailyStatsFn != nil {
-		return m.GetDailyStatsFn(ctx, tenantID, date)
+		return m.GetDailyStatsFn(ctx, tenantID, unitID, date)
 	}
 	return nil, nil
 }

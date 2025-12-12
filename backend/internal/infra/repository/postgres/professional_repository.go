@@ -191,7 +191,7 @@ func (r *ProfessionalRepository) Create(ctx context.Context, tenantID, unitID st
 }
 
 // Update atualiza um profissional
-func (r *ProfessionalRepository) Update(ctx context.Context, tenantID, id string, req dto.UpdateProfessionalRequest) (*dto.ProfessionalResponse, error) {
+func (r *ProfessionalRepository) Update(ctx context.Context, tenantID, unitID, id string, req dto.UpdateProfessionalRequest) (*dto.ProfessionalResponse, error) {
 	// Parse comissao
 	var comissao decimal.Decimal
 	if req.Comissao != 0 {
@@ -225,6 +225,7 @@ func (r *ProfessionalRepository) Update(ctx context.Context, tenantID, id string
 	params := db.UpdateProfessionalParams{
 		ID:              stringToUUID(id),
 		TenantID:        stringToUUID(tenantID),
+		UnitID:          stringToUUID(unitID),
 		Nome:            req.Nome,
 		Email:           req.Email,
 		Telefone:        req.Telefone,
@@ -256,7 +257,7 @@ func (r *ProfessionalRepository) Update(ctx context.Context, tenantID, id string
 }
 
 // UpdateStatus atualiza o status de um profissional
-func (r *ProfessionalRepository) UpdateStatus(ctx context.Context, tenantID, id string, req dto.UpdateProfessionalStatusRequest) (*dto.ProfessionalResponse, error) {
+func (r *ProfessionalRepository) UpdateStatus(ctx context.Context, tenantID, unitID, id string, req dto.UpdateProfessionalStatusRequest) (*dto.ProfessionalResponse, error) {
 	var dataDemissao pgtype.Date
 	if req.DataDemissao != nil && *req.DataDemissao != "" {
 		t, err := time.Parse("2006-01-02", *req.DataDemissao)
@@ -269,6 +270,7 @@ func (r *ProfessionalRepository) UpdateStatus(ctx context.Context, tenantID, id 
 	params := db.UpdateProfessionalStatusParams{
 		ID:           stringToUUID(id),
 		TenantID:     stringToUUID(tenantID),
+		UnitID:       stringToUUID(unitID),
 		Status:       &req.Status,
 		DataDemissao: dataDemissao,
 	}
@@ -299,7 +301,7 @@ func (r *ProfessionalRepository) Delete(ctx context.Context, tenantID, unitID, i
 }
 
 // CheckEmailExists verifica se email já existe
-func (r *ProfessionalRepository) CheckEmailExists(ctx context.Context, tenantID, email string, excludeID *string) (bool, error) {
+func (r *ProfessionalRepository) CheckEmailExists(ctx context.Context, tenantID, unitID, email string, excludeID *string) (bool, error) {
 	var excludeUUID pgtype.UUID
 	if excludeID != nil {
 		excludeUUID = stringToUUID(*excludeID)
@@ -307,6 +309,7 @@ func (r *ProfessionalRepository) CheckEmailExists(ctx context.Context, tenantID,
 
 	params := db.CheckEmailExistsProfessionalParams{
 		TenantID:  stringToUUID(tenantID),
+		UnitID:    stringToUUID(unitID),
 		Email:     email,
 		ExcludeID: excludeUUID,
 	}
@@ -320,7 +323,7 @@ func (r *ProfessionalRepository) CheckEmailExists(ctx context.Context, tenantID,
 }
 
 // CheckCpfExists verifica se CPF já existe
-func (r *ProfessionalRepository) CheckCpfExists(ctx context.Context, tenantID, cpf string, excludeID *string) (bool, error) {
+func (r *ProfessionalRepository) CheckCpfExists(ctx context.Context, tenantID, unitID, cpf string, excludeID *string) (bool, error) {
 	var excludeUUID pgtype.UUID
 	if excludeID != nil {
 		excludeUUID = stringToUUID(*excludeID)
@@ -328,6 +331,7 @@ func (r *ProfessionalRepository) CheckCpfExists(ctx context.Context, tenantID, c
 
 	params := db.CheckCpfExistsProfessionalParams{
 		TenantID:  stringToUUID(tenantID),
+		UnitID:    stringToUUID(unitID),
 		Cpf:       cpf,
 		ExcludeID: excludeUUID,
 	}

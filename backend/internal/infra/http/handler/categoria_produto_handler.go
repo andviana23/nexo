@@ -6,6 +6,8 @@ import (
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
 	"github.com/andviana23/barber-analytics-backend/internal/application/mapper"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/categoriaproduto"
+	"github.com/andviana23/barber-analytics-backend/internal/domain"
+	"github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -65,6 +67,15 @@ func (h *CategoriaProdutoHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "tenant_id inválido"})
 	}
 
+	unitIDStr := middleware.GetUnitID(c)
+	if unitIDStr == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": domain.ErrUnitIDRequired.Error()})
+	}
+	unitID, err := uuid.Parse(unitIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unit_id inválido"})
+	}
+
 	var req dto.CreateCategoriaProdutoRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -76,6 +87,7 @@ func (h *CategoriaProdutoHandler) Create(c echo.Context) error {
 
 	input := categoriaproduto.CreateCategoriaProdutoInput{
 		TenantID:    tenantID,
+		UnitID:      unitID,
 		Nome:        req.Nome,
 		Descricao:   req.Descricao,
 		Cor:         req.Cor,
@@ -119,9 +131,18 @@ func (h *CategoriaProdutoHandler) List(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "tenant_id inválido"})
 	}
 
+	unitIDStr := middleware.GetUnitID(c)
+	if unitIDStr == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": domain.ErrUnitIDRequired.Error()})
+	}
+	unitID, err := uuid.Parse(unitIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unit_id inválido"})
+	}
+
 	apenasAtivas := c.QueryParam("ativas") == "true"
 
-	categorias, err := h.listUC.Execute(c.Request().Context(), tenantID, apenasAtivas)
+	categorias, err := h.listUC.Execute(c.Request().Context(), tenantID, unitID, apenasAtivas)
 	if err != nil {
 		h.logger.Error("Erro ao listar categorias de produtos", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -150,12 +171,21 @@ func (h *CategoriaProdutoHandler) GetByID(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "tenant_id inválido"})
 	}
 
+	unitIDStr := middleware.GetUnitID(c)
+	if unitIDStr == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": domain.ErrUnitIDRequired.Error()})
+	}
+	unitID, err := uuid.Parse(unitIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unit_id inválido"})
+	}
+
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID inválido"})
 	}
 
-	categoria, err := h.getUC.Execute(c.Request().Context(), tenantID, id)
+	categoria, err := h.getUC.Execute(c.Request().Context(), tenantID, unitID, id)
 	if err != nil {
 		h.logger.Error("Erro ao buscar categoria de produto", zap.Error(err))
 		if err.Error() == "categoria não encontrada" {
@@ -191,6 +221,15 @@ func (h *CategoriaProdutoHandler) Update(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "tenant_id inválido"})
 	}
 
+	unitIDStr := middleware.GetUnitID(c)
+	if unitIDStr == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": domain.ErrUnitIDRequired.Error()})
+	}
+	unitID, err := uuid.Parse(unitIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unit_id inválido"})
+	}
+
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID inválido"})
@@ -207,6 +246,7 @@ func (h *CategoriaProdutoHandler) Update(c echo.Context) error {
 
 	input := categoriaproduto.UpdateCategoriaProdutoInput{
 		TenantID:    tenantID,
+		UnitID:      unitID,
 		ID:          id,
 		Nome:        req.Nome,
 		Descricao:   req.Descricao,
@@ -257,12 +297,21 @@ func (h *CategoriaProdutoHandler) Delete(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "tenant_id inválido"})
 	}
 
+	unitIDStr := middleware.GetUnitID(c)
+	if unitIDStr == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": domain.ErrUnitIDRequired.Error()})
+	}
+	unitID, err := uuid.Parse(unitIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unit_id inválido"})
+	}
+
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID inválido"})
 	}
 
-	err = h.deleteUC.Execute(c.Request().Context(), tenantID, id)
+	err = h.deleteUC.Execute(c.Request().Context(), tenantID, unitID, id)
 	if err != nil {
 		h.logger.Error("Erro ao excluir categoria de produto", zap.Error(err))
 		switch err.Error() {
@@ -298,12 +347,21 @@ func (h *CategoriaProdutoHandler) Toggle(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "tenant_id inválido"})
 	}
 
+	unitIDStr := middleware.GetUnitID(c)
+	if unitIDStr == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": domain.ErrUnitIDRequired.Error()})
+	}
+	unitID, err := uuid.Parse(unitIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unit_id inválido"})
+	}
+
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "ID inválido"})
 	}
 
-	categoria, err := h.toggleUC.Execute(c.Request().Context(), tenantID, id)
+	categoria, err := h.toggleUC.Execute(c.Request().Context(), tenantID, unitID, id)
 	if err != nil {
 		h.logger.Error("Erro ao alternar status da categoria de produto", zap.Error(err))
 		if err.Error() == "categoria não encontrada" {

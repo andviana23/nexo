@@ -9,6 +9,7 @@ var (
 	ErrUnitIDRequired   = errors.New("unit_id é obrigatório")
 	ErrInvalidID        = errors.New("ID inválido")
 	ErrInvalidTenantID  = errors.New("tenant_id inválido")
+	ErrInvalidUnitID    = errors.New("unit_id inválido")
 	ErrNotFound         = errors.New("recurso não encontrado")
 	ErrAlreadyExists    = errors.New("recurso já existe")
 

@@ -43,8 +43,13 @@ func (uc *CreateServicoUseCase) Execute(
 		return nil, domain.ErrInvalidTenantID
 	}
 
+	unitID := ""
+	if req.UnitID != nil {
+		unitID = *req.UnitID
+	}
+
 	// Verificar duplicidade de nome
-	exists, err := uc.repo.CheckNomeExists(ctx, tenantID, req.Nome, "")
+	exists, err := uc.repo.CheckNomeExists(ctx, tenantID, unitID, req.Nome, "")
 	if err != nil {
 		uc.logger.Error("Erro ao verificar nome duplicado",
 			zap.String("tenant_id", tenantID),
@@ -60,7 +65,7 @@ func (uc *CreateServicoUseCase) Execute(
 
 	// Se foi informada uma categoria, verificar se existe
 	if req.CategoriaID != nil {
-		categoria, err := uc.catRepo.FindByID(ctx, tenantID, *req.CategoriaID)
+		categoria, err := uc.catRepo.FindByID(ctx, tenantID, unitID, *req.CategoriaID)
 		if err != nil || categoria == nil {
 			return nil, domain.ErrCategoriaNotFound
 		}

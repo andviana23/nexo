@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS compensacoes_bancarias (
     atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT now(),
 
     CONSTRAINT compensacoes_bancarias_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    CONSTRAINT compensacoes_bancarias_receita_id_fkey FOREIGN KEY (receita_id) REFERENCES receitas(id) ON DELETE CASCADE,
+    -- receita_id referencia a receita canônica (contas_a_receber) nos fluxos V2
     CONSTRAINT compensacoes_bancarias_meio_pagamento_id_fkey FOREIGN KEY (meio_pagamento_id) REFERENCES meios_pagamento(id),
     CONSTRAINT chk_status_compensacao CHECK (status IN ('PREVISTO', 'CONFIRMADO', 'COMPENSADO', 'CANCELADO'))
 );

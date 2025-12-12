@@ -74,9 +74,9 @@ UPDATE profissionais SET
     horario_trabalho = sqlc.narg(horario_trabalho),
     observacoes = sqlc.narg(observacoes),
     tipo = @tipo,
-    unit_id = COALESCE(sqlc.narg(unit_id), unit_id),
     atualizado_em = NOW()
 WHERE id = @id AND tenant_id = @tenant_id
+  AND unit_id = @unit_id
 RETURNING id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
           comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
           horario_trabalho, observacoes, criado_em, atualizado_em, tipo;
@@ -87,7 +87,8 @@ UPDATE profissionais SET
     data_demissao = sqlc.narg(data_demissao),
     atualizado_em = NOW()
 WHERE id = @id AND tenant_id = @tenant_id
-RETURNING id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+  AND unit_id = @unit_id
+RETURNING id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
           comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
           horario_trabalho, observacoes, criado_em, atualizado_em, tipo;
 
@@ -100,6 +101,7 @@ WHERE id = @id AND tenant_id = @tenant_id
 SELECT EXISTS (
     SELECT 1 FROM profissionais
     WHERE tenant_id = @tenant_id 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
       AND email = @email 
       AND (sqlc.narg(exclude_id)::uuid IS NULL OR id != sqlc.narg(exclude_id))
 ) as exists;
@@ -108,6 +110,7 @@ SELECT EXISTS (
 SELECT EXISTS (
     SELECT 1 FROM profissionais
     WHERE tenant_id = @tenant_id 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
       AND cpf = @cpf 
       AND (sqlc.narg(exclude_id)::uuid IS NULL OR id != sqlc.narg(exclude_id))
 ) as exists;

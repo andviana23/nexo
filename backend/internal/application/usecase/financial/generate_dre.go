@@ -75,6 +75,7 @@ func (uc *GenerateDREUseCase) Execute(ctx context.Context, input GenerateDREInpu
 	// Calcular período do mês
 	inicio := input.MesAno.PrimeiroDia()
 	fim := input.MesAno.UltimoDia()
+	statusRecebido := valueobject.StatusContaRecebido
 	statusPago := valueobject.StatusContaPago
 
 	// ===== RECEITAS POR ORIGEM =====
@@ -101,7 +102,7 @@ func (uc *GenerateDREUseCase) Execute(ctx context.Context, input GenerateDREInpu
 
 	// Se todas as receitas por origem forem zero, usar receita total como fallback
 	if receitaServicos.IsZero() && receitaProdutos.IsZero() && receitaAssinaturas.IsZero() {
-		totalReceitas, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusPago)
+		totalReceitas, err := uc.contasReceberRepo.SumByPeriod(ctx, input.TenantID, inicio, fim, &statusRecebido)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao calcular receitas: %w", err)
 		}

@@ -31,7 +31,7 @@ func (r *ContaPagarRepository) Create(ctx context.Context, conta *entity.ContaPa
 	categoriaUUID := uuidStringToPgtype(conta.CategoriaID)
 
 	tipoStr := string(conta.Tipo)
-	statusStr := string(conta.Status)
+	statusStr := mapContaPagarStatusToDB(conta.Status)
 	recorrente := conta.Recorrente
 
 	params := db.CreateContaPagarParams{
@@ -88,7 +88,7 @@ func (r *ContaPagarRepository) Update(ctx context.Context, conta *entity.ContaPa
 	tenantUUID := entityUUIDToPgtype(conta.TenantID)
 	idUUID := uuidStringToPgtype(conta.ID)
 
-	statusStr := string(conta.Status)
+	statusStr := mapContaPagarStatusToDB(conta.Status)
 
 	params := db.UpdateContaPagarParams{
 		ID:             idUUID,
@@ -136,8 +136,6 @@ func (r *ContaPagarRepository) Delete(ctx context.Context, tenantID, id string) 
 func (r *ContaPagarRepository) List(ctx context.Context, tenantID string, filters port.ContaPagarListFilters) ([]*entity.ContaPagar, error) {
 	tenantUUID := uuidStringToPgtype(tenantID)
 
-	// Por enquanto, implementação simples usando ListByTenant
-	// TODO: Expandir para suportar todos os filtros
 	var limit int32 = 100
 	var offset int32 = 0
 	if filters.PageSize > 0 {
@@ -147,10 +145,43 @@ func (r *ContaPagarRepository) List(ctx context.Context, tenantID string, filter
 		offset = int32((filters.Page - 1) * filters.PageSize)
 	}
 
-	results, err := r.queries.ListContasPagarByTenant(ctx, db.ListContasPagarByTenantParams{
-		TenantID: tenantUUID,
-		Limit:    limit,
-		Offset:   offset,
+	var statusStr *string
+	if filters.Status != nil {
+		s := mapContaPagarStatusToDB(*filters.Status)
+		statusStr = &s
+	}
+
+	var tipoStr *string
+	if filters.Tipo != nil {
+		t := string(*filters.Tipo)
+		tipoStr = &t
+	}
+
+	categoriaUUID := pgtype.UUID{Valid: false}
+	if filters.CategoriaID != nil && *filters.CategoriaID != "" {
+		categoriaUUID = uuidStringToPgtype(*filters.CategoriaID)
+	}
+
+	dataInicio := pgtype.Date{Valid: false}
+	if filters.DataInicio != nil && !filters.DataInicio.IsZero() {
+		dataInicio = dateToDate(*filters.DataInicio)
+	}
+
+	dataFim := pgtype.Date{Valid: false}
+	if filters.DataFim != nil && !filters.DataFim.IsZero() {
+		dataFim = dateToDate(*filters.DataFim)
+	}
+
+	results, err := r.queries.ListContasPagarFiltered(ctx, db.ListContasPagarFilteredParams{
+		TenantID:    tenantUUID,
+		Limit:       limit,
+		Offset:      offset,
+		UnitID:      pgtype.UUID{Valid: false},
+		Status:      statusStr,
+		Tipo:        tipoStr,
+		CategoriaID: categoriaUUID,
+		DataInicio:  dataInicio,
+		DataFim:     dataFim,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar contas: %w", err)
@@ -242,7 +273,7 @@ func (r *ContaPagarRepository) ListByStatus(ctx context.Context, tenantID string
 
 	tenantUUID := uuidStringToPgtype(tenantID)
 
-	statusStr := string(status)
+	statusStr := mapContaPagarStatusToDB(status)
 
 	results, err := r.queries.ListContasPagarByStatus(ctx, db.ListContasPagarByStatusParams{
 		TenantID: tenantUUID,
@@ -304,7 +335,7 @@ func (r *ContaPagarRepository) toDomain(model *db.ContasAPagar) (*entity.ContaPa
 
 	var status valueobject.StatusConta
 	if model.Status != nil {
-		status = valueobject.StatusConta(*model.Status)
+		status = mapContaPagarStatusFromDB(*model.Status)
 	}
 
 	var comprovanteURL string
@@ -324,7 +355,7 @@ func (r *ContaPagarRepository) toDomain(model *db.ContasAPagar) (*entity.ContaPa
 
 	conta := &entity.ContaPagar{
 		ID:             pgUUIDToString(model.ID),
-		TenantID: pgtypeToEntityUUID(model.TenantID),
+		TenantID:       pgtypeToEntityUUID(model.TenantID),
 		Descricao:      model.Descricao,
 		CategoriaID:    pgUUIDToString(model.CategoriaID),
 		Fornecedor:     fornecedor,
@@ -343,6 +374,23 @@ func (r *ContaPagarRepository) toDomain(model *db.ContasAPagar) (*entity.ContaPa
 	}
 
 	return conta, nil
+}
+
+// mapContaPagarStatusToDB converte status canônico do domínio para o status esperado no banco.
+// No banco, "ABERTO" é equivalente a "PENDENTE".
+func mapContaPagarStatusToDB(status valueobject.StatusConta) string {
+	if status == valueobject.StatusContaPendente {
+		return "ABERTO"
+	}
+	return string(status)
+}
+
+// mapContaPagarStatusFromDB converte status do banco para status canônico do domínio.
+func mapContaPagarStatusFromDB(status string) valueobject.StatusConta {
+	if status == "ABERTO" {
+		return valueobject.StatusContaPendente
+	}
+	return valueobject.StatusConta(status)
 }
 
 // toDomainList converte lista de modelos para lista de entidades.

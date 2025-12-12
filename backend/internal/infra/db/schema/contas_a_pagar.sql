@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS contas_a_pagar (
     data_vencimento DATE NOT NULL,
     data_pagamento DATE,
     status VARCHAR(20) DEFAULT 'ABERTO' CHECK (status IN ('ABERTO', 'PAGO', 'ATRASADO', 'CANCELADO')),
+    unit_id UUID REFERENCES units(id) ON DELETE RESTRICT,
 
     comprovante_url TEXT,
     pix_code TEXT,

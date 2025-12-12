@@ -245,7 +245,7 @@ func (uc *ProcessWebhookUseCaseV2) handlePaymentConfirmed(ctx context.Context, s
 			ValorPago:       valueobject.Zero(),
 			ValorAberto:     valueobject.NewMoneyFromFloat(event.Payment.Value),
 			DataVencimento:  confirmedDate,
-			Status:          valueobject.StatusContaPendente, // Confirmado mas não recebido ainda
+			Status:          valueobject.StatusContaConfirmado, // Confirmado mas não recebido ainda
 			CompetenciaMes:  &competenciaMes,
 			ConfirmedAt:     &confirmedDate,
 			CriadoEm:        time.Now(),
@@ -349,7 +349,7 @@ func (uc *ProcessWebhookUseCaseV2) handlePaymentReceived(ctx context.Context, su
 		if err != nil {
 			uc.logger.Warn("conta a receber not found for payment", zap.String("payment_id", event.Payment.ID))
 		} else if conta != nil {
-			conta.Status = valueobject.StatusContaPago
+			conta.Status = valueobject.StatusContaRecebido
 			conta.ValorPago = conta.Valor
 			conta.ValorAberto = valueobject.Zero()
 			conta.DataRecebimento = &creditDate
@@ -403,7 +403,8 @@ func (uc *ProcessWebhookUseCaseV2) handlePaymentReceived(ctx context.Context, su
 				} else {
 					// Atualizar totais do caixa
 					novoTotal := caixaAberto.TotalEntradas.Add(valor)
-					if err := uc.caixaRepo.UpdateTotais(ctx, caixaAberto.ID, sub.TenantID, decimal.Zero, decimal.Zero, novoTotal); err != nil {
+					caixaAberto.TotalEntradas = novoTotal
+					if err := uc.caixaRepo.UpdateTotais(ctx, caixaAberto.ID, sub.TenantID, caixaAberto.TotalSangrias, caixaAberto.TotalReforcos, novoTotal); err != nil {
 						uc.logger.Error("erro ao atualizar totais do caixa", zap.Error(err))
 					}
 
@@ -521,7 +522,7 @@ func (uc *ProcessWebhookUseCaseV2) handlePaymentRefunded(ctx context.Context, su
 	if uc.contaReceberRepo != nil {
 		conta, _ := uc.contaReceberRepo.GetByAsaasPaymentID(ctx, sub.TenantID.String(), event.Payment.ID)
 		if conta != nil {
-			conta.Status = valueobject.StatusContaCancelado
+			conta.Status = valueobject.StatusContaEstornado
 			conta.AtualizadoEm = time.Now()
 			_ = uc.contaReceberRepo.Update(ctx, conta)
 		}

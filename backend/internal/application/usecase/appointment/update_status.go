@@ -15,6 +15,7 @@ import (
 // UpdateAppointmentStatusInput dados de entrada para atualizar status
 type UpdateAppointmentStatusInput struct {
 	TenantID      string
+	UnitID        string
 	AppointmentID string
 	NewStatus     valueobject.AppointmentStatus
 	Reason        string // Para cancelamento ou no-show
@@ -53,7 +54,7 @@ func (uc *UpdateAppointmentStatusUseCase) Execute(ctx context.Context, input Upd
 	}
 
 	// Buscar agendamento
-	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.AppointmentID)
+	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.UnitID, input.AppointmentID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar agendamento: %w", err)
 	}
@@ -135,6 +136,7 @@ func (uc *UpdateAppointmentStatusUseCase) Execute(ctx context.Context, input Upd
 // GetAppointmentInput dados de entrada para buscar agendamento
 type GetAppointmentInput struct {
 	TenantID      string
+	UnitID        string
 	AppointmentID string
 }
 
@@ -164,7 +166,7 @@ func (uc *GetAppointmentUseCase) Execute(ctx context.Context, input GetAppointme
 		return nil, domain.ErrInvalidID
 	}
 
-	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.AppointmentID)
+	appointment, err := uc.repo.FindByID(ctx, input.TenantID, input.UnitID, input.AppointmentID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar agendamento: %w", err)
 	}

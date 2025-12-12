@@ -16,19 +16,26 @@ const checkCpfExistsProfessional = `-- name: CheckCpfExistsProfessional :one
 SELECT EXISTS (
     SELECT 1 FROM profissionais
     WHERE tenant_id = $1 
-      AND cpf = $2 
-      AND ($3::uuid IS NULL OR id != $3)
+  AND ($2::uuid IS NULL OR unit_id = $2)
+      AND cpf = $3 
+      AND ($4::uuid IS NULL OR id != $4)
 ) as exists
 `
 
 type CheckCpfExistsProfessionalParams struct {
 	TenantID  pgtype.UUID `json:"tenant_id"`
+	UnitID    pgtype.UUID `json:"unit_id"`
 	Cpf       string      `json:"cpf"`
 	ExcludeID pgtype.UUID `json:"exclude_id"`
 }
 
 func (q *Queries) CheckCpfExistsProfessional(ctx context.Context, arg CheckCpfExistsProfessionalParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkCpfExistsProfessional, arg.TenantID, arg.Cpf, arg.ExcludeID)
+	row := q.db.QueryRow(ctx, checkCpfExistsProfessional,
+		arg.TenantID,
+		arg.UnitID,
+		arg.Cpf,
+		arg.ExcludeID,
+	)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -38,19 +45,26 @@ const checkEmailExistsProfessional = `-- name: CheckEmailExistsProfessional :one
 SELECT EXISTS (
     SELECT 1 FROM profissionais
     WHERE tenant_id = $1 
-      AND email = $2 
-      AND ($3::uuid IS NULL OR id != $3)
+  AND ($2::uuid IS NULL OR unit_id = $2)
+      AND email = $3 
+      AND ($4::uuid IS NULL OR id != $4)
 ) as exists
 `
 
 type CheckEmailExistsProfessionalParams struct {
 	TenantID  pgtype.UUID `json:"tenant_id"`
+	UnitID    pgtype.UUID `json:"unit_id"`
 	Email     string      `json:"email"`
 	ExcludeID pgtype.UUID `json:"exclude_id"`
 }
 
 func (q *Queries) CheckEmailExistsProfessional(ctx context.Context, arg CheckEmailExistsProfessionalParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkEmailExistsProfessional, arg.TenantID, arg.Email, arg.ExcludeID)
+	row := q.db.QueryRow(ctx, checkEmailExistsProfessional,
+		arg.TenantID,
+		arg.UnitID,
+		arg.Email,
+		arg.ExcludeID,
+	)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -59,18 +73,20 @@ func (q *Queries) CheckEmailExistsProfessional(ctx context.Context, arg CheckEma
 const countProfessionals = `-- name: CountProfessionals :one
 SELECT COUNT(*) FROM profissionais
 WHERE tenant_id = $1
-  AND ($2::text IS NULL OR status = $2)
-  AND ($3::text IS NULL OR tipo = $3)
+  AND ($2::uuid IS NULL OR unit_id = $2)
+  AND ($3::text IS NULL OR status = $3)
+  AND ($4::text IS NULL OR tipo = $4)
   AND (
-    $4::text IS NULL 
-    OR nome ILIKE '%' || $4 || '%'
-    OR email ILIKE '%' || $4 || '%'
-    OR cpf ILIKE '%' || $4 || '%'
+    $5::text IS NULL 
+    OR nome ILIKE '%' || $5 || '%'
+    OR email ILIKE '%' || $5 || '%'
+    OR cpf ILIKE '%' || $5 || '%'
   )
 `
 
 type CountProfessionalsParams struct {
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 	Status   *string     `json:"status"`
 	Tipo     *string     `json:"tipo"`
 	Search   *string     `json:"search"`
@@ -79,6 +95,7 @@ type CountProfessionalsParams struct {
 func (q *Queries) CountProfessionals(ctx context.Context, arg CountProfessionalsParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countProfessionals,
 		arg.TenantID,
+		arg.UnitID,
 		arg.Status,
 		arg.Tipo,
 		arg.Search,
@@ -90,21 +107,22 @@ func (q *Queries) CountProfessionals(ctx context.Context, arg CountProfessionals
 
 const createProfessional = `-- name: CreateProfessional :one
 INSERT INTO profissionais (
-    tenant_id, user_id, nome, email, telefone, cpf, especialidades,
+    tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades,
     comissao, tipo_comissao, foto, data_admissao, status, horario_trabalho,
     observacoes, tipo
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7,
-    $8, $9, $10, $11, $12, $13,
-    $14, $15
+    $1, $2, $3, $4, $5, $6, $7, $8,
+    $9, $10, $11, $12, $13, $14,
+    $15, $16
 )
-RETURNING id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+RETURNING id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
           comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
           horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 `
 
 type CreateProfessionalParams struct {
 	TenantID        pgtype.UUID    `json:"tenant_id"`
+	UnitID          pgtype.UUID    `json:"unit_id"`
 	UserID          pgtype.UUID    `json:"user_id"`
 	Nome            string         `json:"nome"`
 	Email           string         `json:"email"`
@@ -124,6 +142,7 @@ type CreateProfessionalParams struct {
 type CreateProfessionalRow struct {
 	ID              pgtype.UUID        `json:"id"`
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	UserID          pgtype.UUID        `json:"user_id"`
 	Nome            string             `json:"nome"`
 	Email           string             `json:"email"`
@@ -146,6 +165,7 @@ type CreateProfessionalRow struct {
 func (q *Queries) CreateProfessional(ctx context.Context, arg CreateProfessionalParams) (CreateProfessionalRow, error) {
 	row := q.db.QueryRow(ctx, createProfessional,
 		arg.TenantID,
+		arg.UnitID,
 		arg.UserID,
 		arg.Nome,
 		arg.Email,
@@ -165,6 +185,7 @@ func (q *Queries) CreateProfessional(ctx context.Context, arg CreateProfessional
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.UserID,
 		&i.Nome,
 		&i.Email,
@@ -224,15 +245,17 @@ func (q *Queries) CreateProfessionalCategoryCommission(ctx context.Context, arg 
 const deleteProfessional = `-- name: DeleteProfessional :exec
 DELETE FROM profissionais
 WHERE id = $1 AND tenant_id = $2
+  AND ($3::uuid IS NULL OR unit_id = $3)
 `
 
 type DeleteProfessionalParams struct {
 	ID       pgtype.UUID `json:"id"`
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 func (q *Queries) DeleteProfessional(ctx context.Context, arg DeleteProfessionalParams) error {
-	_, err := q.db.Exec(ctx, deleteProfessional, arg.ID, arg.TenantID)
+	_, err := q.db.Exec(ctx, deleteProfessional, arg.ID, arg.TenantID, arg.UnitID)
 	return err
 }
 
@@ -252,21 +275,24 @@ func (q *Queries) DeleteProfessionalCategoryCommissionsByProfessional(ctx contex
 }
 
 const getProfessionalByID = `-- name: GetProfessionalByID :one
-SELECT id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+SELECT id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
        comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
        horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 FROM profissionais
 WHERE id = $1 AND tenant_id = $2
+  AND ($3::uuid IS NULL OR unit_id = $3)
 `
 
 type GetProfessionalByIDParams struct {
 	ID       pgtype.UUID `json:"id"`
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 type GetProfessionalByIDRow struct {
 	ID              pgtype.UUID        `json:"id"`
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	UserID          pgtype.UUID        `json:"user_id"`
 	Nome            string             `json:"nome"`
 	Email           string             `json:"email"`
@@ -287,11 +313,12 @@ type GetProfessionalByIDRow struct {
 }
 
 func (q *Queries) GetProfessionalByID(ctx context.Context, arg GetProfessionalByIDParams) (GetProfessionalByIDRow, error) {
-	row := q.db.QueryRow(ctx, getProfessionalByID, arg.ID, arg.TenantID)
+	row := q.db.QueryRow(ctx, getProfessionalByID, arg.ID, arg.TenantID, arg.UnitID)
 	var i GetProfessionalByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.UserID,
 		&i.Nome,
 		&i.Email,
@@ -336,19 +363,26 @@ func (q *Queries) GetProfessionalCategoryCommission(ctx context.Context, arg Get
 }
 
 const listBarbers = `-- name: ListBarbers :many
-SELECT id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+SELECT id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
        comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
        horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 FROM profissionais
 WHERE tenant_id = $1 
+  AND ($2::uuid IS NULL OR unit_id = $2) 
   AND tipo = 'BARBEIRO' 
   AND status = 'ATIVO'
 ORDER BY nome
 `
 
+type ListBarbersParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
+
 type ListBarbersRow struct {
 	ID              pgtype.UUID        `json:"id"`
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	UserID          pgtype.UUID        `json:"user_id"`
 	Nome            string             `json:"nome"`
 	Email           string             `json:"email"`
@@ -368,8 +402,8 @@ type ListBarbersRow struct {
 	Tipo            string             `json:"tipo"`
 }
 
-func (q *Queries) ListBarbers(ctx context.Context, tenantID pgtype.UUID) ([]ListBarbersRow, error) {
-	rows, err := q.db.Query(ctx, listBarbers, tenantID)
+func (q *Queries) ListBarbers(ctx context.Context, arg ListBarbersParams) ([]ListBarbersRow, error) {
+	rows, err := q.db.Query(ctx, listBarbers, arg.TenantID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -380,6 +414,7 @@ func (q *Queries) ListBarbers(ctx context.Context, tenantID pgtype.UUID) ([]List
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.UserID,
 			&i.Nome,
 			&i.Email,
@@ -448,28 +483,30 @@ func (q *Queries) ListProfessionalCategoryCommissions(ctx context.Context, arg L
 
 const listProfessionals = `-- name: ListProfessionals :many
 
-SELECT id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+SELECT id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
        comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
        horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 FROM profissionais
 WHERE tenant_id = $1
-  AND ($2::text IS NULL OR status = $2)
-  AND ($3::text IS NULL OR tipo = $3)
+  AND ($2::uuid IS NULL OR unit_id = $2)
+  AND ($3::text IS NULL OR status = $3)
+  AND ($4::text IS NULL OR tipo = $4)
   AND (
-    $4::text IS NULL 
-    OR nome ILIKE '%' || $4 || '%'
-    OR email ILIKE '%' || $4 || '%'
-    OR cpf ILIKE '%' || $4 || '%'
+    $5::text IS NULL 
+    OR nome ILIKE '%' || $5 || '%'
+    OR email ILIKE '%' || $5 || '%'
+    OR cpf ILIKE '%' || $5 || '%'
   )
 ORDER BY 
-  CASE WHEN $5::text = 'nome' THEN nome END ASC,
-  CASE WHEN $5::text = 'criado_em' OR $5::text IS NULL THEN criado_em END DESC,
-  CASE WHEN $5::text = 'data_admissao' THEN data_admissao END DESC
-LIMIT $7 OFFSET $6
+  CASE WHEN $6::text = 'nome' THEN nome END ASC,
+  CASE WHEN $6::text = 'criado_em' OR $6::text IS NULL THEN criado_em END DESC,
+  CASE WHEN $6::text = 'data_admissao' THEN data_admissao END DESC
+LIMIT $8 OFFSET $7
 `
 
 type ListProfessionalsParams struct {
 	TenantID   pgtype.UUID `json:"tenant_id"`
+	UnitID     pgtype.UUID `json:"unit_id"`
 	Status     *string     `json:"status"`
 	Tipo       *string     `json:"tipo"`
 	Search     *string     `json:"search"`
@@ -481,6 +518,7 @@ type ListProfessionalsParams struct {
 type ListProfessionalsRow struct {
 	ID              pgtype.UUID        `json:"id"`
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	UserID          pgtype.UUID        `json:"user_id"`
 	Nome            string             `json:"nome"`
 	Email           string             `json:"email"`
@@ -506,6 +544,7 @@ type ListProfessionalsRow struct {
 func (q *Queries) ListProfessionals(ctx context.Context, arg ListProfessionalsParams) ([]ListProfessionalsRow, error) {
 	rows, err := q.db.Query(ctx, listProfessionals,
 		arg.TenantID,
+		arg.UnitID,
 		arg.Status,
 		arg.Tipo,
 		arg.Search,
@@ -523,6 +562,7 @@ func (q *Queries) ListProfessionals(ctx context.Context, arg ListProfessionalsPa
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.UserID,
 			&i.Nome,
 			&i.Email,
@@ -569,7 +609,8 @@ UPDATE profissionais SET
     tipo = $14,
     atualizado_em = NOW()
 WHERE id = $15 AND tenant_id = $16
-RETURNING id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+  AND unit_id = $17
+RETURNING id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
           comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
           horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 `
@@ -591,11 +632,13 @@ type UpdateProfessionalParams struct {
 	Tipo            string         `json:"tipo"`
 	ID              pgtype.UUID    `json:"id"`
 	TenantID        pgtype.UUID    `json:"tenant_id"`
+	UnitID          pgtype.UUID    `json:"unit_id"`
 }
 
 type UpdateProfessionalRow struct {
 	ID              pgtype.UUID        `json:"id"`
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	UserID          pgtype.UUID        `json:"user_id"`
 	Nome            string             `json:"nome"`
 	Email           string             `json:"email"`
@@ -633,11 +676,13 @@ func (q *Queries) UpdateProfessional(ctx context.Context, arg UpdateProfessional
 		arg.Tipo,
 		arg.ID,
 		arg.TenantID,
+		arg.UnitID,
 	)
 	var i UpdateProfessionalRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.UserID,
 		&i.Nome,
 		&i.Email,
@@ -665,7 +710,8 @@ UPDATE profissionais SET
     data_demissao = $2,
     atualizado_em = NOW()
 WHERE id = $3 AND tenant_id = $4
-RETURNING id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+  AND unit_id = $5
+RETURNING id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
           comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
           horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 `
@@ -675,11 +721,13 @@ type UpdateProfessionalStatusParams struct {
 	DataDemissao pgtype.Date `json:"data_demissao"`
 	ID           pgtype.UUID `json:"id"`
 	TenantID     pgtype.UUID `json:"tenant_id"`
+	UnitID       pgtype.UUID `json:"unit_id"`
 }
 
 type UpdateProfessionalStatusRow struct {
 	ID              pgtype.UUID        `json:"id"`
 	TenantID        pgtype.UUID        `json:"tenant_id"`
+	UnitID          pgtype.UUID        `json:"unit_id"`
 	UserID          pgtype.UUID        `json:"user_id"`
 	Nome            string             `json:"nome"`
 	Email           string             `json:"email"`
@@ -705,11 +753,13 @@ func (q *Queries) UpdateProfessionalStatus(ctx context.Context, arg UpdateProfes
 		arg.DataDemissao,
 		arg.ID,
 		arg.TenantID,
+		arg.UnitID,
 	)
 	var i UpdateProfessionalStatusRow
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.UserID,
 		&i.Nome,
 		&i.Email,

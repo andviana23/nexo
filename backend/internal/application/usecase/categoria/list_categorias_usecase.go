@@ -26,7 +26,7 @@ func NewListCategoriasServicosUseCase(repo port.CategoriaServicoRepository, logg
 // Execute lista categorias de serviço com filtros
 func (uc *ListCategoriasServicosUseCase) Execute(
 	ctx context.Context,
-	tenantID string,
+	tenantID, unitID string,
 	req dto.ListCategoriasServicosRequest,
 ) (*dto.ListCategoriasServicosResponse, error) {
 	// Construir filtros
@@ -41,7 +41,7 @@ func (uc *ListCategoriasServicosUseCase) Execute(
 	}
 
 	// Buscar categorias
-	categorias, err := uc.repo.List(ctx, tenantID, filter)
+	categorias, err := uc.repo.List(ctx, tenantID, unitID, filter)
 	if err != nil {
 		uc.logger.Error("erro ao listar categorias de serviço",
 			zap.Error(err),

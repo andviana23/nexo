@@ -21,6 +21,7 @@ var (
 type CategoriaServico struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
+	UnitID       uuid.UUID // Added for multi-unit isolation
 	Nome         string
 	Descricao    *string
 	Cor          *string // Formato hexadecimal: #RRGGBB
@@ -31,7 +32,7 @@ type CategoriaServico struct {
 }
 
 // NewCategoriaServico cria uma nova categoria de serviço com validações
-func NewCategoriaServico(tenantID uuid.UUID, nome string) (*CategoriaServico, error) {
+func NewCategoriaServico(tenantID, unitID uuid.UUID, nome string) (*CategoriaServico, error) {
 	// Validações
 	nome = strings.TrimSpace(nome)
 	if nome == "" {
@@ -44,6 +45,7 @@ func NewCategoriaServico(tenantID uuid.UUID, nome string) (*CategoriaServico, er
 	return &CategoriaServico{
 		ID:           uuid.New(),
 		TenantID:     tenantID,
+		UnitID:       unitID,
 		Nome:         nome,
 		Ativa:        true,
 		CriadoEm:     time.Now(),

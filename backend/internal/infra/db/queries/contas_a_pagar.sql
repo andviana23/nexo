@@ -1,6 +1,7 @@
 -- name: CreateContaPagar :one
 INSERT INTO contas_a_pagar (
     tenant_id,
+    unit_id,
     descricao,
     categoria_id,
     fornecedor,
@@ -15,7 +16,7 @@ INSERT INTO contas_a_pagar (
     pix_code,
     observacoes
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
 ) RETURNING *;
 
 -- name: GetContaPagarByID :one
@@ -25,18 +26,22 @@ WHERE id = $1 AND tenant_id = $2;
 -- name: ListContasPagarByTenant :many
 SELECT * FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
 ORDER BY data_vencimento DESC
 LIMIT $2 OFFSET $3;
 
 -- name: ListContasPagarByStatus :many
 SELECT * FROM contas_a_pagar
-WHERE tenant_id = $1 AND status = $2
+WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
+  AND status = $2
 ORDER BY data_vencimento ASC
 LIMIT $3 OFFSET $4;
 
 -- name: ListContasPagarByPeriod :many
 SELECT * FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
   AND data_vencimento >= $2
   AND data_vencimento <= $3
 ORDER BY data_vencimento ASC;
@@ -44,6 +49,7 @@ ORDER BY data_vencimento ASC;
 -- name: ListContasPagarVencidas :many
 SELECT * FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
   AND status IN ('ABERTO', 'ATRASADO')
   AND data_vencimento < $2
 ORDER BY data_vencimento ASC;
@@ -69,6 +75,7 @@ SET
     comprovante_url = $13,
     pix_code = $14,
     observacoes = $15,
+    unit_id = COALESCE(sqlc.narg(unit_id), unit_id),
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
 RETURNING *;
@@ -100,6 +107,7 @@ SELECT
     COALESCE(SUM(valor), 0) as total_a_pagar
 FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
   AND data_vencimento >= $2
   AND data_vencimento <= $3
   AND status != 'CANCELADO';
@@ -109,6 +117,7 @@ SELECT
     COALESCE(SUM(valor), 0) as total_pago
 FROM contas_a_pagar
 WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
   AND data_pagamento >= $2
   AND data_pagamento <= $3
   AND status = 'PAGO';

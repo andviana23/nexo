@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS profissionais (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    unit_id UUID REFERENCES units(id) ON DELETE RESTRICT,
     user_id UUID,
     nome VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,

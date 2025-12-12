@@ -10,6 +10,7 @@ import (
 
 // AppointmentFilter contém filtros para listagem de agendamentos
 type AppointmentFilter struct {
+	UnitID         string
 	ProfessionalID string
 	CustomerID     string
 	Statuses       []valueobject.AppointmentStatus // Array de status para filtrar (OR)
@@ -25,13 +26,13 @@ type AppointmentRepository interface {
 	Create(ctx context.Context, appointment *entity.Appointment) error
 
 	// FindByID busca um agendamento por ID
-	FindByID(ctx context.Context, tenantID, id string) (*entity.Appointment, error)
+	FindByID(ctx context.Context, tenantID, unitID, id string) (*entity.Appointment, error)
 
 	// Update atualiza um agendamento existente
 	Update(ctx context.Context, appointment *entity.Appointment) error
 
 	// Delete remove um agendamento (soft delete via status CANCELED)
-	Delete(ctx context.Context, tenantID, id string) error
+	Delete(ctx context.Context, tenantID, unitID, id string) error
 
 	// List lista agendamentos com filtros
 	List(ctx context.Context, tenantID string, filter AppointmentFilter) ([]*entity.Appointment, int64, error)
@@ -40,12 +41,13 @@ type AppointmentRepository interface {
 	ListByProfessionalAndDateRange(
 		ctx context.Context,
 		tenantID string,
+		unitID string,
 		professionalID string,
 		startDate, endDate time.Time,
 	) ([]*entity.Appointment, error)
 
 	// ListByCustomer lista agendamentos de um cliente
-	ListByCustomer(ctx context.Context, tenantID, customerID string) ([]*entity.Appointment, error)
+	ListByCustomer(ctx context.Context, tenantID, unitID, customerID string) ([]*entity.Appointment, error)
 
 	// CheckConflict verifica se há conflito de horário
 	// Retorna true se houver conflito
@@ -78,10 +80,10 @@ type AppointmentRepository interface {
 	) (bool, error)
 
 	// CountByStatus conta agendamentos por status (para dashboard)
-	CountByStatus(ctx context.Context, tenantID string, status valueobject.AppointmentStatus) (int64, error)
+	CountByStatus(ctx context.Context, tenantID, unitID string, status valueobject.AppointmentStatus) (int64, error)
 
 	// GetDailyStats retorna estatísticas diárias
-	GetDailyStats(ctx context.Context, tenantID string, date time.Time) (*AppointmentDailyStats, error)
+	GetDailyStats(ctx context.Context, tenantID, unitID string, date time.Time) (*AppointmentDailyStats, error)
 }
 
 // AppointmentDailyStats estatísticas diárias de agendamentos

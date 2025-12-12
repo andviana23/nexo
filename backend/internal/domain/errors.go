@@ -6,6 +6,7 @@ import "errors"
 var (
 	// Erros gerais
 	ErrTenantIDRequired = errors.New("tenant_id é obrigatório")
+	ErrUnitIDRequired   = errors.New("unit_id é obrigatório")
 	ErrInvalidID        = errors.New("ID inválido")
 	ErrInvalidTenantID  = errors.New("tenant_id inválido")
 	ErrNotFound         = errors.New("recurso não encontrado")

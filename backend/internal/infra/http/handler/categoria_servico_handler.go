@@ -64,6 +64,15 @@ func (h *CategoriaServicoHandler) Create(c echo.Context) error {
 		})
 	}
 
+	// Extrair unit_id do contexto
+	unitID, ok := c.Get("unit_id").(string)
+	if !ok || unitID == "" {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Unit ID não encontrado",
+		})
+	}
+
 	// Bind e validação
 	var req dto.CreateCategoriaServicoRequest
 	if err := c.Bind(&req); err != nil {
@@ -82,7 +91,7 @@ func (h *CategoriaServicoHandler) Create(c echo.Context) error {
 	}
 
 	// Executar use case
-	result, err := h.createUC.Execute(ctx, tenantID, req)
+	result, err := h.createUC.Execute(ctx, tenantID, unitID, req)
 	if err != nil {
 		h.logger.Error("Erro ao criar categoria de serviço", zap.Error(err))
 
@@ -134,6 +143,14 @@ func (h *CategoriaServicoHandler) GetByID(c echo.Context) error {
 		})
 	}
 
+	unitID, ok := c.Get("unit_id").(string)
+	if !ok || unitID == "" {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Unit ID não encontrado",
+		})
+	}
+
 	categoriaID := c.Param("id")
 	if categoriaID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -142,7 +159,7 @@ func (h *CategoriaServicoHandler) GetByID(c echo.Context) error {
 		})
 	}
 
-	result, err := h.getUC.Execute(ctx, tenantID, categoriaID)
+	result, err := h.getUC.Execute(ctx, tenantID, unitID, categoriaID)
 	if err != nil {
 		h.logger.Error("Erro ao buscar categoria de serviço", zap.Error(err))
 
@@ -184,6 +201,14 @@ func (h *CategoriaServicoHandler) List(c echo.Context) error {
 		})
 	}
 
+	unitID, ok := c.Get("unit_id").(string)
+	if !ok || unitID == "" {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Unit ID não encontrado",
+		})
+	}
+
 	// Bind query parameters
 	var req dto.ListCategoriasServicosRequest
 	if err := c.Bind(&req); err != nil {
@@ -194,7 +219,7 @@ func (h *CategoriaServicoHandler) List(c echo.Context) error {
 		})
 	}
 
-	result, err := h.listUC.Execute(ctx, tenantID, req)
+	result, err := h.listUC.Execute(ctx, tenantID, unitID, req)
 	if err != nil {
 		h.logger.Error("Erro ao listar categorias de serviço", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
@@ -232,6 +257,14 @@ func (h *CategoriaServicoHandler) Update(c echo.Context) error {
 		})
 	}
 
+	unitID, ok := c.Get("unit_id").(string)
+	if !ok || unitID == "" {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Unit ID não encontrado",
+		})
+	}
+
 	categoriaID := c.Param("id")
 	if categoriaID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -256,7 +289,7 @@ func (h *CategoriaServicoHandler) Update(c echo.Context) error {
 		})
 	}
 
-	result, err := h.updateUC.Execute(ctx, tenantID, categoriaID, req)
+	result, err := h.updateUC.Execute(ctx, tenantID, unitID, categoriaID, req)
 	if err != nil {
 		h.logger.Error("Erro ao atualizar categoria de serviço", zap.Error(err))
 
@@ -314,6 +347,14 @@ func (h *CategoriaServicoHandler) Delete(c echo.Context) error {
 		})
 	}
 
+	unitID, ok := c.Get("unit_id").(string)
+	if !ok || unitID == "" {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Unit ID não encontrado",
+		})
+	}
+
 	categoriaID := c.Param("id")
 	if categoriaID == "" {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
@@ -322,7 +363,7 @@ func (h *CategoriaServicoHandler) Delete(c echo.Context) error {
 		})
 	}
 
-	err := h.deleteUC.Execute(ctx, tenantID, categoriaID)
+	err := h.deleteUC.Execute(ctx, tenantID, unitID, categoriaID)
 	if err != nil {
 		h.logger.Error("Erro ao deletar categoria de serviço", zap.Error(err))
 

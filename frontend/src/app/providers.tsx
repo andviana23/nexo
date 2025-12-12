@@ -9,6 +9,7 @@
 'use client';
 
 import { Toaster } from '@/components/ui/sonner';
+import { UnitSelectionProvider } from '@/components/unit-selection/UnitSelectionProvider';
 import { makeQueryClient } from '@/lib/query-client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -40,7 +41,9 @@ export function Providers({ children }: ProvidersProps) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
+        <UnitSelectionProvider>
+          {children}
+        </UnitSelectionProvider>
 
         {/* Toast Notifications */}
         <Toaster

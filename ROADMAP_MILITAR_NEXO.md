@@ -1,7 +1,7 @@
 # 🎯 ROADMAP MILITAR — NEXO v1.0 → v2.0
 
 **Emissão:** 22/11/2025  
-**Última Atualização:** 06/12/2025 10:30  
+**Última Atualização:** 10/12/2025 09:00  
 **Responsável:** Chief Engineering Officer
 **Validade:** Até 20/12/2026
 **Classificação:** CONFIDENCIAL - USO INTERNO
@@ -59,7 +59,7 @@ Este documento é um **plano de combate técnico**, não um roadmap de apresenta
 
 ---
 
-## 📊 ESTADO ATUAL DO SISTEMA (06/12/2025)
+## 📊 ESTADO ATUAL DO SISTEMA (10/12/2025)
 
 ### 🎉 MARCO ATINGIDO: v1.0.0 CORE 100% COMPLETO
 
@@ -67,9 +67,14 @@ Este documento é um **plano de combate técnico**, não um roadmap de apresenta
 PROGRESSO GLOBAL: ████████████████████ 100% ✅
 ```
 
-**Status:** MVP Core (P1-P5.6) finalizado. Sistema pronto para release de produção.
+**Status:** MVP Core (P1-P5.6) finalizado. Sistema em estabilização pós-release. Preparando início v1.1.0.
 
 ### Decisões Estratégicas
+
+> ✅ **STATUS 10/12/2025:** Sistema estável e pronto para expansão.
+> Verificação completa dos módulos Core (Financeiro, Agendamento, Comissões, Estoque, CRM).
+> UI de Precificação confirmada como entregue (apesar de docs antigos dizerem o contrário).
+> Início do planejamento v1.1.0 (Fidelidade + Gamificação) confirmado para 12/12/2025.
 
 > ✅ **DECISÃO 27/11/2025:** Integração Asaas movida para ÚLTIMA prioridade no MVP.
 > O sistema pode lançar com cobrança manual (PIX/dinheiro) e integração Asaas será entregue em v1.0.1 se necessário.
@@ -152,17 +157,31 @@ PROGRESSO GLOBAL: ████████████████████ 1
 - **Início:** 12/12/2025
 - **Entrega:** 10/02/2026 (42 dias úteis)
 - **Escopo:** CONGELADO
+- **Features Chave:**
+    - Sistema de Pontos Multi-tier (Bronze, Prata, Ouro, Diamante)
+    - Gamificação Barbeiros (Aprendiz → Master)
+    - Metas Avançadas (KPIs por nível)
+    - Google Agenda (movido de v1.0)
 
-### v1.2.0 — RELATÓRIOS AVANÇADOS
+### v1.2.0 — RELATÓRIOS AVANÇADOS + APPS
 
 - **Início:** 11/02/2026
 - **Entrega:** 30/03/2026 (33 dias úteis)
 - **Escopo:** CONGELADO
+- **Features Chave:**
+    - Dashboards Interativos (Self-Service BI)
+    - Precificação Dinâmica (IA + A/B Testing)
+    - Apps Nativos (Cliente, Barbeiro, Gestor)
 
 ### v2.0 — REDE/FRANQUIA + IA
 
 - **Início Planejamento:** 10/04/2026
 - **Estimativa:** Q4 2026
+- **Features Chave:**
+    - IA Preditiva (Demanda, Churn)
+    - Franquias (Governança, Multi-unidade)
+    - Marketplace de Fornecedores
+    - Integração Bancária (Open Banking)
 
 ---
 
@@ -552,23 +571,23 @@ PROGRESSO GLOBAL: ████████████████████ 1
 
 **Entrega:** 13/01/2026 (5 dias úteis)
 
-| Tarefa                  | Horas | Deadline |
-| ----------------------- | ----- | -------- |
-| Entidade Cashback + VOs | 8h    | 09/01    |
-| Repository + Use Cases  | 12h   | 10/01    |
-| Endpoints HTTP          | 8h    | 13/01    |
-| Cron job expiração      | 4h    | 13/01    |
+| Tarefa                  | Horas | Deadline | Detalhes PRD 4.6 |
+| ----------------------- | ----- | -------- | ---------------- |
+| Entidade Cashback + VOs | 8h    | 09/01    | Tiers: Bronze (1%), Prata (1.5%), Ouro (2%), Diamante (2.5%) |
+| Repository + Use Cases  | 12h   | 10/01    | Regras de acúmulo (R$1=1pt, Check-in=10pts, etc) |
+| Endpoints HTTP          | 8h    | 13/01    | Saldo, Extrato, Resgate |
+| Cron job expiração      | 4h    | 13/01    | Expiração de pontos configurável |
 
 #### Milestone 3.4: Backend Gamificação
 
 **Entrega:** 20/01/2026 (5 dias úteis)
 
-| Tarefa                | Horas | Deadline |
-| --------------------- | ----- | -------- |
-| Entidade BarbeiroXP   | 8h    | 16/01    |
-| Cálculo de níveis     | 10h   | 17/01    |
-| Use Cases gamificação | 10h   | 20/01    |
-| Endpoints HTTP        | 6h    | 20/01    |
+| Tarefa                | Horas | Deadline | Detalhes PRD 4.7 |
+| --------------------- | ----- | -------- | ---------------- |
+| Entidade BarbeiroXP   | 8h    | 16/01    | Níveis: Aprendiz, Profissional, Especialista, Master |
+| Cálculo de níveis     | 10h   | 17/01    | XP: Atendimento=10, Venda=5, Avaliação=15 |
+| Use Cases gamificação | 10h   | 20/01    | Conquistas (Badges) e Progressão |
+| Endpoints HTTP        | 6h    | 20/01    | Ranking, Perfil Gamificado |
 
 #### Milestone 3.5: Frontend Web
 
@@ -694,15 +713,15 @@ PROGRESSO GLOBAL: ████████████████████ 1
 | Gamificação + ranking | 8h    | 24/03    | -        |
 | Push notifications    | 6h    | 24/03    | Firebase |
 
-#### Milestone 4.6: App Cliente
+#### Milestone 4.6: App Cliente + Gestor
 
 **Entrega:** 28/03/2026 (3 dias úteis)
 
-| Tarefa               | Horas | Deadline |
-| -------------------- | ----- | -------- |
-| Agendamento mobile   | 10h   | 26/03    |
-| Histórico + cashback | 8h    | 27/03    |
-| Avaliações           | 6h    | 28/03    |
+| Tarefa               | Horas | Deadline | Detalhes |
+| -------------------- | ----- | -------- | -------- |
+| App Cliente (Core)   | 10h   | 26/03    | Agendamento, Histórico, Cashback |
+| App Gestor (MVP)     | 8h    | 27/03    | Dashboard Multi-unidade, Aprovações (PRD 4.11.3) |
+| Avaliações           | 6h    | 28/03    | - |
 
 ---
 
@@ -739,26 +758,26 @@ PROGRESSO GLOBAL: ████████████████████ 1
 
 **Entrega:** 30/04/2026
 
-| Tarefa                       | Owner        | Duração   |
-| ---------------------------- | ------------ | --------- |
-| Research IA (time series)    | Data Science | 2 semanas |
-| Design multi-tenant avançado | Arquiteto    | 2 semanas |
-| Integrações (Open Banking)   | Tech Lead    | 2 semanas |
+| Tarefa                       | Owner        | Duração   | Detalhes |
+| ---------------------------- | ------------ | --------- | -------- |
+| Research IA (time series)    | Data Science | 2 semanas | Prophet/RandomForest (PRD 5.1) |
+| Design multi-tenant avançado | Arquiteto    | 2 semanas | Governança Corporativa (PRD 5.3) |
+| Integrações (Open Banking)   | Tech Lead    | 2 semanas | Conciliação Bancária (PRD 5.4.2) |
 
 ---
 
-### FASE 2: NOTAS FISCAIS (05/05 - 30/06/2026)
+### FASE 2: MARKETPLACE & NOTAS (05/05 - 30/06/2026)
 
-#### Milestone 5.2: Gateway NFSe/NFe
+#### Milestone 5.2: Marketplace de Fornecedores
 
 **Entrega:** 30/06/2026 (8 semanas)
 
-| Tarefa                     | Duração   |
-| -------------------------- | --------- |
-| Integração eNotas.io       | 3 semanas |
-| Backend emissão automática | 2 semanas |
-| Frontend configuração      | 2 semanas |
-| Testes certificação        | 1 semana  |
+| Tarefa                     | Duração   | Detalhes |
+| -------------------------- | --------- | -------- |
+| Catálogo Único             | 3 semanas | +500 fornecedores (PRD 5.4.1) |
+| Negociação Coletiva        | 2 semanas | - |
+| Integração eNotas.io       | 2 semanas | Emissão automática NFSe |
+| Testes certificação        | 1 semana  | - |
 
 ---
 
@@ -1141,7 +1160,8 @@ DEC: ██████████████████░░ v2.0 DONE (20/
 ___________________________
 Andrey Viana
 CEO - NEXO
-06/12/2025
+10/12/2025
 
 🎉 MVP v1.0.0 COMPLETO - 100% Core Features Delivered
+✅ Ready for v1.1.0 Planning
 ```

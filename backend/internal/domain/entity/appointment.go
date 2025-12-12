@@ -12,6 +12,7 @@ import (
 type Appointment struct {
 	ID             string
 	TenantID       uuid.UUID
+	UnitID         uuid.UUID
 	ProfessionalID string
 	CustomerID     string
 
@@ -56,6 +57,7 @@ type AppointmentService struct {
 // NewAppointment cria um novo agendamento validado
 func NewAppointment(
 	tenantID uuid.UUID,
+	unitID uuid.UUID,
 	professionalID string,
 	customerID string,
 	startTime time.Time,
@@ -63,6 +65,9 @@ func NewAppointment(
 ) (*Appointment, error) {
 	if tenantID == uuid.Nil {
 		return nil, domain.ErrTenantIDRequired
+	}
+	if unitID == uuid.Nil {
+		return nil, domain.ErrUnitIDRequired
 	}
 	if professionalID == "" {
 		return nil, domain.ErrAppointmentProfessionalRequired
@@ -91,6 +96,7 @@ func NewAppointment(
 	return &Appointment{
 		ID:             uuid.NewString(),
 		TenantID:       tenantID,
+		UnitID:         unitID,
 		ProfessionalID: professionalID,
 		CustomerID:     customerID,
 		StartTime:      startTime,
@@ -263,6 +269,9 @@ func (a *Appointment) ConflictsWith(other *Appointment) bool {
 func (a *Appointment) Validate() error {
 	if a.TenantID == uuid.Nil {
 		return domain.ErrTenantIDRequired
+	}
+	if a.UnitID == uuid.Nil {
+		return domain.ErrUnitIDRequired
 	}
 	if a.ProfessionalID == "" {
 		return domain.ErrAppointmentProfessionalRequired

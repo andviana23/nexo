@@ -4,6 +4,7 @@
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    unit_id UUID REFERENCES units(id) ON DELETE RESTRICT,
     cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE RESTRICT,
     plano_id UUID NOT NULL REFERENCES plans(id) ON DELETE RESTRICT,
     

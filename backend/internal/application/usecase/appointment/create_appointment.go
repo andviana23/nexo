@@ -16,6 +16,7 @@ import (
 // CreateAppointmentInput dados de entrada para criar agendamento
 type CreateAppointmentInput struct {
 	TenantID       string
+	UnitID         string
 	ProfessionalID string
 	CustomerID     string
 	StartTime      time.Time
@@ -63,6 +64,9 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 	// 1. Validações básicas
 	if input.TenantID == "" {
 		return nil, domain.ErrTenantIDRequired
+	}
+	if input.UnitID == "" {
+		return nil, domain.ErrUnitIDRequired
 	}
 	if input.ProfessionalID == "" {
 		return nil, domain.ErrAppointmentProfessionalRequired
@@ -123,9 +127,14 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 	if err != nil {
 		return nil, fmt.Errorf("tenant_id inválido: %w", err)
 	}
+	unitUUID, err := uuid.Parse(input.UnitID)
+	if err != nil {
+		return nil, fmt.Errorf("unit_id inválido: %w", err)
+	}
 
 	appointment, err := entity.NewAppointment(
 		tenantUUID,
+		unitUUID,
 		input.ProfessionalID,
 		input.CustomerID,
 		input.StartTime,
@@ -139,6 +148,7 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 	hasConflict, err := uc.appointmentRepo.CheckConflict(
 		ctx,
 		input.TenantID,
+		input.UnitID, // Added UnitID
 		input.ProfessionalID,
 		appointment.StartTime,
 		appointment.EndTime,
@@ -155,6 +165,7 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 	hasBlockedConflict, err := uc.appointmentRepo.CheckBlockedTimeConflict(
 		ctx,
 		input.TenantID,
+		input.UnitID, // Added UnitID
 		input.ProfessionalID,
 		appointment.StartTime,
 		appointment.EndTime,
@@ -171,6 +182,7 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 	hasIntervalConflict, err := uc.appointmentRepo.CheckMinimumIntervalConflict(
 		ctx,
 		input.TenantID,
+		input.UnitID, // Added UnitID
 		input.ProfessionalID,
 		appointment.StartTime,
 		appointment.EndTime,
@@ -257,6 +269,7 @@ func (uc *CreateAppointmentUseCase) Execute(ctx context.Context, input CreateApp
 // ListAppointmentsInput dados de entrada para listar agendamentos
 type ListAppointmentsInput struct {
 	TenantID       string
+	UnitID         string
 	ProfessionalID string
 	CustomerID     string
 	Statuses       []valueobject.AppointmentStatus // Array de status
@@ -306,6 +319,7 @@ func (uc *ListAppointmentsUseCase) Execute(ctx context.Context, input ListAppoin
 	}
 
 	filter := port.AppointmentFilter{
+		UnitID:         input.UnitID,
 		ProfessionalID: input.ProfessionalID,
 		CustomerID:     input.CustomerID,
 		Statuses:       input.Statuses,

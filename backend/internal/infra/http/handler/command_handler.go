@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
@@ -15,6 +16,7 @@ import (
 type CommandHandler struct {
 	createUC             *command.CreateCommandUseCase
 	getUC                *command.GetCommandUseCase
+	listUC               *command.ListCommandsUseCase
 	getByAppointmentUC   *command.GetCommandByAppointmentUseCase
 	addItemUC            *command.AddCommandItemUseCase
 	removeItemUC         *command.RemoveCommandItemUseCase
@@ -30,6 +32,7 @@ type CommandHandler struct {
 func NewCommandHandler(
 	createUC *command.CreateCommandUseCase,
 	getUC *command.GetCommandUseCase,
+	listUC *command.ListCommandsUseCase,
 	getByAppointmentUC *command.GetCommandByAppointmentUseCase,
 	addItemUC *command.AddCommandItemUseCase,
 	removeItemUC *command.RemoveCommandItemUseCase,
@@ -43,6 +46,7 @@ func NewCommandHandler(
 	return &CommandHandler{
 		createUC:             createUC,
 		getUC:                getUC,
+		listUC:               listUC,
 		getByAppointmentUC:   getByAppointmentUC,
 		addItemUC:            addItemUC,
 		removeItemUC:         removeItemUC,
@@ -131,6 +135,77 @@ func (h *CommandHandler) GetCommand(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "command not found"})
 		}
 		h.logger.Error("failed to get command", zap.Error(err))
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+// ListCommands godoc
+// @Summary Listar comandas
+// @Description Lista comandas com filtros e paginação
+// @Tags Comandas
+// @Produce json
+// @Param status query string false "Filtrar por status (ABERTA, FECHADA, CANCELADA)"
+// @Param customer_id query string false "Filtrar por cliente (UUID)"
+// @Param date_from query string false "Data inicial (YYYY-MM-DD)"
+// @Param date_to query string false "Data final (YYYY-MM-DD)"
+// @Param page query int false "Página (default: 1)"
+// @Param page_size query int false "Itens por página (default: 20, max: 100)"
+// @Success 200 {object} dto.CommandListResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/v1/commands [get]
+func (h *CommandHandler) ListCommands(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	// Extrair tenant_id
+	tenantID, err := getTenantIDFromContext(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	}
+
+	// Parse query params
+	input := command.ListCommandsInput{
+		TenantID: tenantID,
+		Page:     1,
+		PageSize: 20,
+	}
+
+	// Status
+	if status := c.QueryParam("status"); status != "" {
+		input.Status = &status
+	}
+
+	// Customer ID
+	if customerID := c.QueryParam("customer_id"); customerID != "" {
+		input.CustomerID = &customerID
+	}
+
+	// Date range
+	if dateFrom := c.QueryParam("date_from"); dateFrom != "" {
+		input.DateFrom = &dateFrom
+	}
+	if dateTo := c.QueryParam("date_to"); dateTo != "" {
+		input.DateTo = &dateTo
+	}
+
+	// Pagination
+	if page := c.QueryParam("page"); page != "" {
+		if p, err := strconv.Atoi(page); err == nil && p > 0 {
+			input.Page = p
+		}
+	}
+	if pageSize := c.QueryParam("page_size"); pageSize != "" {
+		if ps, err := strconv.Atoi(pageSize); err == nil && ps > 0 && ps <= 100 {
+			input.PageSize = ps
+		}
+	}
+
+	// Executar use case
+	response, err := h.listUC.Execute(ctx, input)
+	if err != nil {
+		h.logger.Error("failed to list commands", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 

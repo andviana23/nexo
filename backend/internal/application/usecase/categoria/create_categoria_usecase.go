@@ -29,7 +29,7 @@ func NewCreateCategoriaServicoUseCase(repo port.CategoriaServicoRepository, logg
 // Execute cria uma nova categoria de serviço
 func (uc *CreateCategoriaServicoUseCase) Execute(
 	ctx context.Context,
-	tenantID string,
+	tenantID, unitID string,
 	req dto.CreateCategoriaServicoRequest,
 ) (*dto.CategoriaServicoResponse, error) {
 	// Validar tenant_id
@@ -39,7 +39,7 @@ func (uc *CreateCategoriaServicoUseCase) Execute(
 	}
 
 	// Verificar duplicidade de nome
-	exists, err := uc.repo.CheckNomeExists(ctx, tenantID, req.Nome, "")
+	exists, err := uc.repo.CheckNomeExists(ctx, tenantID, unitID, req.Nome, "")
 	if err != nil {
 		uc.logger.Error("Erro ao verificar nome duplicado",
 			zap.String("tenant_id", tenantID),
@@ -53,8 +53,14 @@ func (uc *CreateCategoriaServicoUseCase) Execute(
 		return nil, domain.ErrCategoriaNomeDuplicate
 	}
 
+	// Validar unit_id
+	unitUUID, err := uuid.Parse(unitID)
+	if err != nil {
+		return nil, domain.ErrInvalidUnitID
+	}
+
 	// Criar entidade
-	categoria, err := entity.NewCategoriaServico(tenantUUID, req.Nome)
+	categoria, err := entity.NewCategoriaServico(tenantUUID, unitUUID, req.Nome)
 	if err != nil {
 		return nil, err
 	}

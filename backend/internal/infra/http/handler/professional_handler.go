@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
+	"github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/repository/postgres"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -72,7 +73,8 @@ func (h *ProfessionalHandler) ListProfessionals(c echo.Context) error {
 		req.PageSize = 100
 	}
 
-	professionals, total, err := h.repo.List(ctx, tenantID, req)
+	unitID := middleware.GetUnitID(c)
+	professionals, total, err := h.repo.List(ctx, tenantID, unitID, req)
 	if err != nil {
 		h.logger.Error("Erro ao listar profissionais", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
@@ -120,7 +122,8 @@ func (h *ProfessionalHandler) GetProfessional(c echo.Context) error {
 		})
 	}
 
-	professional, err := h.repo.GetByID(ctx, tenantID, id)
+	unitID := middleware.GetUnitID(c)
+	professional, err := h.repo.GetByID(ctx, tenantID, unitID, id)
 	if err != nil {
 		h.logger.Error("Erro ao buscar profissional", zap.Error(err))
 		return c.JSON(http.StatusNotFound, dto.ErrorResponse{
@@ -201,7 +204,8 @@ func (h *ProfessionalHandler) CreateProfessional(c echo.Context) error {
 		}
 	}
 
-	professional, err := h.repo.Create(ctx, tenantID, req)
+	unitID := middleware.GetUnitID(c)
+	professional, err := h.repo.Create(ctx, tenantID, unitID, req)
 	if err != nil {
 		h.logger.Error("Erro ao criar profissional", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
@@ -403,7 +407,8 @@ func (h *ProfessionalHandler) DeleteProfessional(c echo.Context) error {
 	}
 
 	// Deletar permanentemente o profissional
-	err := h.repo.Delete(ctx, tenantID, id)
+	unitID := middleware.GetUnitID(c)
+	err := h.repo.Delete(ctx, tenantID, unitID, id)
 	if err != nil {
 		h.logger.Error("Erro ao deletar profissional permanentemente", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

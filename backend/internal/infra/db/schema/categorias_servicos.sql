@@ -7,6 +7,7 @@
 CREATE TABLE IF NOT EXISTS categorias_servicos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    unit_id UUID REFERENCES units(id) ON DELETE RESTRICT,
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
     cor VARCHAR(7) DEFAULT '#000000',

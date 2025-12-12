@@ -11,12 +11,12 @@ import { getErrorMessage, isAxiosError } from '@/lib/axios';
 import { queryKeys } from '@/lib/query-client';
 import { authService, InvalidCredentialsError } from '@/services/auth-service';
 import {
-    useAuthHydrated,
-    useAuthLoading,
-    useAuthStore,
-    useCurrentTenant,
-    useCurrentUser,
-    useIsAuthenticated,
+  useAuthHydrated,
+  useAuthLoading,
+  useAuthStore,
+  useCurrentTenant,
+  useCurrentUser,
+  useIsAuthenticated,
 } from '@/store/auth-store';
 import type { LoginCredentials, User } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -89,10 +89,11 @@ export function useAuth(): UseAuthReturn {
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
 
-      // Aguarda um tick para garantir persistência antes de redirecionar
-      setTimeout(() => {
-        router.push('/');
-      }, 100);
+      // Sinaliza que precisa selecionar unidade antes de acessar o sistema
+      // O UnitSelectionProvider vai detectar e exibir o modal
+      import('@/store/unit-store').then(({ useUnitStore }) => {
+        useUnitStore.getState().setNeedsSelection(true);
+      });
     },
 
     onError: (error) => {

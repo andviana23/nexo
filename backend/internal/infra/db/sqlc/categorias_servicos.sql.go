@@ -16,19 +16,26 @@ SELECT EXISTS(
     SELECT 1 
     FROM categorias_servicos 
     WHERE tenant_id = $1 
-      AND LOWER(nome) = LOWER($2)
-      AND id != COALESCE($3, '00000000-0000-0000-0000-000000000000'::uuid)
+      AND unit_id = $2
+      AND LOWER(nome) = LOWER($3)
+      AND id != COALESCE($4, '00000000-0000-0000-0000-000000000000'::uuid)
 ) AS exists
 `
 
 type CheckCategoriaServicoNomeExistsParams struct {
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 	Lower    string      `json:"lower"`
 	ID       pgtype.UUID `json:"id"`
 }
 
 func (q *Queries) CheckCategoriaServicoNomeExists(ctx context.Context, arg CheckCategoriaServicoNomeExistsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkCategoriaServicoNomeExists, arg.TenantID, arg.Lower, arg.ID)
+	row := q.db.QueryRow(ctx, checkCategoriaServicoNomeExists,
+		arg.TenantID,
+		arg.UnitID,
+		arg.Lower,
+		arg.ID,
+	)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -37,33 +44,38 @@ func (q *Queries) CheckCategoriaServicoNomeExists(ctx context.Context, arg Check
 const countCategoriasServicosByTenant = `-- name: CountCategoriasServicosByTenant :one
 SELECT COUNT(*) AS total
 FROM categorias_servicos
-WHERE tenant_id = $1
+WHERE tenant_id = $1 AND unit_id = $2
 `
 
-func (q *Queries) CountCategoriasServicosByTenant(ctx context.Context, tenantID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countCategoriasServicosByTenant, tenantID)
+type CountCategoriasServicosByTenantParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
+
+func (q *Queries) CountCategoriasServicosByTenant(ctx context.Context, arg CountCategoriasServicosByTenantParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countCategoriasServicosByTenant, arg.TenantID, arg.UnitID)
 	var total int64
 	err := row.Scan(&total)
 	return total, err
 }
 
 const countServicosInCategoria = `-- name: CountServicosInCategoria :one
-
 SELECT COUNT(*) AS total
 FROM servicos
-WHERE categoria_id = $1 AND tenant_id = $2
+WHERE categoria_id = $1 AND tenant_id = $2 AND unit_id = $3
 `
 
 type CountServicosInCategoriaParams struct {
 	CategoriaID pgtype.UUID `json:"categoria_id"`
 	TenantID    pgtype.UUID `json:"tenant_id"`
+	UnitID      pgtype.UUID `json:"unit_id"`
 }
 
 // ============================================================================
 // QUERIES AUXILIARES
 // ============================================================================
 func (q *Queries) CountServicosInCategoria(ctx context.Context, arg CountServicosInCategoriaParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countServicosInCategoria, arg.CategoriaID, arg.TenantID)
+	row := q.db.QueryRow(ctx, countServicosInCategoria, arg.CategoriaID, arg.TenantID, arg.UnitID)
 	var total int64
 	err := row.Scan(&total)
 	return total, err
@@ -75,6 +87,7 @@ const createCategoriaServico = `-- name: CreateCategoriaServico :one
 INSERT INTO categorias_servicos (
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -83,13 +96,14 @@ INSERT INTO categorias_servicos (
     criado_em,
     atualizado_em
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
-) RETURNING id, tenant_id, nome, descricao, cor, icone, ativa, criado_em, atualizado_em
+    $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+) RETURNING id, tenant_id, unit_id, nome, descricao, cor, icone, ativa, criado_em, atualizado_em
 `
 
 type CreateCategoriaServicoParams struct {
 	ID        pgtype.UUID `json:"id"`
 	TenantID  pgtype.UUID `json:"tenant_id"`
+	UnitID    pgtype.UUID `json:"unit_id"`
 	Nome      string      `json:"nome"`
 	Descricao *string     `json:"descricao"`
 	Cor       *string     `json:"cor"`
@@ -109,6 +123,7 @@ func (q *Queries) CreateCategoriaServico(ctx context.Context, arg CreateCategori
 	row := q.db.QueryRow(ctx, createCategoriaServico,
 		arg.ID,
 		arg.TenantID,
+		arg.UnitID,
 		arg.Nome,
 		arg.Descricao,
 		arg.Cor,
@@ -119,6 +134,7 @@ func (q *Queries) CreateCategoriaServico(ctx context.Context, arg CreateCategori
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Cor,
@@ -133,19 +149,20 @@ func (q *Queries) CreateCategoriaServico(ctx context.Context, arg CreateCategori
 const deleteCategoriaServico = `-- name: DeleteCategoriaServico :exec
 
 DELETE FROM categorias_servicos
-WHERE id = $1 AND tenant_id = $2
+WHERE id = $1 AND tenant_id = $2 AND unit_id = $3
 `
 
 type DeleteCategoriaServicoParams struct {
 	ID       pgtype.UUID `json:"id"`
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 // ============================================================================
 // DELETE
 // ============================================================================
 func (q *Queries) DeleteCategoriaServico(ctx context.Context, arg DeleteCategoriaServicoParams) error {
-	_, err := q.db.Exec(ctx, deleteCategoriaServico, arg.ID, arg.TenantID)
+	_, err := q.db.Exec(ctx, deleteCategoriaServico, arg.ID, arg.TenantID, arg.UnitID)
 	return err
 }
 
@@ -154,6 +171,7 @@ const getCategoriaServicoByID = `-- name: GetCategoriaServicoByID :one
 SELECT 
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -162,23 +180,25 @@ SELECT
     criado_em,
     atualizado_em
 FROM categorias_servicos
-WHERE id = $1 AND tenant_id = $2
+WHERE id = $1 AND tenant_id = $2 AND unit_id = $3
 `
 
 type GetCategoriaServicoByIDParams struct {
 	ID       pgtype.UUID `json:"id"`
 	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
 }
 
 // ============================================================================
 // READ
 // ============================================================================
 func (q *Queries) GetCategoriaServicoByID(ctx context.Context, arg GetCategoriaServicoByIDParams) (CategoriasServico, error) {
-	row := q.db.QueryRow(ctx, getCategoriaServicoByID, arg.ID, arg.TenantID)
+	row := q.db.QueryRow(ctx, getCategoriaServicoByID, arg.ID, arg.TenantID, arg.UnitID)
 	var i CategoriasServico
 	err := row.Scan(
 		&i.ID,
 		&i.TenantID,
+		&i.UnitID,
 		&i.Nome,
 		&i.Descricao,
 		&i.Cor,
@@ -194,6 +214,7 @@ const getCategoriasServicosComServicos = `-- name: GetCategoriasServicosComServi
 SELECT 
     cs.id,
     cs.tenant_id,
+    cs.unit_id,
     cs.nome,
     cs.descricao,
     cs.cor,
@@ -203,15 +224,21 @@ SELECT
     cs.atualizado_em,
     COUNT(s.id) AS total_servicos
 FROM categorias_servicos cs
-LEFT JOIN servicos s ON s.categoria_id = cs.id AND s.tenant_id = cs.tenant_id
-WHERE cs.tenant_id = $1
-GROUP BY cs.id, cs.tenant_id, cs.nome, cs.descricao, cs.cor, cs.icone, cs.ativa, cs.criado_em, cs.atualizado_em
+LEFT JOIN servicos s ON s.categoria_id = cs.id AND s.tenant_id = cs.tenant_id AND s.unit_id = cs.unit_id
+WHERE cs.tenant_id = $1 AND cs.unit_id = $2
+GROUP BY cs.id, cs.tenant_id, cs.unit_id, cs.nome, cs.descricao, cs.cor, cs.icone, cs.ativa, cs.criado_em, cs.atualizado_em
 ORDER BY cs.nome ASC
 `
+
+type GetCategoriasServicosComServicosParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
 
 type GetCategoriasServicosComServicosRow struct {
 	ID            pgtype.UUID        `json:"id"`
 	TenantID      pgtype.UUID        `json:"tenant_id"`
+	UnitID        pgtype.UUID        `json:"unit_id"`
 	Nome          string             `json:"nome"`
 	Descricao     *string            `json:"descricao"`
 	Cor           *string            `json:"cor"`
@@ -222,8 +249,8 @@ type GetCategoriasServicosComServicosRow struct {
 	TotalServicos int64              `json:"total_servicos"`
 }
 
-func (q *Queries) GetCategoriasServicosComServicos(ctx context.Context, tenantID pgtype.UUID) ([]GetCategoriasServicosComServicosRow, error) {
-	rows, err := q.db.Query(ctx, getCategoriasServicosComServicos, tenantID)
+func (q *Queries) GetCategoriasServicosComServicos(ctx context.Context, arg GetCategoriasServicosComServicosParams) ([]GetCategoriasServicosComServicosRow, error) {
+	rows, err := q.db.Query(ctx, getCategoriasServicosComServicos, arg.TenantID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -234,6 +261,7 @@ func (q *Queries) GetCategoriasServicosComServicos(ctx context.Context, tenantID
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Cor,
@@ -257,6 +285,7 @@ const listCategoriasServicos = `-- name: ListCategoriasServicos :many
 SELECT 
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -265,12 +294,17 @@ SELECT
     criado_em,
     atualizado_em
 FROM categorias_servicos
-WHERE tenant_id = $1
+WHERE tenant_id = $1 AND unit_id = $2
 ORDER BY nome ASC
 `
 
-func (q *Queries) ListCategoriasServicos(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasServico, error) {
-	rows, err := q.db.Query(ctx, listCategoriasServicos, tenantID)
+type ListCategoriasServicosParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
+
+func (q *Queries) ListCategoriasServicos(ctx context.Context, arg ListCategoriasServicosParams) ([]CategoriasServico, error) {
+	rows, err := q.db.Query(ctx, listCategoriasServicos, arg.TenantID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -281,6 +315,7 @@ func (q *Queries) ListCategoriasServicos(ctx context.Context, tenantID pgtype.UU
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Cor,
@@ -303,6 +338,7 @@ const listCategoriasServicosAtivas = `-- name: ListCategoriasServicosAtivas :man
 SELECT 
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -311,12 +347,17 @@ SELECT
     criado_em,
     atualizado_em
 FROM categorias_servicos
-WHERE tenant_id = $1 AND ativa = true
+WHERE tenant_id = $1 AND unit_id = $2 AND ativa = true
 ORDER BY nome ASC
 `
 
-func (q *Queries) ListCategoriasServicosAtivas(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasServico, error) {
-	rows, err := q.db.Query(ctx, listCategoriasServicosAtivas, tenantID)
+type ListCategoriasServicosAtivasParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	UnitID   pgtype.UUID `json:"unit_id"`
+}
+
+func (q *Queries) ListCategoriasServicosAtivas(ctx context.Context, arg ListCategoriasServicosAtivasParams) ([]CategoriasServico, error) {
+	rows, err := q.db.Query(ctx, listCategoriasServicosAtivas, arg.TenantID, arg.UnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -327,6 +368,7 @@ func (q *Queries) ListCategoriasServicosAtivas(ctx context.Context, tenantID pgt
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
+			&i.UnitID,
 			&i.Nome,
 			&i.Descricao,
 			&i.Cor,

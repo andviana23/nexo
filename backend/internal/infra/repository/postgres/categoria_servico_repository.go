@@ -29,6 +29,7 @@ func (r *CategoriaServicoRepository) Create(ctx context.Context, categoria *enti
 	params := db.CreateCategoriaServicoParams{
 		ID:        stringToUUID(categoria.ID.String()),
 		TenantID:  stringToUUID(categoria.TenantID.String()),
+		UnitID:    stringToUUID(categoria.UnitID.String()),
 		Nome:      categoria.Nome,
 		Descricao: categoria.Descricao,
 		Cor:       categoria.Cor,
@@ -45,10 +46,11 @@ func (r *CategoriaServicoRepository) Create(ctx context.Context, categoria *enti
 // =============================================================================
 
 // FindByID busca categoria por ID
-func (r *CategoriaServicoRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.CategoriaServico, error) {
+func (r *CategoriaServicoRepository) FindByID(ctx context.Context, tenantID, unitID, id string) (*entity.CategoriaServico, error) {
 	params := db.GetCategoriaServicoByIDParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUID(unitID),
 	}
 
 	row, err := r.queries.GetCategoriaServicoByID(ctx, params)
@@ -60,16 +62,23 @@ func (r *CategoriaServicoRepository) FindByID(ctx context.Context, tenantID, id 
 }
 
 // List lista todas as categorias com filtros
-func (r *CategoriaServicoRepository) List(ctx context.Context, tenantID string, filter port.CategoriaServicoFilter) ([]*entity.CategoriaServico, error) {
+func (r *CategoriaServicoRepository) List(ctx context.Context, tenantID, unitID string, filter port.CategoriaServicoFilter) ([]*entity.CategoriaServico, error) {
 	var rows []db.CategoriasServico
 	var err error
 
-	tenantUUID := stringToUUID(tenantID)
+	params := db.ListCategoriasServicosParams{
+		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUID(unitID),
+	}
 
 	if filter.ApenasAtivas {
-		rows, err = r.queries.ListCategoriasServicosAtivas(ctx, tenantUUID)
+		activeParams := db.ListCategoriasServicosAtivasParams{
+			TenantID: params.TenantID,
+			UnitID:   params.UnitID,
+		}
+		rows, err = r.queries.ListCategoriasServicosAtivas(ctx, activeParams)
 	} else {
-		rows, err = r.queries.ListCategoriasServicos(ctx, tenantUUID)
+		rows, err = r.queries.ListCategoriasServicos(ctx, params)
 	}
 
 	if err != nil {
@@ -108,7 +117,7 @@ func (r *CategoriaServicoRepository) Update(ctx context.Context, categoria *enti
 }
 
 // ToggleStatus ativa/desativa uma categoria
-func (r *CategoriaServicoRepository) ToggleStatus(ctx context.Context, tenantID, id string, ativa bool) error {
+func (r *CategoriaServicoRepository) ToggleStatus(ctx context.Context, tenantID, unitID, id string, ativa bool) error {
 	params := db.ToggleCategoriaServicoStatusParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
@@ -128,10 +137,11 @@ func (r *CategoriaServicoRepository) ToggleStatus(ctx context.Context, tenantID,
 // =============================================================================
 
 // Delete deleta uma categoria
-func (r *CategoriaServicoRepository) Delete(ctx context.Context, tenantID, id string) error {
+func (r *CategoriaServicoRepository) Delete(ctx context.Context, tenantID, unitID, id string) error {
 	params := db.DeleteCategoriaServicoParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUID(unitID),
 	}
 
 	err := r.queries.DeleteCategoriaServico(ctx, params)
@@ -147,7 +157,7 @@ func (r *CategoriaServicoRepository) Delete(ctx context.Context, tenantID, id st
 // =============================================================================
 
 // CheckNomeExists verifica se já existe categoria com o mesmo nome
-func (r *CategoriaServicoRepository) CheckNomeExists(ctx context.Context, tenantID, nome, excludeID string) (bool, error) {
+func (r *CategoriaServicoRepository) CheckNomeExists(ctx context.Context, tenantID, unitID, nome, excludeID string) (bool, error) {
 	var idUUID pgtype.UUID
 
 	if excludeID != "" {
@@ -159,6 +169,7 @@ func (r *CategoriaServicoRepository) CheckNomeExists(ctx context.Context, tenant
 
 	params := db.CheckCategoriaServicoNomeExistsParams{
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUID(unitID),
 		Lower:    nome, // A query já faz LOWER()
 		ID:       idUUID,
 	}
@@ -172,10 +183,11 @@ func (r *CategoriaServicoRepository) CheckNomeExists(ctx context.Context, tenant
 }
 
 // CountServicos conta quantos serviços estão vinculados à categoria
-func (r *CategoriaServicoRepository) CountServicos(ctx context.Context, tenantID, categoriaID string) (int64, error) {
+func (r *CategoriaServicoRepository) CountServicos(ctx context.Context, tenantID, unitID, categoriaID string) (int64, error) {
 	params := db.CountServicosInCategoriaParams{
 		CategoriaID: stringToUUID(categoriaID),
 		TenantID:    stringToUUID(tenantID),
+		UnitID:      stringToUUID(unitID),
 	}
 
 	count, err := r.queries.CountServicosInCategoria(ctx, params)
@@ -195,6 +207,7 @@ func mapDBToCategoria(row db.CategoriasServico) *entity.CategoriaServico {
 	categoria := &entity.CategoriaServico{
 		ID:           row.ID.Bytes,
 		TenantID:     row.TenantID.Bytes,
+		UnitID:       row.UnitID.Bytes,
 		Nome:         row.Nome,
 		Descricao:    row.Descricao,
 		Cor:          row.Cor,

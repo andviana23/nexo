@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS servicos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    unit_id UUID REFERENCES units(id) ON DELETE RESTRICT,
     categoria_id UUID,
     nome VARCHAR(255) NOT NULL,
     descricao TEXT,

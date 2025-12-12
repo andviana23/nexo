@@ -12,6 +12,7 @@
 INSERT INTO categorias_servicos (
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -20,7 +21,7 @@ INSERT INTO categorias_servicos (
     criado_em,
     atualizado_em
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
 ) RETURNING *;
 
 -- ============================================================================
@@ -31,6 +32,7 @@ INSERT INTO categorias_servicos (
 SELECT 
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -39,12 +41,13 @@ SELECT
     criado_em,
     atualizado_em
 FROM categorias_servicos
-WHERE id = $1 AND tenant_id = $2;
+WHERE id = $1 AND tenant_id = $2 AND unit_id = $3;
 
 -- name: ListCategoriasServicos :many
 SELECT 
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -53,13 +56,14 @@ SELECT
     criado_em,
     atualizado_em
 FROM categorias_servicos
-WHERE tenant_id = $1
+WHERE tenant_id = $1 AND unit_id = $2
 ORDER BY nome ASC;
 
 -- name: ListCategoriasServicosAtivas :many
 SELECT 
     id,
     tenant_id,
+    unit_id,
     nome,
     descricao,
     cor,
@@ -68,7 +72,7 @@ SELECT
     criado_em,
     atualizado_em
 FROM categorias_servicos
-WHERE tenant_id = $1 AND ativa = true
+WHERE tenant_id = $1 AND unit_id = $2 AND ativa = true
 ORDER BY nome ASC;
 
 -- name: CheckCategoriaServicoNomeExists :one
@@ -76,8 +80,9 @@ SELECT EXISTS(
     SELECT 1 
     FROM categorias_servicos 
     WHERE tenant_id = $1 
-      AND LOWER(nome) = LOWER($2)
-      AND id != COALESCE($3, '00000000-0000-0000-0000-000000000000'::uuid)
+      AND unit_id = $2
+      AND LOWER(nome) = LOWER($3)
+      AND id != COALESCE($4, '00000000-0000-0000-0000-000000000000'::uuid)
 ) AS exists;
 
 -- ============================================================================
@@ -107,7 +112,7 @@ RETURNING *;
 
 -- name: DeleteCategoriaServico :exec
 DELETE FROM categorias_servicos
-WHERE id = $1 AND tenant_id = $2;
+WHERE id = $1 AND tenant_id = $2 AND unit_id = $3;
 
 -- ============================================================================
 -- QUERIES AUXILIARES
@@ -116,17 +121,18 @@ WHERE id = $1 AND tenant_id = $2;
 -- name: CountServicosInCategoria :one
 SELECT COUNT(*) AS total
 FROM servicos
-WHERE categoria_id = $1 AND tenant_id = $2;
+WHERE categoria_id = $1 AND tenant_id = $2 AND unit_id = $3;
 
 -- name: CountCategoriasServicosByTenant :one
 SELECT COUNT(*) AS total
 FROM categorias_servicos
-WHERE tenant_id = $1;
+WHERE tenant_id = $1 AND unit_id = $2;
 
 -- name: GetCategoriasServicosComServicos :many
 SELECT 
     cs.id,
     cs.tenant_id,
+    cs.unit_id,
     cs.nome,
     cs.descricao,
     cs.cor,
@@ -136,7 +142,7 @@ SELECT
     cs.atualizado_em,
     COUNT(s.id) AS total_servicos
 FROM categorias_servicos cs
-LEFT JOIN servicos s ON s.categoria_id = cs.id AND s.tenant_id = cs.tenant_id
-WHERE cs.tenant_id = $1
-GROUP BY cs.id, cs.tenant_id, cs.nome, cs.descricao, cs.cor, cs.icone, cs.ativa, cs.criado_em, cs.atualizado_em
+LEFT JOIN servicos s ON s.categoria_id = cs.id AND s.tenant_id = cs.tenant_id AND s.unit_id = cs.unit_id
+WHERE cs.tenant_id = $1 AND cs.unit_id = $2
+GROUP BY cs.id, cs.tenant_id, cs.unit_id, cs.nome, cs.descricao, cs.cor, cs.icone, cs.ativa, cs.criado_em, cs.atualizado_em
 ORDER BY cs.nome ASC;

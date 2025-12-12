@@ -20,6 +20,7 @@ interface UnitState {
   // Estado
   units: UserUnit[];
   activeUnit: UserUnit | null;
+  needsSelection: boolean; // true após login, false após escolher unidade
   isLoading: boolean;
   isHydrated: boolean;
   error: string | null;
@@ -31,6 +32,7 @@ interface UnitState {
   setUnits: (units: UserUnit[]) => void;
   setActiveUnit: (unit: UserUnit) => void;
   clearActiveUnit: () => void;
+  setNeedsSelection: (needs: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setHydrated: () => void;
@@ -50,6 +52,7 @@ const UNIT_STORAGE_KEY = 'nexo-unit';
 const initialState = {
   units: [],
   activeUnit: null,
+  needsSelection: false,
   isLoading: false,
   isHydrated: false,
   error: null,
@@ -79,6 +82,11 @@ export const useUnitStore = create<UnitState>()(
       },
 
       clearActiveUnit: () => set({ activeUnit: null }),
+
+      setNeedsSelection: (needsSelection) => {
+        console.log('📍 [UnitStore] setNeedsSelection:', needsSelection);
+        set({ needsSelection });
+      },
 
       setLoading: (isLoading) => set({ isLoading }),
 
@@ -164,6 +172,13 @@ export function useUnitLoading(): boolean {
  */
 export function useUnitError(): string | null {
   return useUnitStore((state) => state.error);
+}
+
+/**
+ * Retorna se precisa selecionar unidade
+ */
+export function useNeedsSelection(): boolean {
+  return useUnitStore((state) => state.needsSelection);
 }
 
 // =============================================================================

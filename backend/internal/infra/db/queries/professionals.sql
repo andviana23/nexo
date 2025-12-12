@@ -3,11 +3,12 @@
 -- =============================================================================
 
 -- name: ListProfessionals :many
-SELECT id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+SELECT id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
        comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
        horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 FROM profissionais
 WHERE tenant_id = @tenant_id
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
   AND (sqlc.narg(status)::text IS NULL OR status = sqlc.narg(status))
   AND (sqlc.narg(tipo)::text IS NULL OR tipo = sqlc.narg(tipo))
   AND (
@@ -25,6 +26,7 @@ LIMIT @page_size OFFSET @page_offset;
 -- name: CountProfessionals :one
 SELECT COUNT(*) FROM profissionais
 WHERE tenant_id = @tenant_id
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
   AND (sqlc.narg(status)::text IS NULL OR status = sqlc.narg(status))
   AND (sqlc.narg(tipo)::text IS NULL OR tipo = sqlc.narg(tipo))
   AND (
@@ -35,23 +37,24 @@ WHERE tenant_id = @tenant_id
   );
 
 -- name: GetProfessionalByID :one
-SELECT id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+SELECT id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
        comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
        horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 FROM profissionais
-WHERE id = @id AND tenant_id = @tenant_id;
+WHERE id = @id AND tenant_id = @tenant_id
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id));
 
 -- name: CreateProfessional :one
 INSERT INTO profissionais (
-    tenant_id, user_id, nome, email, telefone, cpf, especialidades,
+    tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades,
     comissao, tipo_comissao, foto, data_admissao, status, horario_trabalho,
     observacoes, tipo
 ) VALUES (
-    @tenant_id, sqlc.narg(user_id), @nome, @email, @telefone, @cpf, @especialidades,
+    @tenant_id, sqlc.narg(unit_id), sqlc.narg(user_id), @nome, @email, @telefone, @cpf, @especialidades,
     @comissao, @tipo_comissao, sqlc.narg(foto), @data_admissao, @status, sqlc.narg(horario_trabalho),
     sqlc.narg(observacoes), @tipo
 )
-RETURNING id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+RETURNING id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
           comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
           horario_trabalho, observacoes, criado_em, atualizado_em, tipo;
 
@@ -71,9 +74,10 @@ UPDATE profissionais SET
     horario_trabalho = sqlc.narg(horario_trabalho),
     observacoes = sqlc.narg(observacoes),
     tipo = @tipo,
+    unit_id = COALESCE(sqlc.narg(unit_id), unit_id),
     atualizado_em = NOW()
 WHERE id = @id AND tenant_id = @tenant_id
-RETURNING id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+RETURNING id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
           comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
           horario_trabalho, observacoes, criado_em, atualizado_em, tipo;
 
@@ -89,7 +93,8 @@ RETURNING id, tenant_id, user_id, nome, email, telefone, cpf, especialidades,
 
 -- name: DeleteProfessional :exec
 DELETE FROM profissionais
-WHERE id = @id AND tenant_id = @tenant_id;
+WHERE id = @id AND tenant_id = @tenant_id
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id));
 
 -- name: CheckEmailExistsProfessional :one
 SELECT EXISTS (
@@ -108,11 +113,12 @@ SELECT EXISTS (
 ) as exists;
 
 -- name: ListBarbers :many
-SELECT id, tenant_id, user_id, nome, email, telefone, cpf, especialidades, 
+SELECT id, tenant_id, unit_id, user_id, nome, email, telefone, cpf, especialidades, 
        comissao, tipo_comissao, foto, data_admissao, data_demissao, status, 
        horario_trabalho, observacoes, criado_em, atualizado_em, tipo
 FROM profissionais
 WHERE tenant_id = @tenant_id 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id)) 
   AND tipo = 'BARBEIRO' 
   AND status = 'ATIVO'
 ORDER BY nome;

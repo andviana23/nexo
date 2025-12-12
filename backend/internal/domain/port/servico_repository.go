@@ -31,47 +31,47 @@ type ServicoRepository interface {
 	Create(ctx context.Context, servico *entity.Servico) error
 
 	// FindByID busca um serviço por ID
-	FindByID(ctx context.Context, tenantID, id string) (*entity.Servico, error)
+	FindByID(ctx context.Context, tenantID, unitID, id string) (*entity.Servico, error)
 
 	// List lista todos os serviços com filtros
-	List(ctx context.Context, tenantID string, filter ServicoFilter) ([]*entity.Servico, error)
+	List(ctx context.Context, tenantID, unitID string, filter ServicoFilter) ([]*entity.Servico, error)
 
 	// ListByCategoria lista serviços de uma categoria específica
-	ListByCategoria(ctx context.Context, tenantID, categoriaID string) ([]*entity.Servico, error)
+	ListByCategoria(ctx context.Context, tenantID, unitID, categoriaID string) ([]*entity.Servico, error)
 
 	// ListByProfissional lista serviços que um profissional pode realizar
-	ListByProfissional(ctx context.Context, tenantID, profissionalID string) ([]*entity.Servico, error)
+	ListByProfissional(ctx context.Context, tenantID, unitID, profissionalID string) ([]*entity.Servico, error)
 
 	// FindByIDs busca múltiplos serviços por IDs
-	FindByIDs(ctx context.Context, tenantID string, ids []string) ([]*entity.Servico, error)
+	FindByIDs(ctx context.Context, tenantID, unitID string, ids []string) ([]*entity.Servico, error)
 
 	// Update atualiza um serviço existente
 	Update(ctx context.Context, servico *entity.Servico) error
 
 	// Delete deleta um serviço
-	Delete(ctx context.Context, tenantID, id string) error
+	Delete(ctx context.Context, tenantID, unitID, id string) error
 
 	// DeleteByCategoria deleta todos os serviços de uma categoria
-	DeleteByCategoria(ctx context.Context, tenantID, categoriaID string) error
+	DeleteByCategoria(ctx context.Context, tenantID, unitID, categoriaID string) error
 
 	// CheckNomeExists verifica se já existe serviço com o mesmo nome
-	CheckNomeExists(ctx context.Context, tenantID, nome, excludeID string) (bool, error)
+	CheckNomeExists(ctx context.Context, tenantID, unitID, nome, excludeID string) (bool, error)
 
 	// ToggleStatus ativa/desativa um serviço
-	ToggleStatus(ctx context.Context, tenantID, id string, ativo bool) error
+	ToggleStatus(ctx context.Context, tenantID, unitID, id string, ativo bool) error
 
 	// UpdateCategoria atualiza a categoria de um serviço
-	UpdateCategoria(ctx context.Context, tenantID, id, categoriaID string) error
+	UpdateCategoria(ctx context.Context, tenantID, unitID, id, categoriaID string) error
 
 	// UpdateProfissionais atualiza a lista de profissionais de um serviço
-	UpdateProfissionais(ctx context.Context, tenantID, id string, profissionaisIDs []string) error
+	UpdateProfissionais(ctx context.Context, tenantID, unitID, id string, profissionaisIDs []string) error
 
 	// GetStats retorna estatísticas dos serviços
-	GetStats(ctx context.Context, tenantID string) (*ServicoStats, error)
+	GetStats(ctx context.Context, tenantID, unitID string) (*ServicoStats, error)
 
 	// Count conta total de serviços do tenant
-	Count(ctx context.Context, tenantID string) (int64, error)
+	Count(ctx context.Context, tenantID, unitID string) (int64, error)
 
 	// CountAtivos conta total de serviços ativos do tenant
-	CountAtivos(ctx context.Context, tenantID string) (int64, error)
+	CountAtivos(ctx context.Context, tenantID, unitID string) (int64, error)
 }

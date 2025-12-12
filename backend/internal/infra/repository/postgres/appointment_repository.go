@@ -45,6 +45,7 @@ func (r *AppointmentRepository) Create(ctx context.Context, appointment *entity.
 	params := db.CreateAppointmentParams{
 		ID:                    uuidStringToPgtype(appointment.ID),
 		TenantID:              entityUUIDToPgtype(appointment.TenantID),
+		UnitID:                entityUUIDToPgtype(appointment.UnitID),
 		ProfessionalID:        uuidStringToPgtype(appointment.ProfessionalID),
 		CustomerID:            uuidStringToPgtype(appointment.CustomerID),
 		StartTime:             timestampToTimestamptz(appointment.StartTime),
@@ -87,10 +88,11 @@ func (r *AppointmentRepository) Create(ctx context.Context, appointment *entity.
 }
 
 // FindByID busca um agendamento por ID.
-func (r *AppointmentRepository) FindByID(ctx context.Context, tenantID, id string) (*entity.Appointment, error) {
+func (r *AppointmentRepository) FindByID(ctx context.Context, tenantID, unitID, id string) (*entity.Appointment, error) {
 	params := db.GetAppointmentByIDParams{
 		ID:       uuidStringToPgtype(id),
 		TenantID: uuidStringToPgtype(tenantID),
+		UnitID:   uuidStringToPgtype(unitID),
 	}
 
 	row, err := r.queries.GetAppointmentByID(ctx, params)
@@ -142,10 +144,11 @@ func (r *AppointmentRepository) Update(ctx context.Context, appointment *entity.
 }
 
 // Delete remove um agendamento (soft delete via status CANCELED).
-func (r *AppointmentRepository) Delete(ctx context.Context, tenantID, id string) error {
+func (r *AppointmentRepository) Delete(ctx context.Context, tenantID, unitID, id string) error {
 	params := db.DeleteAppointmentParams{
 		ID:       uuidStringToPgtype(id),
 		TenantID: uuidStringToPgtype(tenantID),
+		UnitID:   uuidStringToPgtype(unitID),
 	}
 	return r.queries.DeleteAppointment(ctx, params)
 }
@@ -155,6 +158,7 @@ func (r *AppointmentRepository) List(ctx context.Context, tenantID string, filte
 	// Preparar parâmetros
 	params := db.ListAppointmentsParams{
 		TenantID: uuidStringToPgtype(tenantID),
+		UnitID:   uuidStringToPgtype(filter.UnitID),
 		Limit:    int32(filter.PageSize),
 		Offset:   int32((filter.Page - 1) * filter.PageSize),
 	}
@@ -245,11 +249,13 @@ func (r *AppointmentRepository) List(ctx context.Context, tenantID string, filte
 func (r *AppointmentRepository) ListByProfessionalAndDateRange(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	professionalID string,
 	startDate, endDate time.Time,
 ) ([]*entity.Appointment, error) {
 	params := db.ListAppointmentsByProfessionalAndDateRangeParams{
 		TenantID:       uuidStringToPgtype(tenantID),
+		UnitID:         uuidStringToPgtype(unitID),
 		ProfessionalID: uuidStringToPgtype(professionalID),
 		StartTime:      timestampToTimestamptz(startDate),
 		StartTime_2:    timestampToTimestamptz(endDate),
@@ -298,9 +304,10 @@ func (r *AppointmentRepository) ListByProfessionalAndDateRange(
 }
 
 // ListByCustomer lista agendamentos de um cliente.
-func (r *AppointmentRepository) ListByCustomer(ctx context.Context, tenantID, customerID string) ([]*entity.Appointment, error) {
+func (r *AppointmentRepository) ListByCustomer(ctx context.Context, tenantID, unitID, customerID string) ([]*entity.Appointment, error) {
 	params := db.ListAppointmentsByCustomerParams{
 		TenantID:   uuidStringToPgtype(tenantID),
+		UnitID:     uuidStringToPgtype(unitID),
 		CustomerID: uuidStringToPgtype(customerID),
 	}
 
@@ -350,6 +357,7 @@ func (r *AppointmentRepository) ListByCustomer(ctx context.Context, tenantID, cu
 func (r *AppointmentRepository) CheckConflict(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	professionalID string,
 	startTime, endTime time.Time,
 	excludeAppointmentID string,
@@ -361,6 +369,7 @@ func (r *AppointmentRepository) CheckConflict(
 
 	params := db.CheckAppointmentConflictParams{
 		TenantID:       uuidStringToPgtype(tenantID),
+		UnitID:         uuidStringToPgtype(unitID),
 		ProfessionalID: uuidStringToPgtype(professionalID),
 		ID:             excludeID,
 		StartTime:      timestampToTimestamptz(startTime),
@@ -379,11 +388,13 @@ func (r *AppointmentRepository) CheckConflict(
 func (r *AppointmentRepository) CheckBlockedTimeConflict(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	professionalID string,
 	startTime, endTime time.Time,
 ) (bool, error) {
 	params := db.CheckBlockedTimeConflictForAppointmentParams{
 		TenantID:       uuidStringToPgtype(tenantID),
+		UnitID:         uuidStringToPgtype(unitID),
 		ProfessionalID: uuidStringToPgtype(professionalID),
 		StartTime:      timestampToTimestamptz(startTime),
 		EndTime:        timestampToTimestamptz(endTime),
@@ -401,6 +412,7 @@ func (r *AppointmentRepository) CheckBlockedTimeConflict(
 func (r *AppointmentRepository) CheckMinimumIntervalConflict(
 	ctx context.Context,
 	tenantID string,
+	unitID string,
 	professionalID string,
 	startTime, endTime time.Time,
 	excludeAppointmentID string,
@@ -413,6 +425,7 @@ func (r *AppointmentRepository) CheckMinimumIntervalConflict(
 
 	params := db.CheckMinimumIntervalConflictParams{
 		TenantID:        uuidStringToPgtype(tenantID),
+		UnitID:          uuidStringToPgtype(unitID),
 		ProfessionalID:  uuidStringToPgtype(professionalID),
 		ExcludeID:       excludeID,
 		StartTime:       timestampToTimestamptz(startTime),
@@ -429,9 +442,10 @@ func (r *AppointmentRepository) CheckMinimumIntervalConflict(
 }
 
 // CountByStatus conta agendamentos por status.
-func (r *AppointmentRepository) CountByStatus(ctx context.Context, tenantID string, status valueobject.AppointmentStatus) (int64, error) {
+func (r *AppointmentRepository) CountByStatus(ctx context.Context, tenantID, unitID string, status valueobject.AppointmentStatus) (int64, error) {
 	params := db.CountAppointmentsByStatusParams{
 		TenantID: uuidStringToPgtype(tenantID),
+		UnitID:   uuidStringToPgtype(unitID),
 		Status:   status.String(),
 	}
 
@@ -444,12 +458,13 @@ func (r *AppointmentRepository) CountByStatus(ctx context.Context, tenantID stri
 }
 
 // GetDailyStats retorna estatísticas diárias.
-func (r *AppointmentRepository) GetDailyStats(ctx context.Context, tenantID string, date time.Time) (*port.AppointmentDailyStats, error) {
+func (r *AppointmentRepository) GetDailyStats(ctx context.Context, tenantID, unitID string, date time.Time) (*port.AppointmentDailyStats, error) {
 	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	endOfDay := startOfDay.Add(24 * time.Hour)
 
 	params := db.GetDailyAppointmentStatsParams{
 		TenantID:    uuidStringToPgtype(tenantID),
+		UnitID:      uuidStringToPgtype(unitID),
 		StartTime:   timestampToTimestamptz(startOfDay),
 		StartTime_2: timestampToTimestamptz(endOfDay),
 	}

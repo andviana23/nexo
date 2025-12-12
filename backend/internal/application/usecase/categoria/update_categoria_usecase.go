@@ -27,11 +27,11 @@ func NewUpdateCategoriaServicoUseCase(repo port.CategoriaServicoRepository, logg
 // Execute atualiza uma categoria de serviço
 func (uc *UpdateCategoriaServicoUseCase) Execute(
 	ctx context.Context,
-	tenantID, categoriaID string,
+	tenantID, unitID, categoriaID string,
 	req dto.UpdateCategoriaServicoRequest,
 ) (*dto.CategoriaServicoResponse, error) {
 	// Buscar categoria existente
-	categoria, err := uc.repo.FindByID(ctx, tenantID, categoriaID)
+	categoria, err := uc.repo.FindByID(ctx, tenantID, unitID, categoriaID)
 	if err != nil {
 		uc.logger.Error("erro ao buscar categoria de serviço",
 			zap.Error(err),
@@ -47,7 +47,7 @@ func (uc *UpdateCategoriaServicoUseCase) Execute(
 
 	// Verificar duplicidade de nome (exceto própria categoria)
 	if req.Nome != categoria.Nome {
-		exists, err := uc.repo.CheckNomeExists(ctx, tenantID, req.Nome, categoriaID)
+		exists, err := uc.repo.CheckNomeExists(ctx, tenantID, unitID, req.Nome, categoriaID)
 		if err != nil {
 			uc.logger.Error("erro ao verificar nome duplicado",
 				zap.Error(err),

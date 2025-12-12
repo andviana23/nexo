@@ -27,10 +27,10 @@ func NewGetCategoriaServicoUseCase(repo port.CategoriaServicoRepository, logger 
 // Execute busca uma categoria por ID
 func (uc *GetCategoriaServicoUseCase) Execute(
 	ctx context.Context,
-	tenantID, categoriaID string,
+	tenantID, unitID, categoriaID string,
 ) (*dto.CategoriaServicoResponse, error) {
 	// Buscar categoria
-	categoria, err := uc.repo.FindByID(ctx, tenantID, categoriaID)
+	categoria, err := uc.repo.FindByID(ctx, tenantID, unitID, categoriaID)
 	if err != nil {
 		uc.logger.Error("erro ao buscar categoria de serviço",
 			zap.Error(err),

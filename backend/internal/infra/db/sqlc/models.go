@@ -181,6 +181,8 @@ type CategoriasServico struct {
 	ID pgtype.UUID `json:"id"`
 	// Isolamento multi-tenant - OBRIGATÓRIO em todas as queries
 	TenantID pgtype.UUID `json:"tenant_id"`
+	// ID da Unidade (Isolamento Multi-Unidade)
+	UnitID pgtype.UUID `json:"unit_id"`
 	// Nome da categoria (ex: Cortes de Cabelo, Barba, Tratamentos Capilares)
 	Nome      string  `json:"nome"`
 	Descricao *string `json:"descricao"`

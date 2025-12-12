@@ -18,23 +18,23 @@ type CategoriaServicoRepository interface {
 	Create(ctx context.Context, categoria *entity.CategoriaServico) error
 
 	// FindByID busca uma categoria por ID
-	FindByID(ctx context.Context, tenantID, id string) (*entity.CategoriaServico, error)
+	FindByID(ctx context.Context, tenantID, unitID, id string) (*entity.CategoriaServico, error)
 
 	// List lista todas as categorias com filtros
-	List(ctx context.Context, tenantID string, filter CategoriaServicoFilter) ([]*entity.CategoriaServico, error)
+	List(ctx context.Context, tenantID, unitID string, filter CategoriaServicoFilter) ([]*entity.CategoriaServico, error)
 
 	// Update atualiza uma categoria existente
 	Update(ctx context.Context, categoria *entity.CategoriaServico) error
 
 	// Delete deleta uma categoria
-	Delete(ctx context.Context, tenantID, id string) error
+	Delete(ctx context.Context, tenantID, unitID, id string) error
 
 	// CheckNomeExists verifica se já existe categoria com o mesmo nome
-	CheckNomeExists(ctx context.Context, tenantID, nome, excludeID string) (bool, error)
+	CheckNomeExists(ctx context.Context, tenantID, unitID, nome, excludeID string) (bool, error)
 
 	// CountServicos conta quantos serviços estão vinculados à categoria
-	CountServicos(ctx context.Context, tenantID, categoriaID string) (int64, error)
+	CountServicos(ctx context.Context, tenantID, unitID, categoriaID string) (int64, error)
 
 	// ToggleStatus ativa/desativa uma categoria
-	ToggleStatus(ctx context.Context, tenantID, id string, ativa bool) error
+	ToggleStatus(ctx context.Context, tenantID, unitID, id string, ativa bool) error
 }

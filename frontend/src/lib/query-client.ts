@@ -216,6 +216,7 @@ export const queryKeys = {
   // Unidades/Filiais
   units: {
     all: ['units'] as const,
+    me: () => [...queryKeys.units.all, 'me'] as const,
     userUnits: () => [...queryKeys.units.all, 'user-units'] as const,
     detail: (id: string) => [...queryKeys.units.all, 'detail', id] as const,
     list: (filters?: Record<string, unknown>) =>

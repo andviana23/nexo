@@ -25,6 +25,7 @@ var (
 type Servico struct {
 	ID               uuid.UUID
 	TenantID         uuid.UUID
+	UnitID           uuid.UUID // Identificador da unidade
 	CategoriaID      uuid.UUID // Referência à CategoriaServico (pode ser uuid.Nil)
 	Nome             string
 	Descricao        string
@@ -46,7 +47,7 @@ type Servico struct {
 }
 
 // NewServico cria um novo serviço com validações
-func NewServico(tenantID uuid.UUID, nome string, preco decimal.Decimal, duracao int) (*Servico, error) {
+func NewServico(tenantID, unitID uuid.UUID, nome string, preco decimal.Decimal, duracao int) (*Servico, error) {
 	// Validar nome
 	nome = strings.TrimSpace(nome)
 	if nome == "" {
@@ -69,6 +70,7 @@ func NewServico(tenantID uuid.UUID, nome string, preco decimal.Decimal, duracao 
 	return &Servico{
 		ID:               uuid.New(),
 		TenantID:         tenantID,
+		UnitID:           unitID,
 		Nome:             nome,
 		Preco:            preco,
 		Duracao:          duracao,

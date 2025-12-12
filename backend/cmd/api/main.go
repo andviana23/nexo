@@ -324,9 +324,10 @@ func main() {
 	// Initialize mapper - Commands
 	commandMapper := mapper.NewCommandMapper()
 
-	// Initialize use cases - Commands (9 use cases)
+	// Initialize use cases - Commands (10 use cases)
 	createCommandUC := command.NewCreateCommandUseCase(commandRepo, commandMapper)
 	getCommandUC := command.NewGetCommandUseCase(commandRepo, commandMapper)
+	listCommandsUC := command.NewListCommandsUseCase(commandRepo, commandMapper)
 	getCommandByAppointmentUC := command.NewGetCommandByAppointmentUseCase(commandRepo, commandMapper)
 	// T-EST-001: Validação de estoque ao adicionar item PRODUTO
 	addCommandItemUC := command.NewAddCommandItemUseCase(commandRepo, produtoRepo, commandMapper)
@@ -691,10 +692,11 @@ func main() {
 		logger,
 	)
 
-	// Initialize handlers - Commands (10 use cases)
+	// Initialize handlers - Commands (11 use cases)
 	commandHandler := handler.NewCommandHandler(
 		createCommandUC,
 		getCommandUC,
+		listCommandsUC,
 		getCommandByAppointmentUC,
 		addCommandItemUC,
 		removeCommandItemUC,
@@ -882,7 +884,7 @@ func main() {
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3006", "http://localhost:8000"},
 		AllowMethods:     []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE, echo.OPTIONS},
 		AllowCredentials: true, // Permite cookies (refresh token)
-		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "X-Unit-ID"},
 	}))
 
 	// Health Check Endpoint
@@ -997,10 +999,11 @@ func main() {
 	blockedTimesGroup.GET("", blockedTimeHandler.ListBlockedTimes)
 	blockedTimesGroup.DELETE("/:id", blockedTimeHandler.DeleteBlockedTime)
 
-	// Command routes - 10 endpoints (PROTEGIDAS com JWT + RBAC + ASSINATURA ATIVA)
+	// Command routes - 11 endpoints (PROTEGIDAS com JWT + RBAC + ASSINATURA ATIVA)
 	// T-ASAAS-003: Requer assinatura ativa (grupo guarded)
 	commandsGroup := guarded.Group("/commands")
 	commandsGroup.POST("", commandHandler.CreateCommand, mw.RequireAnyRole(logger))
+	commandsGroup.GET("", commandHandler.ListCommands, mw.RequireAnyRole(logger)) // LIST - filtros e paginação
 	commandsGroup.GET("/by-appointment/:appointmentId", commandHandler.GetCommandByAppointment, mw.RequireAnyRole(logger))
 	commandsGroup.GET("/:id", commandHandler.GetCommand, mw.RequireAnyRole(logger))
 	commandsGroup.POST("/:id/items", commandHandler.AddCommandItem, mw.RequireAnyRole(logger))

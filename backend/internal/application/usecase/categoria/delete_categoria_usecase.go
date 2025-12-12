@@ -25,10 +25,10 @@ func NewDeleteCategoriaServicoUseCase(repo port.CategoriaServicoRepository, logg
 // Execute deleta uma categoria de serviço
 func (uc *DeleteCategoriaServicoUseCase) Execute(
 	ctx context.Context,
-	tenantID, categoriaID string,
+	tenantID, unitID, categoriaID string,
 ) error {
 	// Verificar se categoria existe
-	categoria, err := uc.repo.FindByID(ctx, tenantID, categoriaID)
+	categoria, err := uc.repo.FindByID(ctx, tenantID, unitID, categoriaID)
 	if err != nil {
 		uc.logger.Error("erro ao buscar categoria de serviço",
 			zap.Error(err),
@@ -43,7 +43,7 @@ func (uc *DeleteCategoriaServicoUseCase) Execute(
 	}
 
 	// Verificar se há serviços vinculados
-	count, err := uc.repo.CountServicos(ctx, tenantID, categoriaID)
+	count, err := uc.repo.CountServicos(ctx, tenantID, unitID, categoriaID)
 	if err != nil {
 		uc.logger.Error("erro ao contar serviços da categoria",
 			zap.Error(err),
@@ -63,7 +63,7 @@ func (uc *DeleteCategoriaServicoUseCase) Execute(
 	}
 
 	// Deletar categoria
-	if err := uc.repo.Delete(ctx, tenantID, categoriaID); err != nil {
+	if err := uc.repo.Delete(ctx, tenantID, unitID, categoriaID); err != nil {
 		uc.logger.Error("erro ao deletar categoria de serviço",
 			zap.Error(err),
 			zap.String("tenant_id", tenantID),

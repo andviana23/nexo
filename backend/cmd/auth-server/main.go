@@ -80,7 +80,7 @@ func main() {
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:8000"},
 		AllowMethods:     []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 		AllowCredentials: true,
-		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "X-Unit-ID"},
 	}))
 
 	// Health Check Endpoint

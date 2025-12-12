@@ -7,6 +7,7 @@
 INSERT INTO appointments (
     id,
     tenant_id,
+    unit_id,
     professional_id,
     customer_id,
     start_time,
@@ -18,7 +19,7 @@ INSERT INTO appointments (
     google_calendar_event_id,
     command_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 ) RETURNING *;
 
 -- name: CreateAppointmentService :exec
@@ -40,7 +41,8 @@ SELECT
 FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
-WHERE a.id = $1 AND a.tenant_id = $2;
+WHERE a.id = $1 AND a.tenant_id = $2
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR a.unit_id = sqlc.narg(unit_id));
 
 -- name: GetAppointmentServices :many
 SELECT 
@@ -143,6 +145,7 @@ FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
 WHERE a.tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR a.unit_id = sqlc.narg(unit_id))
   AND ($2::uuid IS NULL OR a.professional_id = $2)
   AND ($3::uuid IS NULL OR a.customer_id = $3)
   AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR a.status = ANY($4::text[]))
@@ -155,6 +158,7 @@ LIMIT $7 OFFSET $8;
 SELECT COUNT(*)
 FROM appointments a
 WHERE a.tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR a.unit_id = sqlc.narg(unit_id))
   AND ($2::uuid IS NULL OR a.professional_id = $2)
   AND ($3::uuid IS NULL OR a.customer_id = $3)
   AND (COALESCE(array_length($4::text[], 1), 0) = 0 OR a.status = ANY($4::text[]))
@@ -171,6 +175,7 @@ FROM appointments a
 JOIN profissionais p ON p.id = a.professional_id
 JOIN clientes c ON c.id = a.customer_id
 WHERE a.tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR a.unit_id = sqlc.narg(unit_id))
   AND a.professional_id = $2
   AND a.start_time >= $3
   AND a.start_time < $4
@@ -197,6 +202,7 @@ LIMIT 50;
 SELECT EXISTS (
     SELECT 1 FROM appointments
     WHERE tenant_id = $1
+      AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
       AND professional_id = $2
       AND id != $3
       AND status NOT IN ('CANCELED', 'NO_SHOW')
@@ -236,7 +242,9 @@ SELECT EXISTS (
 -- name: CountAppointmentsByStatus :one
 SELECT COUNT(*)
 FROM appointments
-WHERE tenant_id = $1 AND status = $2;
+WHERE tenant_id = $1 
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
+  AND status = $2;
 
 -- name: GetDailyAppointmentStats :one
 SELECT 
@@ -247,6 +255,7 @@ SELECT
     COALESCE(SUM(total_price) FILTER (WHERE status = 'DONE'), 0) as total_revenue
 FROM appointments
 WHERE tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR unit_id = sqlc.narg(unit_id))
   AND start_time >= $2
   AND start_time < $3;
 

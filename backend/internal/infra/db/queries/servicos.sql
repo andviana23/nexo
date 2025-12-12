@@ -12,6 +12,7 @@
 INSERT INTO servicos (
     id,
     tenant_id,
+    unit_id,
     categoria_id,
     nome,
     descricao,
@@ -27,7 +28,7 @@ INSERT INTO servicos (
     criado_em,
     atualizado_em
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW()
 ) RETURNING *;
 
 -- ============================================================================
@@ -56,7 +57,8 @@ SELECT
     cs.cor AS categoria_cor
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
-WHERE s.id = $1 AND s.tenant_id = $2;
+WHERE s.id = $1 AND s.tenant_id = $2
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR s.unit_id = sqlc.narg(unit_id));
 
 -- name: ListServicos :many
 SELECT 
@@ -81,6 +83,7 @@ SELECT
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
 WHERE s.tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR s.unit_id = sqlc.narg(unit_id))
 ORDER BY s.nome ASC;
 
 -- name: ListServicosAtivos :many
@@ -105,7 +108,9 @@ SELECT
     cs.cor AS categoria_cor
 FROM servicos s
 LEFT JOIN categorias_servicos cs ON cs.id = s.categoria_id AND cs.tenant_id = s.tenant_id
-WHERE s.tenant_id = $1 AND s.ativo = true
+WHERE s.tenant_id = $1
+  AND (sqlc.narg(unit_id)::uuid IS NULL OR s.unit_id = sqlc.narg(unit_id))
+  AND s.ativo = true
 ORDER BY s.nome ASC;
 
 -- name: ListServicosByCategoria :many
@@ -216,6 +221,7 @@ UPDATE servicos SET
     profissionais_ids = $11,
     observacoes = $12,
     tags = $13,
+    unit_id = COALESCE(sqlc.narg(unit_id), unit_id),
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
 RETURNING *;

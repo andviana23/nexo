@@ -23,7 +23,7 @@ func NewProfessionalRepository(queries *db.Queries) *ProfessionalRepository {
 }
 
 // List lista profissionais com filtros e paginação
-func (r *ProfessionalRepository) List(ctx context.Context, tenantID string, req dto.ListProfessionalsRequest) ([]dto.ProfessionalResponse, int64, error) {
+func (r *ProfessionalRepository) List(ctx context.Context, tenantID, unitID string, req dto.ListProfessionalsRequest) ([]dto.ProfessionalResponse, int64, error) {
 	// Defaults
 	if req.Page <= 0 {
 		req.Page = 1
@@ -53,6 +53,7 @@ func (r *ProfessionalRepository) List(ctx context.Context, tenantID string, req 
 
 	listParams := db.ListProfessionalsParams{
 		TenantID:   stringToUUID(tenantID),
+		UnitID:     stringToUUID(unitID),
 		Status:     status,
 		Tipo:       tipo,
 		Search:     search,
@@ -68,6 +69,7 @@ func (r *ProfessionalRepository) List(ctx context.Context, tenantID string, req 
 
 	countParams := db.CountProfessionalsParams{
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUID(unitID),
 		Status:   status,
 		Tipo:     tipo,
 		Search:   search,
@@ -87,10 +89,11 @@ func (r *ProfessionalRepository) List(ctx context.Context, tenantID string, req 
 }
 
 // GetByID busca um profissional por ID
-func (r *ProfessionalRepository) GetByID(ctx context.Context, tenantID, id string) (*dto.ProfessionalResponse, error) {
+func (r *ProfessionalRepository) GetByID(ctx context.Context, tenantID, unitID, id string) (*dto.ProfessionalResponse, error) {
 	params := db.GetProfessionalByIDParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUID(unitID),
 	}
 
 	row, err := r.queries.GetProfessionalByID(ctx, params)
@@ -126,7 +129,7 @@ func (r *ProfessionalRepository) GetByID(ctx context.Context, tenantID, id strin
 }
 
 // Create cria um novo profissional
-func (r *ProfessionalRepository) Create(ctx context.Context, tenantID string, req dto.CreateProfessionalRequest) (*dto.ProfessionalResponse, error) {
+func (r *ProfessionalRepository) Create(ctx context.Context, tenantID, unitID string, req dto.CreateProfessionalRequest) (*dto.ProfessionalResponse, error) {
 	// Parse comissao
 	var comissao decimal.Decimal
 	if req.Comissao != 0 {
@@ -155,6 +158,7 @@ func (r *ProfessionalRepository) Create(ctx context.Context, tenantID string, re
 
 	params := db.CreateProfessionalParams{
 		TenantID:        stringToUUID(tenantID),
+		UnitID:          stringToUUID(unitID),
 		Nome:            req.Nome,
 		Email:           req.Email,
 		Telefone:        req.Telefone,
@@ -279,10 +283,11 @@ func (r *ProfessionalRepository) UpdateStatus(ctx context.Context, tenantID, id 
 }
 
 // Delete remove um profissional
-func (r *ProfessionalRepository) Delete(ctx context.Context, tenantID, id string) error {
+func (r *ProfessionalRepository) Delete(ctx context.Context, tenantID, unitID, id string) error {
 	params := db.DeleteProfessionalParams{
 		ID:       stringToUUID(id),
 		TenantID: stringToUUID(tenantID),
+		UnitID:   stringToUUID(unitID),
 	}
 
 	err := r.queries.DeleteProfessional(ctx, params)

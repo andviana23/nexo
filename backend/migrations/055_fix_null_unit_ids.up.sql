@@ -6,9 +6,22 @@
 DO $$
 DECLARE
     default_unit_id UUID;
+    unit_name_col TEXT;
 BEGIN
     -- 1. Find a target unit (Prefer Mangabeiras, fallback to any)
-    SELECT id INTO default_unit_id FROM units WHERE name ILIKE '%Mangabeiras%' LIMIT 1;
+    SELECT column_name
+    INTO unit_name_col
+    FROM information_schema.columns
+    WHERE table_name = 'units'
+      AND column_name IN ('nome', 'name')
+    ORDER BY CASE column_name WHEN 'nome' THEN 1 ELSE 2 END
+    LIMIT 1;
+
+    IF unit_name_col IS NOT NULL THEN
+        EXECUTE format('SELECT id FROM units WHERE %I ILIKE $1 LIMIT 1', unit_name_col)
+        INTO default_unit_id
+        USING '%Mangabeiras%';
+    END IF;
     
     IF default_unit_id IS NULL THEN
         SELECT id INTO default_unit_id FROM units LIMIT 1;

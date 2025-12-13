@@ -1,5 +1,6 @@
 import { getErrorMessage } from '@/lib/axios';
 import { serviceService } from '@/services/serviceService';
+import { useActiveUnitId, useNeedsSelection, useUnitHydrated } from '@/store/unit-store';
 import { CreateServiceDTO, ServiceFilters, UpdateServiceDTO } from '@/types/service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -14,24 +15,41 @@ export const SERVICE_KEYS = {
 };
 
 export function useServices(filters: ServiceFilters = {}) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: SERVICE_KEYS.list(filters),
     queryFn: () => serviceService.getAll(filters),
+    enabled: unitReady,
   });
 }
 
 export function useService(id: string) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: SERVICE_KEYS.detail(id),
     queryFn: () => serviceService.getById(id),
-    enabled: !!id,
+    enabled: unitReady && !!id,
   });
 }
 
 export function useServiceStats() {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: SERVICE_KEYS.stats(),
     queryFn: () => serviceService.getStats(),
+    enabled: unitReady,
   });
 }
 

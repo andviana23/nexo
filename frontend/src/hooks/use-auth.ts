@@ -89,10 +89,13 @@ export function useAuth(): UseAuthReturn {
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.units.all });
 
-      // Sinaliza que precisa selecionar unidade antes de acessar o sistema
-      // O UnitSelectionProvider vai detectar e exibir o modal
+      // Reset unit store e sinaliza que precisa selecionar unidade
+      // IMPORTANTE: Reseta activeUnit para forçar nova seleção (mesmo se tinha do localStorage)
       import('@/store/unit-store').then(({ useUnitStore }) => {
-        useUnitStore.getState().setNeedsSelection(true);
+        const unitStore = useUnitStore.getState();
+        unitStore.clearActiveUnit(); // Limpa unidade anterior (se existia)
+        unitStore.setNeedsSelection(true);
+        console.log('🔍 [Login] Unit store resetado, needsSelection=true');
       });
     },
 

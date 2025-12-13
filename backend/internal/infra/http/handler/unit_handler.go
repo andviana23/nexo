@@ -388,54 +388,76 @@ func (h *UnitHandler) ListMyUnits(c echo.Context) error {
 func (h *UnitHandler) SwitchUnit(c echo.Context) error {
 	userID, err := h.getUserID(c)
 	if err != nil {
+		h.logger.Error("SwitchUnit: erro ao obter userID", zap.Error(err))
 		return err
 	}
 
 	tenantID, err := h.getTenantID(c)
 	if err != nil {
+		h.logger.Error("SwitchUnit: erro ao obter tenantID", zap.Error(err))
 		return err
 	}
 
+	h.logger.Info("SwitchUnit: iniciando",
+		zap.String("userID", userID.String()),
+		zap.String("tenantID", tenantID.String()))
+
 	var req dto.SwitchUnitRequest
 	if err := c.Bind(&req); err != nil {
+		h.logger.Error("SwitchUnit: erro no bind", zap.Error(err))
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
 	if err := c.Validate(&req); err != nil {
+		h.logger.Error("SwitchUnit: erro na validação", zap.Error(err))
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
 	unitID, err := uuid.Parse(req.UnitID)
 	if err != nil {
+		h.logger.Error("SwitchUnit: erro ao parsear unitID", zap.Error(err))
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "unit_id inválido"})
 	}
+
+	h.logger.Info("SwitchUnit: unitID parseado", zap.String("unitID", unitID.String()))
 
 	// Verificar se usuário tem acesso à unidade
 	hasAccess, err := h.checkAccessUC.Execute(c.Request().Context(), userID, unitID)
 	if err != nil {
-		h.logger.Error("Erro ao verificar acesso à unidade", zap.Error(err))
+		h.logger.Error("SwitchUnit: erro ao verificar acesso à unidade", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	if !hasAccess {
+		h.logger.Warn("SwitchUnit: usuário sem acesso à unidade")
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "usuário não tem acesso a esta unidade"})
 	}
 
+	h.logger.Info("SwitchUnit: acesso verificado, definindo unidade padrão")
+
 	// Definir como unidade padrão
 	if err := h.setDefaultUC.Execute(c.Request().Context(), userID, unitID); err != nil {
-		h.logger.Error("Erro ao definir unidade padrão", zap.Error(err))
+		h.logger.Error("SwitchUnit: erro ao definir unidade padrão", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
+
+	h.logger.Info("SwitchUnit: buscando detalhes da unidade")
 
 	// Buscar detalhes da unidade e user_unit
 	unitEntity, err := h.getUC.Execute(c.Request().Context(), unitID, tenantID)
 	if err != nil {
+		h.logger.Error("SwitchUnit: erro ao buscar unidade", zap.Error(err), zap.String("unitID", unitID.String()), zap.String("tenantID", tenantID.String()))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	h.logger.Info("SwitchUnit: listando unidades do usuário")
+
 	userUnits, err := h.listUserUnitsUC.Execute(c.Request().Context(), userID)
 	if err != nil {
+		h.logger.Error("SwitchUnit: erro ao listar unidades do usuário", zap.Error(err))
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
+
+	h.logger.Info("SwitchUnit: construindo resposta", zap.Int("totalUnits", len(userUnits)))
 
 	var userUnit *dto.UserUnitResponse
 	for _, uu := range userUnits {

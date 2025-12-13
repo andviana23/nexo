@@ -29,6 +29,7 @@ import type {
   RescheduleAppointmentRequest,
   UpdateAppointmentStatusRequest
 } from '@/types/appointment';
+import { useActiveUnitId, useNeedsSelection, useUnitHydrated } from '@/store/unit-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -54,11 +55,16 @@ export const appointmentKeys = {
  * Hook para listar agendamentos com filtros
  */
 export function useAppointments(filters: ListAppointmentsFilters = {}) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+
   return useQuery({
     queryKey: appointmentKeys.list(filters),
     queryFn: () => appointmentService.list(filters),
     staleTime: 30_000, // 30 segundos
     refetchOnWindowFocus: true,
+    enabled: isUnitHydrated && !needsSelection && !!activeUnitId,
   });
 }
 
@@ -67,6 +73,10 @@ export function useAppointments(filters: ListAppointmentsFilters = {}) {
  */
 export function useCalendarEvents(filters: ListAppointmentsFilters = {}) {
   console.log('[useCalendarEvents] Hook chamado com filtros:', filters);
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+
   return useQuery({
     queryKey: [...appointmentKeys.list(filters), 'calendar'],
     queryFn: async () => {
@@ -77,6 +87,7 @@ export function useCalendarEvents(filters: ListAppointmentsFilters = {}) {
     },
     staleTime: 30_000,
     refetchOnWindowFocus: true,
+    enabled: isUnitHydrated && !needsSelection && !!activeUnitId,
   });
 }
 
@@ -84,10 +95,14 @@ export function useCalendarEvents(filters: ListAppointmentsFilters = {}) {
  * Hook para buscar um agendamento específico
  */
 export function useAppointment(id: string) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+
   return useQuery({
     queryKey: appointmentKeys.detail(id),
     queryFn: () => appointmentService.getById(id),
-    enabled: !!id,
+    enabled: isUnitHydrated && !needsSelection && !!activeUnitId && !!id,
   });
 }
 
@@ -95,10 +110,15 @@ export function useAppointment(id: string) {
  * Hook para listar profissionais (barbeiros)
  */
 export function useProfessionals() {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+
   return useQuery({
     queryKey: appointmentKeys.professionals(),
     queryFn: () => appointmentService.listProfessionals(),
     staleTime: 5 * 60_000, // 5 minutos
+    enabled: isUnitHydrated && !needsSelection && !!activeUnitId,
   });
 }
 
@@ -107,6 +127,10 @@ export function useProfessionals() {
  */
 export function useCalendarResources() {
   console.log('[useCalendarResources] Hook chamado');
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+
   return useQuery({
     queryKey: [...appointmentKeys.professionals(), 'calendar'],
     queryFn: async () => {
@@ -116,6 +140,7 @@ export function useCalendarResources() {
       return professionalsToCalendarResources(professionals);
     },
     staleTime: 5 * 60_000,
+    enabled: isUnitHydrated && !needsSelection && !!activeUnitId,
   });
 }
 

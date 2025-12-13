@@ -26,6 +26,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/mapper"
@@ -58,6 +59,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -113,7 +115,15 @@ func main() {
 
 	// Initialize database connection
 	ctx := context.Background()
-	dbPool, err := pgxpool.New(ctx, databaseURL)
+	poolCfg, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		logger.Fatal("Erro ao parsear DATABASE_URL", zap.Error(err))
+	}
+	if strings.EqualFold(os.Getenv("PGX_SIMPLE_PROTOCOL"), "true") {
+		// Ajuda quando DATABASE_URL aponta para poolers (ex.: PgBouncer/Neon) que têm problemas com prepared statements.
+		poolCfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	}
+	dbPool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		logger.Fatal("Erro ao conectar ao banco de dados", zap.Error(err))
 	}

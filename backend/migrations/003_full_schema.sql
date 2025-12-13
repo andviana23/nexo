@@ -651,7 +651,13 @@ CREATE OR REPLACE FUNCTION update_updated_at_column()
  LANGUAGE plpgsql
 AS $function$
 BEGIN
-    NEW.updated_at = NOW();
+    -- Compatível com tabelas que usam updated_at e/ou atualizado_em
+    IF to_jsonb(NEW) ? 'updated_at' THEN
+        NEW.updated_at = NOW();
+    END IF;
+    IF to_jsonb(NEW) ? 'atualizado_em' THEN
+        NEW.atualizado_em = NOW();
+    END IF;
     RETURN NEW;
 END;
 $function$;

@@ -326,9 +326,10 @@ func (q *Queries) ListUserUnits(ctx context.Context, userID pgtype.UUID) ([]List
 
 const setUserDefaultUnit = `-- name: SetUserDefaultUnit :exec
 UPDATE user_units
-SET is_default = CASE WHEN unit_id = $2 THEN true ELSE false END,
+SET is_default = true,
     atualizado_em = NOW()
 WHERE user_id = $1
+  AND unit_id = $2
 `
 
 type SetUserDefaultUnitParams struct {
@@ -336,6 +337,8 @@ type SetUserDefaultUnitParams struct {
 	UnitID pgtype.UUID `json:"unit_id"`
 }
 
+// Simplesmente seta is_default=true; o trigger ensure_single_default_unit
+// cuida de desmarcar automaticamente as outras unidades do usuário.
 func (q *Queries) SetUserDefaultUnit(ctx context.Context, arg SetUserDefaultUnitParams) error {
 	_, err := q.db.Exec(ctx, setUserDefaultUnit, arg.UserID, arg.UnitID)
 	return err

@@ -58,10 +58,13 @@ SELECT EXISTS(
 ) as has_access;
 
 -- name: SetUserDefaultUnit :exec
+-- Simplesmente seta is_default=true; o trigger ensure_single_default_unit
+-- cuida de desmarcar automaticamente as outras unidades do usuário.
 UPDATE user_units
-SET is_default = CASE WHEN unit_id = $2 THEN true ELSE false END,
+SET is_default = true,
     atualizado_em = NOW()
-WHERE user_id = $1;
+WHERE user_id = $1
+  AND unit_id = $2;
 
 -- name: UpdateUserUnitRole :one
 UPDATE user_units

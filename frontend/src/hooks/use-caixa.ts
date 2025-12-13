@@ -8,6 +8,7 @@
  */
 
 import { caixaService } from '@/services/caixa-service';
+import { useActiveUnitId, useNeedsSelection, useUnitHydrated } from '@/store/unit-store';
 import type {
     AbrirCaixaRequest,
     FecharCaixaRequest,
@@ -51,11 +52,17 @@ export const caixaKeys = {
  * Hook para verificar status do caixa (aberto ou fechado)
  */
 export function useCaixaStatus() {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: caixaKeys.status(),
     queryFn: () => caixaService.getStatus(),
     staleTime: 30 * 1000, // 30 segundos
     refetchInterval: 60 * 1000, // Atualiza a cada 1 minuto
+    enabled: unitReady,
   });
 }
 
@@ -63,10 +70,16 @@ export function useCaixaStatus() {
  * Hook para buscar caixa aberto atual
  */
 export function useCaixaAberto() {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: caixaKeys.aberto(),
     queryFn: () => caixaService.getCaixaAberto(),
     retry: false, // Não retentar se não houver caixa aberto
+    enabled: unitReady,
   });
 }
 
@@ -74,11 +87,16 @@ export function useCaixaAberto() {
  * Hook para buscar totais do caixa
  */
 export function useCaixaTotais(enabled: boolean = true) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: caixaKeys.totais(),
     queryFn: () => caixaService.getTotais(),
     staleTime: 10 * 1000, // 10 segundos - atualiza mais rápido para refletir vendas
-    enabled,
+    enabled: enabled && unitReady,
     retry: false, // Não retentar se falhar (ex: caixa fechado)
   });
 }
@@ -87,9 +105,15 @@ export function useCaixaTotais(enabled: boolean = true) {
  * Hook para listar histórico de caixas
  */
 export function useCaixaHistorico(filters: ListCaixaHistoricoFilters = {}) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: caixaKeys.historicoList(filters),
     queryFn: () => caixaService.getHistorico(filters),
+    enabled: unitReady,
   });
 }
 
@@ -97,10 +121,15 @@ export function useCaixaHistorico(filters: ListCaixaHistoricoFilters = {}) {
  * Hook para buscar caixa por ID
  */
 export function useCaixaById(id: string) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: caixaKeys.detail(id),
     queryFn: () => caixaService.getCaixaById(id),
-    enabled: !!id,
+    enabled: unitReady && !!id,
   });
 }
 

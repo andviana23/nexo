@@ -1,4 +1,5 @@
 import { categoryService } from '@/services/category-service';
+import { useActiveUnitId, useNeedsSelection, useUnitHydrated } from '@/store/unit-store';
 import {
     CategoryFilters,
     CreateCategoryDTO,
@@ -11,17 +12,28 @@ import { toast } from 'sonner';
 export const CATEGORIES_QUERY_KEY = ['categories'];
 
 export function useCategories(filters?: CategoryFilters) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: [...CATEGORIES_QUERY_KEY, filters],
     queryFn: () => categoryService.list(filters),
+    enabled: unitReady,
   });
 }
 
 export function useCategory(id: string) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: [...CATEGORIES_QUERY_KEY, id],
     queryFn: () => categoryService.getById(id),
-    enabled: !!id,
+    enabled: unitReady && !!id,
   });
 }
 

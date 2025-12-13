@@ -84,6 +84,11 @@ backend: ## Iniciar apenas o backend (Air + Go)
 		exit 1; \
 	fi
 
+.PHONY: migrate
+migrate: ## Aplicar migrations do backend (Postgres)
+	@echo "$(YELLOW)🧱 Rodando migrations (backend/cmd/migrate)...$(NC)"
+	@cd "$(BACKEND_DIR)" && go run ./cmd/migrate
+
 .PHONY: frontend
 frontend: ## Iniciar apenas o frontend (Next.js)
 	@echo "$(YELLOW)⚛️  Frontend (Next.js)...$(NC)"

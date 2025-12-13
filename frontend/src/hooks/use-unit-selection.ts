@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { unitService } from '@/services/unit-service';
 import { queryKeys } from '@/lib/query-client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 
 // =============================================================================
 // TIPOS
@@ -71,18 +71,6 @@ export function useUnitSelection(): UseUnitSelectionReturn {
         retry: 2,
     });
 
-    // Sincroniza unidades com store quando carrega
-    useEffect(() => {
-        if (unitsData?.units) {
-            setUnits(unitsData.units);
-
-            // Auto-seleciona se só tem 1 unidade
-            if (unitsData.units.length === 1) {
-                handleSelectUnit(unitsData.units[0]);
-            }
-        }
-    }, [unitsData]);
-
     // ==========================================================================
     // MUTATION: Selecionar unidade (switch)
     // ==========================================================================
@@ -113,16 +101,27 @@ export function useUnitSelection(): UseUnitSelectionReturn {
         },
     });
 
+    const switchUnitAsync = switchMutation.mutateAsync;
+
     // ==========================================================================
     // HANDLERS
     // ==========================================================================
 
-    const handleSelectUnit = useCallback(
-        async (unit: UserUnit) => {
-            await switchMutation.mutateAsync(unit.unit_id);
-        },
-        [switchMutation]
-    );
+    async function handleSelectUnit(unit: UserUnit): Promise<void> {
+        await switchUnitAsync(unit.unit_id);
+    }
+
+    // Sincroniza unidades com store quando carrega
+    useEffect(() => {
+        if (unitsData?.units) {
+            setUnits(unitsData.units);
+
+            // Auto-seleciona se só tem 1 unidade
+            if (unitsData.units.length === 1) {
+                void switchUnitAsync(unitsData.units[0].unit_id);
+            }
+        }
+    }, [unitsData, setUnits, switchUnitAsync]);
 
     // ==========================================================================
     // COMPUTED: Modal deve estar aberto?

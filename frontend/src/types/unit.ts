@@ -158,7 +158,7 @@ export interface UnitContextValue {
 // CONSTANTES
 // =============================================================================
 
-export const UNIT_STORAGE_KEY = 'nexo-active-unit';
+export const UNIT_STORAGE_KEY = 'nexo-unit';
 
 /**
  * Header HTTP para identificar a unidade ativa

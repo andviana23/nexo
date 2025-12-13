@@ -2,12 +2,14 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/andviana23/barber-analytics-backend/internal/application/dto"
 	"github.com/andviana23/barber-analytics-backend/internal/application/mapper"
 	"github.com/andviana23/barber-analytics-backend/internal/application/usecase/caixa"
+	"github.com/andviana23/barber-analytics-backend/internal/domain"
 	mw "github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -370,24 +372,30 @@ func (h *CaixaHandler) ListHistorico(c echo.Context) error {
 		pageSize = 100
 	}
 
-	input := caixa.ListHistoricoInput{
-		TenantID: tenantID,
-		Page:     page,
-		PageSize: pageSize,
-	}
-
-	// Parse datas
+	// Parse datas (YYYY-MM-DD)
+	var dataInicioPtr, dataFimPtr *time.Time
 	if req.DataInicio != nil {
-		t, err := time.Parse("2006-01-02", *req.DataInicio)
-		if err == nil {
-			input.DataInicio = &t
+		parsed, err := time.Parse("2006-01-02", *req.DataInicio)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "data_inicio inválida (use YYYY-MM-DD)"})
 		}
+		dataInicioPtr = &parsed
 	}
 	if req.DataFim != nil {
-		t, err := time.Parse("2006-01-02", *req.DataFim)
-		if err == nil {
-			input.DataFim = &t
+		parsed, err := time.Parse("2006-01-02", *req.DataFim)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "data_fim inválida (use YYYY-MM-DD)"})
 		}
+		dataFimPtr = &parsed
+	}
+
+	input := caixa.ListHistoricoInput{
+		TenantID:   tenantID,
+		DataInicio: dataInicioPtr,
+		DataFim:    dataFimPtr,
+		UsuarioID:  nil,
+		Page:       page,
+		PageSize:   pageSize,
 	}
 	if req.UsuarioID != nil {
 		u, err := uuid.Parse(*req.UsuarioID)
@@ -440,6 +448,24 @@ func (h *CaixaHandler) GetTotais(c echo.Context) error {
 
 // handleCaixaError trata erros específicos do módulo caixa
 func handleCaixaError(c echo.Context, err error) error {
+	// Preferir errors.Is para não depender de mensagens string (mais robusto)
+	switch {
+	case errors.Is(err, domain.ErrCaixaJaAberto):
+		return c.JSON(http.StatusConflict, map[string]string{"error": "já existe um caixa aberto"})
+	case errors.Is(err, domain.ErrCaixaNaoAberto):
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "nenhum caixa aberto"})
+	case errors.Is(err, domain.ErrCaixaJaFechado):
+		return c.JSON(http.StatusConflict, map[string]string{"error": "caixa já está fechado"})
+	case errors.Is(err, domain.ErrCaixaJustificativaObrigatoria):
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "justificativa obrigatória para divergência maior que R$ 5,00"})
+	case errors.Is(err, domain.ErrCaixaNotFound):
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "caixa não encontrado"})
+	case errors.Is(err, domain.ErrSangriaDestinoObrigatorio):
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "destino é obrigatório para sangria"})
+	case errors.Is(err, domain.ErrReforcoOrigemObrigatoria):
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "origem é obrigatória para reforço"})
+	}
+
 	switch err.Error() {
 	case "caixa já aberto para este tenant":
 		return c.JSON(http.StatusConflict, map[string]string{"error": "já existe um caixa aberto"})

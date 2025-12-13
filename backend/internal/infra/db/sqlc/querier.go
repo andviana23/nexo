@@ -588,8 +588,8 @@ type Querier interface {
 	ListBlockedTimes(ctx context.Context, arg ListBlockedTimesParams) ([]BlockedTime, error)
 	// ========== LIST ==========
 	ListCaixaDiarioHistorico(ctx context.Context, arg ListCaixaDiarioHistoricoParams) ([]ListCaixaDiarioHistoricoRow, error)
-	ListCategoriasProdutos(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasProduto, error)
-	ListCategoriasProdutosAtivas(ctx context.Context, tenantID pgtype.UUID) ([]CategoriasProduto, error)
+	ListCategoriasProdutos(ctx context.Context, arg ListCategoriasProdutosParams) ([]CategoriasProduto, error)
+	ListCategoriasProdutosAtivas(ctx context.Context, arg ListCategoriasProdutosAtivasParams) ([]CategoriasProduto, error)
 	ListCategoriasServicos(ctx context.Context, arg ListCategoriasServicosParams) ([]CategoriasServico, error)
 	ListCategoriasServicosAtivas(ctx context.Context, arg ListCategoriasServicosAtivasParams) ([]CategoriasServico, error)
 	ListCommands(ctx context.Context, arg ListCommandsParams) ([]Command, error)
@@ -613,6 +613,7 @@ type Querier interface {
 	ListContasPagarByPeriod(ctx context.Context, arg ListContasPagarByPeriodParams) ([]ContasAPagar, error)
 	ListContasPagarByStatus(ctx context.Context, arg ListContasPagarByStatusParams) ([]ContasAPagar, error)
 	ListContasPagarByTenant(ctx context.Context, arg ListContasPagarByTenantParams) ([]ContasAPagar, error)
+	ListContasPagarFiltered(ctx context.Context, arg ListContasPagarFilteredParams) ([]ContasAPagar, error)
 	ListContasPagarRecorrentes(ctx context.Context, tenantID pgtype.UUID) ([]ContasAPagar, error)
 	ListContasPagarVencidas(ctx context.Context, arg ListContasPagarVencidasParams) ([]ContasAPagar, error)
 	ListContasReceberByAssinatura(ctx context.Context, arg ListContasReceberByAssinaturaParams) ([]ContasAReceber, error)
@@ -623,6 +624,7 @@ type Querier interface {
 	ListContasReceberByPeriod(ctx context.Context, arg ListContasReceberByPeriodParams) ([]ContasAReceber, error)
 	ListContasReceberByStatus(ctx context.Context, arg ListContasReceberByStatusParams) ([]ContasAReceber, error)
 	ListContasReceberByTenant(ctx context.Context, arg ListContasReceberByTenantParams) ([]ContasAReceber, error)
+	ListContasReceberFiltered(ctx context.Context, arg ListContasReceberFilteredParams) ([]ContasAReceber, error)
 	// Listar contas pendentes de assinaturas (para conciliação)
 	ListContasReceberPendentesAsaas(ctx context.Context, tenantID pgtype.UUID) ([]ListContasReceberPendentesAsaasRow, error)
 	ListContasReceberVencidas(ctx context.Context, arg ListContasReceberVencidasParams) ([]ContasAReceber, error)
@@ -792,6 +794,8 @@ type Querier interface {
 	// Marcar/desmarcar cliente como assinante (RN-CLI-003, RN-CLI-004)
 	SetClienteAsSubscriber(ctx context.Context, arg SetClienteAsSubscriberParams) error
 	SetMatrizUnit(ctx context.Context, arg SetMatrizUnitParams) error
+	// Simplesmente seta is_default=true; o trigger ensure_single_default_unit
+	// cuida de desmarcar automaticamente as outras unidades do usuário.
 	SetUserDefaultUnit(ctx context.Context, arg SetUserDefaultUnitParams) error
 	// Inicia o atendimento (profissional começou os serviços)
 	StartAppointment(ctx context.Context, arg StartAppointmentParams) (Appointment, error)
@@ -809,8 +813,8 @@ type Querier interface {
 	SumContasReceberByCompetenciaAndStatus(ctx context.Context, arg SumContasReceberByCompetenciaAndStatusParams) (decimal.Decimal, error)
 	// Somar por data de confirmação (para DRE regime competência)
 	SumContasReceberByConfirmedDate(ctx context.Context, arg SumContasReceberByConfirmedDateParams) (decimal.Decimal, error)
-	SumContasReceberByPeriod(ctx context.Context, arg SumContasReceberByPeriodParams) (interface{}, error)
 	SumContasReceberByOrigem(ctx context.Context, arg SumContasReceberByOrigemParams) (interface{}, error)
+	SumContasReceberByPeriod(ctx context.Context, arg SumContasReceberByPeriodParams) (interface{}, error)
 	// Somar por data de recebimento (para fluxo de caixa)
 	SumContasReceberByReceivedDate(ctx context.Context, arg SumContasReceberByReceivedDateParams) (decimal.Decimal, error)
 	SumContasRecebidasByPeriod(ctx context.Context, arg SumContasRecebidasByPeriodParams) (interface{}, error)

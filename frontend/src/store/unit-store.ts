@@ -66,10 +66,21 @@ export const useUnitStore = create<UnitState>()(
 
       // Ações
       setUnits: (units) =>
-        set({
-          units,
-          isMultiUnit: units.length > 1,
-          error: null,
+        set((state) => {
+          const sameLength = state.units.length === units.length;
+          const sameIds =
+            sameLength &&
+            state.units.every((u, idx) => u.unit_id === units[idx]?.unit_id);
+
+          if (sameIds) {
+            return {};
+          }
+
+          return {
+            units,
+            isMultiUnit: units.length > 1,
+            error: null,
+          };
         }),
 
       setActiveUnit: (unit) => {

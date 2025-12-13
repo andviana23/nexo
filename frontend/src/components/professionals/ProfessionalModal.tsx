@@ -131,7 +131,7 @@ export function ProfessionalModal({
       observacoes: '',
       tambem_barbeiro: false,
       tipo_comissao: 'PERCENTUAL',
-      comissao: undefined,
+      comissao: 0,
       comissao_produtos: undefined,
       comissoes_por_categoria: [],
     },

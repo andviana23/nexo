@@ -167,6 +167,7 @@ type Categoria struct {
 type CategoriasProduto struct {
 	ID           pgtype.UUID        `json:"id"`
 	TenantID     pgtype.UUID        `json:"tenant_id"`
+	UnitID       pgtype.UUID        `json:"unit_id"`
 	Nome         string             `json:"nome"`
 	Descricao    *string            `json:"descricao"`
 	Cor          *string            `json:"cor"`
@@ -398,6 +399,8 @@ type ContasAReceber struct {
 	Origem           *string            `json:"origem"`
 	AssinaturaID     pgtype.UUID        `json:"assinatura_id"`
 	ServicoID        pgtype.UUID        `json:"servico_id"`
+	CommandID        pgtype.UUID        `json:"command_id"`
+	CommandPaymentID pgtype.UUID        `json:"command_payment_id"`
 	Descricao        string             `json:"descricao"`
 	Valor            decimal.Decimal    `json:"valor"`
 	ValorPago        pgtype.Numeric     `json:"valor_pago"`
@@ -412,8 +415,6 @@ type ContasAReceber struct {
 	ReceivedAt       pgtype.Timestamptz `json:"received_at"`
 	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
-	CommandID        pgtype.UUID        `json:"command_id"`
-	CommandPaymentID pgtype.UUID        `json:"command_payment_id"`
 }
 
 // Despesas fixas recorrentes que geram contas a pagar mensalmente

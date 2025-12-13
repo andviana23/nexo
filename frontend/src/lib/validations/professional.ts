@@ -101,7 +101,8 @@ export const createProfessionalSchema = z.object({
     .min(0, 'Comissão não pode ser negativa')
     .max(100, 'Comissão máxima é 100%')
     .optional()
-    .nullable(),
+    .nullable()
+    .default(0),
 
   comissao_produtos: z.number()
     .min(0, 'Comissão não pode ser negativa')
@@ -118,30 +119,9 @@ export const createProfessionalSchema = z.object({
   // Horário de trabalho
   horario_trabalho: workScheduleSchema.optional(),
 
-}).superRefine((data, ctx) => {
-  // Validação condicional: Barbeiro precisa de comissão
-  const precisaComissao =
-    data.tipo === 'BARBEIRO' ||
-    (data.tipo === 'GERENTE' && data.tambem_barbeiro);
-
-  if (precisaComissao) {
-    if (!data.tipo_comissao) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Tipo de comissão é obrigatório para barbeiros',
-        path: ['tipo_comissao'],
-      });
-    }
-
-    if (data.comissao === undefined || data.comissao === null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Valor da comissão é obrigatório para barbeiros',
-        path: ['comissao'],
-      });
-    }
-  }
 });
+// Nota: removido superRefine que exigia comissão obrigatória para barbeiros.
+// A comissão agora tem valor padrão 0, permitindo cadastro sem preencher aba financeira.
 
 /** Schema do formulário de edição de profissional */
 export const updateProfessionalSchema = z.object({

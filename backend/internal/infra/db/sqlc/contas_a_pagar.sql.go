@@ -234,80 +234,6 @@ func (q *Queries) ListContasPagarByPeriod(ctx context.Context, arg ListContasPag
 	return items, nil
 }
 
-const listContasPagarFiltered = `-- name: ListContasPagarFiltered :many
-SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
-WHERE tenant_id = $1
-  AND ($4::uuid IS NULL OR unit_id = $4)
-  AND ($5::text IS NULL OR status = $5)
-  AND ($6::text IS NULL OR tipo = $6)
-  AND ($7::uuid IS NULL OR categoria_id = $7)
-  AND ($8::date IS NULL OR data_vencimento >= $8)
-  AND ($9::date IS NULL OR data_vencimento <= $9)
-ORDER BY data_vencimento DESC
-LIMIT $2 OFFSET $3
-`
-
-type ListContasPagarFilteredParams struct {
-	TenantID    pgtype.UUID `json:"tenant_id"`
-	Limit       int32       `json:"limit"`
-	Offset      int32       `json:"offset"`
-	UnitID      pgtype.UUID `json:"unit_id"`
-	Status      *string     `json:"status"`
-	Tipo        *string     `json:"tipo"`
-	CategoriaID pgtype.UUID `json:"categoria_id"`
-	DataInicio  pgtype.Date `json:"data_inicio"`
-	DataFim     pgtype.Date `json:"data_fim"`
-}
-
-func (q *Queries) ListContasPagarFiltered(ctx context.Context, arg ListContasPagarFilteredParams) ([]ContasAPagar, error) {
-	rows, err := q.db.Query(ctx, listContasPagarFiltered,
-		arg.TenantID,
-		arg.Limit,
-		arg.Offset,
-		arg.UnitID,
-		arg.Status,
-		arg.Tipo,
-		arg.CategoriaID,
-		arg.DataInicio,
-		arg.DataFim,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ContasAPagar{}
-	for rows.Next() {
-		var i ContasAPagar
-		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
-			&i.Descricao,
-			&i.CategoriaID,
-			&i.Fornecedor,
-			&i.Valor,
-			&i.Tipo,
-			&i.Recorrente,
-			&i.Periodicidade,
-			&i.DataVencimento,
-			&i.DataPagamento,
-			&i.Status,
-			&i.UnitID,
-			&i.ComprovanteUrl,
-			&i.PixCode,
-			&i.Observacoes,
-			&i.CriadoEm,
-			&i.AtualizadoEm,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listContasPagarByStatus = `-- name: ListContasPagarByStatus :many
 SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
 WHERE tenant_id = $1
@@ -391,6 +317,80 @@ func (q *Queries) ListContasPagarByTenant(ctx context.Context, arg ListContasPag
 		arg.Limit,
 		arg.Offset,
 		arg.UnitID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContasAPagar{}
+	for rows.Next() {
+		var i ContasAPagar
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Descricao,
+			&i.CategoriaID,
+			&i.Fornecedor,
+			&i.Valor,
+			&i.Tipo,
+			&i.Recorrente,
+			&i.Periodicidade,
+			&i.DataVencimento,
+			&i.DataPagamento,
+			&i.Status,
+			&i.UnitID,
+			&i.ComprovanteUrl,
+			&i.PixCode,
+			&i.Observacoes,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContasPagarFiltered = `-- name: ListContasPagarFiltered :many
+SELECT id, tenant_id, descricao, categoria_id, fornecedor, valor, tipo, recorrente, periodicidade, data_vencimento, data_pagamento, status, unit_id, comprovante_url, pix_code, observacoes, criado_em, atualizado_em FROM contas_a_pagar
+WHERE tenant_id = $1
+  AND ($4::uuid IS NULL OR unit_id = $4)
+  AND ($5::text IS NULL OR status = $5)
+  AND ($6::text IS NULL OR tipo = $6)
+  AND ($7::uuid IS NULL OR categoria_id = $7)
+  AND ($8::date IS NULL OR data_vencimento >= $8)
+  AND ($9::date IS NULL OR data_vencimento <= $9)
+ORDER BY data_vencimento DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListContasPagarFilteredParams struct {
+	TenantID    pgtype.UUID `json:"tenant_id"`
+	Limit       int32       `json:"limit"`
+	Offset      int32       `json:"offset"`
+	UnitID      pgtype.UUID `json:"unit_id"`
+	Status      *string     `json:"status"`
+	Tipo        *string     `json:"tipo"`
+	CategoriaID pgtype.UUID `json:"categoria_id"`
+	DataInicio  pgtype.Date `json:"data_inicio"`
+	DataFim     pgtype.Date `json:"data_fim"`
+}
+
+func (q *Queries) ListContasPagarFiltered(ctx context.Context, arg ListContasPagarFilteredParams) ([]ContasAPagar, error) {
+	rows, err := q.db.Query(ctx, listContasPagarFiltered,
+		arg.TenantID,
+		arg.Limit,
+		arg.Offset,
+		arg.UnitID,
+		arg.Status,
+		arg.Tipo,
+		arg.CategoriaID,
+		arg.DataInicio,
+		arg.DataFim,
 	)
 	if err != nil {
 		return nil, err

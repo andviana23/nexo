@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS contas_a_receber (
 
     data_vencimento DATE NOT NULL,
     data_recebimento DATE,
-    status VARCHAR(20) DEFAULT 'PENDENTE' CHECK (status IN ('PENDENTE', 'RECEBIDO', 'ATRASADO', 'CANCELADO', 'CONFIRMADO', 'ESTORNADO')),
+    status VARCHAR(20) DEFAULT 'PENDENTE' CHECK (status IN ('PENDENTE', 'CONFIRMADO', 'RECEBIDO', 'PAGO', 'ATRASADO', 'ESTORNADO', 'CANCELADO')),
 
     observacoes TEXT,
     

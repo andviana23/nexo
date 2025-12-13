@@ -22,6 +22,7 @@ import type {
     UpdateProfessionalRequest,
     UpdateProfessionalStatusRequest
 } from '@/types/professional';
+import { useActiveUnitId, useNeedsSelection, useUnitHydrated } from '@/store/unit-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -48,11 +49,17 @@ export const professionalKeys = {
  * Hook para listar profissionais com filtros e paginação
  */
 export function useProfessionals(filters: ListProfessionalsFilters = {}) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: professionalKeys.list(filters),
     queryFn: () => professionalService.list(filters),
     staleTime: 60_000, // 1 minuto
     refetchOnWindowFocus: true,
+    enabled: unitReady,
   });
 }
 
@@ -60,10 +67,15 @@ export function useProfessionals(filters: ListProfessionalsFilters = {}) {
  * Hook para buscar um profissional específico
  */
 export function useProfessional(id: string) {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: professionalKeys.detail(id),
     queryFn: () => professionalService.getById(id),
-    enabled: !!id,
+    enabled: unitReady && !!id,
   });
 }
 
@@ -71,10 +83,16 @@ export function useProfessional(id: string) {
  * Hook para listar apenas barbeiros ativos (para agendamentos)
  */
 export function useBarbers() {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: professionalKeys.barbers(),
     queryFn: () => professionalService.listBarbers(),
     staleTime: 5 * 60_000, // 5 minutos - cache maior para seleção
+    enabled: unitReady,
   });
 }
 
@@ -82,10 +100,16 @@ export function useBarbers() {
  * Hook para listar todos profissionais ativos (para selects)
  */
 export function useActiveProfessionals() {
+  const activeUnitId = useActiveUnitId();
+  const isUnitHydrated = useUnitHydrated();
+  const needsSelection = useNeedsSelection();
+  const unitReady = isUnitHydrated && !needsSelection && !!activeUnitId;
+
   return useQuery({
     queryKey: professionalKeys.active(),
     queryFn: () => professionalService.listActive(),
     staleTime: 5 * 60_000,
+    enabled: unitReady,
   });
 }
 

@@ -1,4 +1,5 @@
 import { UNIT_HEADER } from '@/types/unit';
+import { getActiveUnitId } from '@/store/unit-store';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Instância do Axios configurada para a API
@@ -33,19 +34,31 @@ api.interceptors.request.use(
         }
       }
 
-      // Busca unit_id do Zustand persist storage (unit)
-      const unitData = localStorage.getItem('nexo-unit');
-      if (unitData) {
-        try {
-          const { state } = JSON.parse(unitData);
-          const unitId = state?.activeUnit?.unit_id;
-          
-          if (unitId && config.headers) {
-            config.headers[UNIT_HEADER] = unitId;
-            console.log('[axios] Unit-ID adicionado:', unitId.substring(0, 8) + '...');
+      // Busca unit_id diretamente do Zustand store (mais confiável)
+      const unitId = getActiveUnitId();
+      console.log('[axios] unitId do Zustand:', unitId || 'null');
+      
+      if (unitId && config.headers) {
+        config.headers[UNIT_HEADER] = unitId;
+        console.log('[axios] X-Unit-ID adicionado:', unitId.substring(0, 8) + '...');
+      } else {
+        // Fallback: tenta ler do localStorage
+        const unitData = localStorage.getItem('nexo-unit');
+        if (unitData) {
+          try {
+            const { state } = JSON.parse(unitData);
+            const fallbackUnitId = state?.activeUnit?.unit_id;
+            if (fallbackUnitId && config.headers) {
+              config.headers[UNIT_HEADER] = fallbackUnitId;
+              console.log('[axios] X-Unit-ID (fallback localStorage):', fallbackUnitId.substring(0, 8) + '...');
+            } else {
+              console.warn('[axios] ⚠️ Unit ID não encontrado (Zustand nem localStorage)');
+            }
+          } catch (error) {
+            console.error('[axios] Erro ao parsear unit do localStorage:', error);
           }
-        } catch (error) {
-          console.error('[axios] Erro ao parsear unit:', error);
+        } else {
+          console.warn('[axios] ⚠️ nexo-unit não existe no localStorage');
         }
       }
     }

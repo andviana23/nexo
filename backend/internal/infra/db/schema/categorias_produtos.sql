@@ -6,6 +6,7 @@
 CREATE TABLE IF NOT EXISTS categorias_produtos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    unit_id UUID REFERENCES units(id) ON DELETE RESTRICT,
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
     cor VARCHAR(7) DEFAULT '#6B7280',
@@ -24,3 +25,6 @@ CREATE INDEX IF NOT EXISTS idx_categorias_produtos_tenant
     ON categorias_produtos(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_categorias_produtos_tenant_ativa 
     ON categorias_produtos(tenant_id, ativa);
+
+CREATE INDEX IF NOT EXISTS idx_categorias_produtos_tenant_unit
+    ON categorias_produtos(tenant_id, unit_id);

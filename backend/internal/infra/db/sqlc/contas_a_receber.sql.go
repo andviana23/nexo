@@ -58,7 +58,7 @@ INSERT INTO contas_a_receber (
     observacoes
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-) RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em, command_id, command_payment_id
+) RETURNING id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type CreateContaReceberParams struct {
@@ -100,6 +100,8 @@ func (q *Queries) CreateContaReceber(ctx context.Context, arg CreateContaReceber
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,
@@ -114,8 +116,6 @@ func (q *Queries) CreateContaReceber(ctx context.Context, arg CreateContaReceber
 		&i.ReceivedAt,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
-		&i.CommandID,
-		&i.CommandPaymentID,
 	)
 	return i, err
 }
@@ -142,7 +142,7 @@ SET
     observacoes = COALESCE(observacoes || ' | ', '') || $3,
     atualizado_em = NOW()
 WHERE tenant_id = $1 AND asaas_payment_id = $2
-RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type EstornarContaReceberViaAsaasParams struct {
@@ -161,6 +161,8 @@ func (q *Queries) EstornarContaReceberViaAsaas(ctx context.Context, arg Estornar
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,
@@ -180,7 +182,7 @@ func (q *Queries) EstornarContaReceberViaAsaas(ctx context.Context, arg Estornar
 }
 
 const getContaReceberByAsaasPaymentID = `-- name: GetContaReceberByAsaasPaymentID :one
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND asaas_payment_id = $2
 `
 
@@ -199,6 +201,8 @@ func (q *Queries) GetContaReceberByAsaasPaymentID(ctx context.Context, arg GetCo
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,
@@ -218,7 +222,7 @@ func (q *Queries) GetContaReceberByAsaasPaymentID(ctx context.Context, arg GetCo
 }
 
 const getContaReceberByID = `-- name: GetContaReceberByID :one
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE id = $1 AND tenant_id = $2
 `
 
@@ -236,6 +240,8 @@ func (q *Queries) GetContaReceberByID(ctx context.Context, arg GetContaReceberBy
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,
@@ -255,7 +261,7 @@ func (q *Queries) GetContaReceberByID(ctx context.Context, arg GetContaReceberBy
 }
 
 const getContaReceberBySubscriptionID = `-- name: GetContaReceberBySubscriptionID :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND subscription_id = $2
 ORDER BY data_vencimento DESC
 `
@@ -281,6 +287,8 @@ func (q *Queries) GetContaReceberBySubscriptionID(ctx context.Context, arg GetCo
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
 			&i.Descricao,
 			&i.Valor,
 			&i.ValorPago,
@@ -352,7 +360,7 @@ func (q *Queries) GetContasReceberResumoMensal(ctx context.Context, arg GetConta
 }
 
 const listContasReceberByAssinatura = `-- name: ListContasReceberByAssinatura :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND assinatura_id = $2
 ORDER BY data_vencimento DESC
 `
@@ -377,6 +385,61 @@ func (q *Queries) ListContasReceberByAssinatura(ctx context.Context, arg ListCon
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
+			&i.Descricao,
+			&i.Valor,
+			&i.ValorPago,
+			&i.DataVencimento,
+			&i.DataRecebimento,
+			&i.Status,
+			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContasReceberByCommandID = `-- name: ListContasReceberByCommandID :many
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+WHERE tenant_id = $1 AND command_id = $2
+ORDER BY criado_em ASC
+`
+
+type ListContasReceberByCommandIDParams struct {
+	TenantID  pgtype.UUID `json:"tenant_id"`
+	CommandID pgtype.UUID `json:"command_id"`
+}
+
+func (q *Queries) ListContasReceberByCommandID(ctx context.Context, arg ListContasReceberByCommandIDParams) ([]ContasAReceber, error) {
+	rows, err := q.db.Query(ctx, listContasReceberByCommandID, arg.TenantID, arg.CommandID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContasAReceber{}
+	for rows.Next() {
+		var i ContasAReceber
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Origem,
+			&i.AssinaturaID,
+			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
 			&i.Descricao,
 			&i.Valor,
 			&i.ValorPago,
@@ -403,7 +466,7 @@ func (q *Queries) ListContasReceberByAssinatura(ctx context.Context, arg ListCon
 }
 
 const listContasReceberByCompetencia = `-- name: ListContasReceberByCompetencia :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND competencia_mes = $2
 ORDER BY data_vencimento ASC
 `
@@ -429,6 +492,8 @@ func (q *Queries) ListContasReceberByCompetencia(ctx context.Context, arg ListCo
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
 			&i.Descricao,
 			&i.Valor,
 			&i.ValorPago,
@@ -455,7 +520,7 @@ func (q *Queries) ListContasReceberByCompetencia(ctx context.Context, arg ListCo
 }
 
 const listContasReceberByOrigem = `-- name: ListContasReceberByOrigem :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1 AND origem = $2
 ORDER BY data_vencimento DESC
 LIMIT $3 OFFSET $4
@@ -488,73 +553,22 @@ func (q *Queries) ListContasReceberByOrigem(ctx context.Context, arg ListContasR
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
-			&i.Descricao,
-			&i.Valor,
-			&i.ValorPago,
-			&i.DataVencimento,
-			&i.DataRecebimento,
-			&i.Status,
-			&i.Observacoes,
-			&i.SubscriptionID,
-			&i.AsaasPaymentID,
-			&i.CompetenciaMes,
-			&i.ConfirmedAt,
-			&i.ReceivedAt,
-			&i.CriadoEm,
-			&i.AtualizadoEm,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listContasReceberByCommandID = `-- name: ListContasReceberByCommandID :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em, command_id, command_payment_id FROM contas_a_receber
-WHERE tenant_id = $1 AND command_id = $2
-ORDER BY criado_em ASC
-`
-
-type ListContasReceberByCommandIDParams struct {
-	TenantID  pgtype.UUID `json:"tenant_id"`
-	CommandID pgtype.UUID `json:"command_id"`
-}
-
-func (q *Queries) ListContasReceberByCommandID(ctx context.Context, arg ListContasReceberByCommandIDParams) ([]ContasAReceber, error) {
-	rows, err := q.db.Query(ctx, listContasReceberByCommandID, arg.TenantID, arg.CommandID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ContasAReceber{}
-	for rows.Next() {
-		var i ContasAReceber
-		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
-			&i.Origem,
-			&i.AssinaturaID,
-			&i.ServicoID,
-			&i.Descricao,
-			&i.Valor,
-			&i.ValorPago,
-			&i.DataVencimento,
-			&i.DataRecebimento,
-			&i.Status,
-			&i.Observacoes,
-			&i.SubscriptionID,
-			&i.AsaasPaymentID,
-			&i.CompetenciaMes,
-			&i.ConfirmedAt,
-			&i.ReceivedAt,
-			&i.CriadoEm,
-			&i.AtualizadoEm,
 			&i.CommandID,
 			&i.CommandPaymentID,
+			&i.Descricao,
+			&i.Valor,
+			&i.ValorPago,
+			&i.DataVencimento,
+			&i.DataRecebimento,
+			&i.Status,
+			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
 		); err != nil {
 			return nil, err
 		}
@@ -567,7 +581,7 @@ func (q *Queries) ListContasReceberByCommandID(ctx context.Context, arg ListCont
 }
 
 const listContasReceberByPeriod = `-- name: ListContasReceberByPeriod :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1
   AND data_vencimento >= $2
   AND data_vencimento <= $3
@@ -595,6 +609,124 @@ func (q *Queries) ListContasReceberByPeriod(ctx context.Context, arg ListContasR
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
+			&i.Descricao,
+			&i.Valor,
+			&i.ValorPago,
+			&i.DataVencimento,
+			&i.DataRecebimento,
+			&i.Status,
+			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContasReceberByStatus = `-- name: ListContasReceberByStatus :many
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+WHERE tenant_id = $1 AND status = $2
+ORDER BY data_vencimento ASC
+LIMIT $3 OFFSET $4
+`
+
+type ListContasReceberByStatusParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	Status   *string     `json:"status"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
+}
+
+func (q *Queries) ListContasReceberByStatus(ctx context.Context, arg ListContasReceberByStatusParams) ([]ContasAReceber, error) {
+	rows, err := q.db.Query(ctx, listContasReceberByStatus,
+		arg.TenantID,
+		arg.Status,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContasAReceber{}
+	for rows.Next() {
+		var i ContasAReceber
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Origem,
+			&i.AssinaturaID,
+			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
+			&i.Descricao,
+			&i.Valor,
+			&i.ValorPago,
+			&i.DataVencimento,
+			&i.DataRecebimento,
+			&i.Status,
+			&i.Observacoes,
+			&i.SubscriptionID,
+			&i.AsaasPaymentID,
+			&i.CompetenciaMes,
+			&i.ConfirmedAt,
+			&i.ReceivedAt,
+			&i.CriadoEm,
+			&i.AtualizadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContasReceberByTenant = `-- name: ListContasReceberByTenant :many
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+WHERE tenant_id = $1
+ORDER BY data_vencimento DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListContasReceberByTenantParams struct {
+	TenantID pgtype.UUID `json:"tenant_id"`
+	Limit    int32       `json:"limit"`
+	Offset   int32       `json:"offset"`
+}
+
+func (q *Queries) ListContasReceberByTenant(ctx context.Context, arg ListContasReceberByTenantParams) ([]ContasAReceber, error) {
+	rows, err := q.db.Query(ctx, listContasReceberByTenant, arg.TenantID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContasAReceber{}
+	for rows.Next() {
+		var i ContasAReceber
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Origem,
+			&i.AssinaturaID,
+			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
 			&i.Descricao,
 			&i.Valor,
 			&i.ValorPago,
@@ -621,7 +753,7 @@ func (q *Queries) ListContasReceberByPeriod(ctx context.Context, arg ListContasR
 }
 
 const listContasReceberFiltered = `-- name: ListContasReceberFiltered :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1
   AND ($4::text IS NULL OR status = $4)
   AND ($5::text IS NULL OR origem = $5)
@@ -667,118 +799,8 @@ func (q *Queries) ListContasReceberFiltered(ctx context.Context, arg ListContasR
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
-			&i.Descricao,
-			&i.Valor,
-			&i.ValorPago,
-			&i.DataVencimento,
-			&i.DataRecebimento,
-			&i.Status,
-			&i.Observacoes,
-			&i.SubscriptionID,
-			&i.AsaasPaymentID,
-			&i.CompetenciaMes,
-			&i.ConfirmedAt,
-			&i.ReceivedAt,
-			&i.CriadoEm,
-			&i.AtualizadoEm,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listContasReceberByStatus = `-- name: ListContasReceberByStatus :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
-WHERE tenant_id = $1 AND status = $2
-ORDER BY data_vencimento ASC
-LIMIT $3 OFFSET $4
-`
-
-type ListContasReceberByStatusParams struct {
-	TenantID pgtype.UUID `json:"tenant_id"`
-	Status   *string     `json:"status"`
-	Limit    int32       `json:"limit"`
-	Offset   int32       `json:"offset"`
-}
-
-func (q *Queries) ListContasReceberByStatus(ctx context.Context, arg ListContasReceberByStatusParams) ([]ContasAReceber, error) {
-	rows, err := q.db.Query(ctx, listContasReceberByStatus,
-		arg.TenantID,
-		arg.Status,
-		arg.Limit,
-		arg.Offset,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ContasAReceber{}
-	for rows.Next() {
-		var i ContasAReceber
-		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
-			&i.Origem,
-			&i.AssinaturaID,
-			&i.ServicoID,
-			&i.Descricao,
-			&i.Valor,
-			&i.ValorPago,
-			&i.DataVencimento,
-			&i.DataRecebimento,
-			&i.Status,
-			&i.Observacoes,
-			&i.SubscriptionID,
-			&i.AsaasPaymentID,
-			&i.CompetenciaMes,
-			&i.ConfirmedAt,
-			&i.ReceivedAt,
-			&i.CriadoEm,
-			&i.AtualizadoEm,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listContasReceberByTenant = `-- name: ListContasReceberByTenant :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
-WHERE tenant_id = $1
-ORDER BY data_vencimento DESC
-LIMIT $2 OFFSET $3
-`
-
-type ListContasReceberByTenantParams struct {
-	TenantID pgtype.UUID `json:"tenant_id"`
-	Limit    int32       `json:"limit"`
-	Offset   int32       `json:"offset"`
-}
-
-func (q *Queries) ListContasReceberByTenant(ctx context.Context, arg ListContasReceberByTenantParams) ([]ContasAReceber, error) {
-	rows, err := q.db.Query(ctx, listContasReceberByTenant, arg.TenantID, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ContasAReceber{}
-	for rows.Next() {
-		var i ContasAReceber
-		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
-			&i.Origem,
-			&i.AssinaturaID,
-			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
 			&i.Descricao,
 			&i.Valor,
 			&i.ValorPago,
@@ -805,7 +827,7 @@ func (q *Queries) ListContasReceberByTenant(ctx context.Context, arg ListContasR
 }
 
 const listContasReceberPendentesAsaas = `-- name: ListContasReceberPendentesAsaas :many
-SELECT cr.id, cr.tenant_id, cr.origem, cr.assinatura_id, cr.servico_id, cr.descricao, cr.valor, cr.valor_pago, cr.data_vencimento, cr.data_recebimento, cr.status, cr.observacoes, cr.subscription_id, cr.asaas_payment_id, cr.competencia_mes, cr.confirmed_at, cr.received_at, cr.criado_em, cr.atualizado_em, s.asaas_subscription_id
+SELECT cr.id, cr.tenant_id, cr.origem, cr.assinatura_id, cr.servico_id, cr.command_id, cr.command_payment_id, cr.descricao, cr.valor, cr.valor_pago, cr.data_vencimento, cr.data_recebimento, cr.status, cr.observacoes, cr.subscription_id, cr.asaas_payment_id, cr.competencia_mes, cr.confirmed_at, cr.received_at, cr.criado_em, cr.atualizado_em, s.asaas_subscription_id
 FROM contas_a_receber cr
 LEFT JOIN subscriptions s ON cr.subscription_id = s.id
 WHERE cr.tenant_id = $1 
@@ -820,6 +842,8 @@ type ListContasReceberPendentesAsaasRow struct {
 	Origem              *string            `json:"origem"`
 	AssinaturaID        pgtype.UUID        `json:"assinatura_id"`
 	ServicoID           pgtype.UUID        `json:"servico_id"`
+	CommandID           pgtype.UUID        `json:"command_id"`
+	CommandPaymentID    pgtype.UUID        `json:"command_payment_id"`
 	Descricao           string             `json:"descricao"`
 	Valor               decimal.Decimal    `json:"valor"`
 	ValorPago           pgtype.Numeric     `json:"valor_pago"`
@@ -853,6 +877,8 @@ func (q *Queries) ListContasReceberPendentesAsaas(ctx context.Context, tenantID 
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
 			&i.Descricao,
 			&i.Valor,
 			&i.ValorPago,
@@ -880,7 +906,7 @@ func (q *Queries) ListContasReceberPendentesAsaas(ctx context.Context, tenantID 
 }
 
 const listContasReceberVencidas = `-- name: ListContasReceberVencidas :many
-SELECT id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
+SELECT id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em FROM contas_a_receber
 WHERE tenant_id = $1
   AND status IN ('PENDENTE', 'ATRASADO')
   AND data_vencimento < $2
@@ -907,6 +933,8 @@ func (q *Queries) ListContasReceberVencidas(ctx context.Context, arg ListContasR
 			&i.Origem,
 			&i.AssinaturaID,
 			&i.ServicoID,
+			&i.CommandID,
+			&i.CommandPaymentID,
 			&i.Descricao,
 			&i.Valor,
 			&i.ValorPago,
@@ -960,7 +988,7 @@ SET
     valor_pago = $4,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type MarcarContaReceberComoRecebidaParams struct {
@@ -984,6 +1012,8 @@ func (q *Queries) MarcarContaReceberComoRecebida(ctx context.Context, arg Marcar
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,
@@ -1011,7 +1041,7 @@ SET
     valor_pago = $4,
     atualizado_em = NOW()
 WHERE tenant_id = $1 AND asaas_payment_id = $2
-RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type MarcarContaReceberRecebidaViaAsaasParams struct {
@@ -1036,6 +1066,8 @@ func (q *Queries) MarcarContaReceberRecebidaViaAsaas(ctx context.Context, arg Ma
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,
@@ -1131,6 +1163,36 @@ func (q *Queries) SumContasReceberByConfirmedDate(ctx context.Context, arg SumCo
 	return total, err
 }
 
+const sumContasReceberByOrigem = `-- name: SumContasReceberByOrigem :one
+SELECT
+    COALESCE(SUM(valor), 0) as total_por_origem
+FROM contas_a_receber
+WHERE tenant_id = $1
+  AND origem = $2
+  AND data_vencimento >= $3
+  AND data_vencimento <= $4
+  AND status NOT IN ('CANCELADO', 'ESTORNADO')
+`
+
+type SumContasReceberByOrigemParams struct {
+	TenantID         pgtype.UUID `json:"tenant_id"`
+	Origem           *string     `json:"origem"`
+	DataVencimento   pgtype.Date `json:"data_vencimento"`
+	DataVencimento_2 pgtype.Date `json:"data_vencimento_2"`
+}
+
+func (q *Queries) SumContasReceberByOrigem(ctx context.Context, arg SumContasReceberByOrigemParams) (interface{}, error) {
+	row := q.db.QueryRow(ctx, sumContasReceberByOrigem,
+		arg.TenantID,
+		arg.Origem,
+		arg.DataVencimento,
+		arg.DataVencimento_2,
+	)
+	var total_por_origem interface{}
+	err := row.Scan(&total_por_origem)
+	return total_por_origem, err
+}
+
 const sumContasReceberByPeriod = `-- name: SumContasReceberByPeriod :one
 SELECT
     COALESCE(SUM(valor), 0) as total_a_receber
@@ -1152,31 +1214,6 @@ func (q *Queries) SumContasReceberByPeriod(ctx context.Context, arg SumContasRec
 	var total_a_receber interface{}
 	err := row.Scan(&total_a_receber)
 	return total_a_receber, err
-}
-
-const sumContasReceberByOrigem = `-- name: SumContasReceberByOrigem :one
-SELECT
-    COALESCE(SUM(valor), 0) as total_por_origem
-FROM contas_a_receber
-WHERE tenant_id = $1
-  AND origem = $2
-  AND data_vencimento >= $3
-  AND data_vencimento <= $4
-  AND status NOT IN ('CANCELADO', 'ESTORNADO')
-`
-
-type SumContasReceberByOrigemParams struct {
-	TenantID         pgtype.UUID `json:"tenant_id"`
-	Origem           *string     `json:"origem"`
-	DataVencimento   pgtype.Date `json:"data_vencimento"`
-	DataVencimento_2 pgtype.Date `json:"data_vencimento_2"`
-}
-
-func (q *Queries) SumContasReceberByOrigem(ctx context.Context, arg SumContasReceberByOrigemParams) (interface{}, error) {
-	row := q.db.QueryRow(ctx, sumContasReceberByOrigem, arg.TenantID, arg.Origem, arg.DataVencimento, arg.DataVencimento_2)
-	var total_por_origem interface{}
-	err := row.Scan(&total_por_origem)
-	return total_por_origem, err
 }
 
 const sumContasReceberByReceivedDate = `-- name: SumContasReceberByReceivedDate :one
@@ -1238,7 +1275,7 @@ SET
     observacoes = $9,
     atualizado_em = NOW()
 WHERE id = $1 AND tenant_id = $2
-RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type UpdateContaReceberParams struct {
@@ -1272,6 +1309,8 @@ func (q *Queries) UpdateContaReceber(ctx context.Context, arg UpdateContaReceber
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,
@@ -1321,7 +1360,7 @@ DO UPDATE SET
     status = EXCLUDED.status,
     observacoes = COALESCE(EXCLUDED.observacoes, contas_a_receber.observacoes),
     atualizado_em = NOW()
-RETURNING id, tenant_id, origem, assinatura_id, servico_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
+RETURNING id, tenant_id, origem, assinatura_id, servico_id, command_id, command_payment_id, descricao, valor, valor_pago, data_vencimento, data_recebimento, status, observacoes, subscription_id, asaas_payment_id, competencia_mes, confirmed_at, received_at, criado_em, atualizado_em
 `
 
 type UpsertContaReceberByAsaasPaymentIDParams struct {
@@ -1374,6 +1413,8 @@ func (q *Queries) UpsertContaReceberByAsaasPaymentID(ctx context.Context, arg Up
 		&i.Origem,
 		&i.AssinaturaID,
 		&i.ServicoID,
+		&i.CommandID,
+		&i.CommandPaymentID,
 		&i.Descricao,
 		&i.Valor,
 		&i.ValorPago,

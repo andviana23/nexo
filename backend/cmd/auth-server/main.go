@@ -4,12 +4,14 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 
 	authUC "github.com/andviana23/barber-analytics-backend/internal/application/usecase/auth"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/auth"
 	db "github.com/andviana23/barber-analytics-backend/internal/infra/db/sqlc"
 	"github.com/andviana23/barber-analytics-backend/internal/infra/http/handler"
 	mw "github.com/andviana23/barber-analytics-backend/internal/infra/http/middleware"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -37,7 +39,14 @@ func main() {
 
 	// Initialize database connection
 	ctx := context.Background()
-	dbPool, err := pgxpool.New(ctx, databaseURL)
+	poolCfg, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		logger.Fatal("Erro ao parsear DATABASE_URL", zap.Error(err))
+	}
+	if strings.EqualFold(os.Getenv("PGX_SIMPLE_PROTOCOL"), "true") {
+		poolCfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	}
+	dbPool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		logger.Fatal("Erro ao conectar ao banco de dados", zap.Error(err))
 	}
